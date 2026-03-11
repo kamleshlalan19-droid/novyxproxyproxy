@@ -186,12 +186,12 @@ router.post('/register', async (req, res) => {
 
 router.get('/ad', async (req, res) => {
     if (!req.session.token) {
-        return res.redirect("https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
+        return res.redirect("//https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
     }
 
     const uid = await pool.query("SELECT id FROM users WHERE token = $1", [req.session.token]);
     if (uid.rowCount === 0) {
-        return res.redirect("https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
+        return res.redirect("//https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
     }
 
     const result = await pool.query(
@@ -200,7 +200,7 @@ router.get('/ad', async (req, res) => {
     );
 
     if (result.rowCount === 0) {
-        return res.redirect("https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
+        return res.redirect("//https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
     }
 
     const expiration = new Date(result.rows[0].expiration);
@@ -215,7 +215,7 @@ router.get('/ad', async (req, res) => {
         [uid.rows[0].id]
     );
 
-    res.redirect("https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
+    res.redirect("//https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
 });
 
 router.get('/postback', async (req, res) => {
