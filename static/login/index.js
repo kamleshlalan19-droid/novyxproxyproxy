@@ -214,7 +214,7 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
             <span id="adfreeClose">✕</span>
             <div>
                 Account holders can now complete surveys to go ad free.  
-                Just select <b>Account</b> in the top bar.
+                Just select <b>My Account</b> in the top bar.
             </div>
         </div>
     `;
