@@ -51,20 +51,54 @@ router.get('/hit/:game', async (req, res) => {
 
 router.post('/check', async (req, res) => {
     const { token } = req.body;
+
     try {
-        const tokenResult = await pool.query('SELECT token, admin FROM users WHERE token = $1', [token]);
+        const tokenResult = await pool.query(
+            'SELECT id, token, admin FROM users WHERE token = $1',
+            [token]
+        );
 
         if (tokenResult.rowCount === 0) {
-            return res.status(400).json(false); // Account does not exist
-        } else {
-            req.session.token = tokenResult.rows[0].token;
-            req.session.admin = tokenResult.rows[0].admin;
-            return res.status(200).json(true);
+            return res.status(200).json({ loggedIn: false });
         }
+
+        const user = tokenResult.rows[0];
+
+        req.session.token = user.token;
+        req.session.admin = user.admin;
+        req.session.user_id = user.id;
+
+        // check adfree
+        const adfreeResult = await pool.query(
+            'SELECT expiration FROM adfree WHERE id = $1',
+            [user.id]
+        );
+
+        let adfree = false;
+
+        if (adfreeResult.rowCount > 0) {
+            const expiration = new Date(adfreeResult.rows[0].expiration);
+
+            if (expiration > new Date()) {
+                adfree = true;
+            } else {
+                // cleanup expired entry
+                await pool.query(
+                    'DELETE FROM adfree WHERE id = $1',
+                    [user.id]
+                );
+            }
+        }
+
+        res.status(200).json({
+            loggedIn: true,
+            adfree
+        });
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
-})
+});
 
 router.get("/arcade", async (req, res) => {
     try {
@@ -147,6 +181,97 @@ router.post('/register', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
+    }
+});
+
+router.get('/ad', async (req, res) => {
+    if (!req.session.token) {
+        return res.redirect("https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
+    }
+
+    const uid = await pool.query("SELECT id FROM accounts WHERE token = $1", [req.session.token]);
+    if (uid.rowCount === 0) {
+        return res.redirect("https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
+    }
+
+    const result = await pool.query(
+        "SELECT expiration FROM adfree WHERE id = $1",
+        [uid.rows[0].id]
+    );
+
+    if (result.rowCount === 0) {
+        return res.redirect("https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
+    }
+
+    const expiration = new Date(result.rows[0].expiration);
+
+    if (expiration > new Date()) {
+        return res.redirect("https://example.com"); // adfree
+    }
+
+    // expired → remove row
+    await pool.query(
+        "DELETE FROM adfree WHERE id = $1",
+        [uid.rows[0].id]
+    );
+
+    res.redirect("https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
+});
+
+router.get('/postback', async (req, res) => {
+    try {
+        const {
+            status,
+            user_id,
+            amount_local
+        } = req.query;
+        const days = parseInt(amount_local, 10);
+        if (!days || !user_id) {
+            return res.send("invalid");
+        }
+        // check if user already has adfree
+        const existing = await pool.query(
+            "SELECT expiration FROM adfree WHERE id = $1",
+            [user_id]
+        );
+        if (status === "1") {
+            if (existing.rowCount > 0) {
+                // extend expiration
+                await pool.query(
+                    "UPDATE adfree SET expiration = expiration + ($1 * INTERVAL '1 day') WHERE id = $2",
+                    [days, user_id]
+                );
+            } else {
+                // create new expiration from now
+                await pool.query(
+                    "INSERT INTO adfree (id, expiration) VALUES ($1, NOW() + ($2 * INTERVAL '1 day'))",
+                    [user_id, days]
+                );
+            }
+        }
+        if (status === "2") {
+            if (existing.rowCount === 0) {
+                return res.send("ok");
+            }
+            const expiration = new Date(existing.rows[0].expiration);
+            const newExpiration = new Date(expiration.getTime() - days * 86400000);
+            if (newExpiration <= new Date()) {
+                await pool.query(
+                    "DELETE FROM adfree WHERE id = $1",
+                    [user_id]
+                );
+            } else {
+                await pool.query(
+                    "UPDATE adfree SET expiration = expiration - ($1 * INTERVAL '1 day') WHERE id = $2",
+                    [days, user_id]
+                );
+
+            }
+        }
+        res.send("OK");
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("error");
     }
 });
 

@@ -163,6 +163,23 @@ app.get("/account", async (req, res) => {
   }
 })
 
+app.get("/offerwall", async (req, res) => {
+  if (req.session.token) {
+    const tokenResult = await pool.query('SELECT token, admin FROM users WHERE token = $1', [req.session.token]);
+    if (tokenResult.rowCount === 0) {
+      return res.status(400).json(false); // Account does not exist
+    } else {
+      const result = await pool.query('SELECT id, email FROM users WHERE token = $1', [req.session.token]);
+      res.render("offerwall", {
+        id: result.rows[0].id,
+        email: result.rows[0].email,
+      });
+    }
+  } else {
+    return res.status(400).json(false);
+  }
+})
+
 app.get("/allgames", async (req, res) => {
   const perPage = 100;
   let search = req.query.search || "";

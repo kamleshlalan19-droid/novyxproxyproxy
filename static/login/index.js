@@ -24,17 +24,22 @@ if (localStorage.getItem('token')) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token })
     })
-        .then(response => {
-            if (response.status === 200) {
-                document.getElementById('loginModalBtn').innerHTML =
-                    `<span id="loginSpan" class="material-symbols-outlined">account_circle</span>My Account`;
-            } else {
-                localStorage.removeItem('token');
+        .then(res => res.json())
+        .then(data => {
+
+            if (!data.loggedIn) {
+                localStorage.removeItem("token");
+                return;
             }
+            document.getElementById('loginModalBtn').innerHTML =
+                `<span id="loginSpan" class="material-symbols-outlined">account_circle</span>My Account`;
+
+            if (data.adfree) {
+                window.userAdfree = true;
+            }
+
         })
-        .catch(error => {
-            console.error("Error:", error);
-        });
+        .catch(err => console.error(err));
 }
 
 const popunderURL = "https://www.effectivegatecpm.com/pu8tr2xdrk?key=8f36a9afbc7645afc5ca1379dc42e46a";
@@ -42,6 +47,7 @@ const localStorageKey = "lastPopunderTime";
 const interval = 5 * 60 * 1000; // 30 minutes in milliseconds
 
 function shouldOpenPopunder() {
+    if (window.userAdfree) return;
     const lastTime = parseInt(localStorage.getItem(localStorageKey), 10) || 0;
     const now = Date.now();
     return ((now - lastTime) >= interval) && (window.location.pathname !== "/");
