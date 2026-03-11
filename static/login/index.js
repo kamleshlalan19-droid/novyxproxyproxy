@@ -203,3 +203,57 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
         document.getElementById('loginStatus').innerHTML = `<p>Registration failed. Please try again.</p>`;
     }
 });
+
+(function () {
+    if (localStorage.getItem("seenAdfreeNotice")) return;
+    localStorage.setItem("seenAdfreeNotice", "1");
+    const box = document.createElement("div");
+
+    box.innerHTML = `
+        <div id="adfreeNotice">
+            <span id="adfreeClose">✕</span>
+            <div>
+                Account holders can now complete surveys to go ad free.  
+                Just select <b>Account</b> in the top bar.
+            </div>
+        </div>
+    `;
+
+    const style = document.createElement("style");
+    style.innerHTML = `
+        #adfreeNotice {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1e1e1e;
+            color: white;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            max-width: 300px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 999999;
+        }
+
+        #adfreeClose {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        #adfreeClose:hover {
+            opacity: 1;
+        }
+    `;
+
+    document.head.appendChild(style);
+    document.body.appendChild(box);
+
+    document.getElementById("adfreeClose").onclick = () => {
+        box.remove();
+    };
+})();
