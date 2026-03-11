@@ -189,7 +189,7 @@ router.get('/ad', async (req, res) => {
         return res.redirect("https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
     }
 
-    const uid = await pool.query("SELECT id FROM accounts WHERE token = $1", [req.session.token]);
+    const uid = await pool.query("SELECT id FROM users WHERE token = $1", [req.session.token]);
     if (uid.rowCount === 0) {
         return res.redirect("https://pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
     }
