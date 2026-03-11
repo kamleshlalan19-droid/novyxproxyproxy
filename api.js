@@ -225,7 +225,7 @@ router.get('/postback', async (req, res) => {
             user_id,
             amount_local
         } = req.query;
-        const days = parseInt(amount_local, 10);
+        const days = parseFloat(amount_local);
         if (!days || !user_id) {
             return res.send("invalid");
         }
