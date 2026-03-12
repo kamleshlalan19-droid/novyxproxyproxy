@@ -36,6 +36,15 @@ try {
   console.error("Failed to load games data:", err);
 }
 
+let newgames = [];
+const newgamesFilePath = path.join(__dirname, "new.json");
+try {
+  const data = fs.readFileSync(newgamesFilePath, "utf8");
+  newgames = JSON.parse(data);
+} catch (err) {
+  console.error("Failed to load games data:", err);
+}
+
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.set("view engine", "ejs");
@@ -187,6 +196,32 @@ app.get("/allgames", async (req, res) => {
 
   const filteredGames = games.filter((game) =>
       game.name.toLowerCase().includes(search)
+  );
+
+  const total = filteredGames.length;
+  const totalPages = Math.ceil(total / perPage);
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+
+  const sortedGames = filteredGames.sort((a, b) => a.name.localeCompare(b.name));
+  const startIndex = (page - 1) * perPage;
+  const paginatedGames = sortedGames.slice(startIndex, startIndex + perPage);
+
+  res.render("games", {
+    games: paginatedGames,
+    currentPage: page,
+    totalPages: totalPages,
+    hostname: req.hostname,
+  });
+});
+
+app.get("/newgames", async (req, res) => {
+  const perPage = 100;
+  let search = req.query.search || "";
+  let page = parseInt(req.query.page) || 1;
+
+  const filteredGames = newgames.filter((newgame) =>
+      newgame.name.toLowerCase().includes(search)
   );
 
   const total = filteredGames.length;
