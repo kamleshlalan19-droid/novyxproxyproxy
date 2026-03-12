@@ -15,6 +15,8 @@ const HARD_BLOCK = [
 
     // CSAM related
     "cp",
+    "little boy",
+    "little girl",
     "child porn",
     "children naked",
     "childporn",
