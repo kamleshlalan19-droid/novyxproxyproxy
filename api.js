@@ -355,10 +355,14 @@ router.get('/img/:id', (req, res) => {
     const gameName = req.params.id;
     const game = games.find((g) => g.name === gameName);
 
-    if(game.prev) {
-        res.sendFile(__dirname + "/static" + game.prev)
-    } else {
-        res.sendFile(__dirname + "/static/d/" + game.name.replace(/\//g, '') + '.jpg')
+    try {
+        if(game.prev) {
+            res.sendFile(__dirname + "/static" + game.prev)
+        } else {
+            res.sendFile(__dirname + "/static/d/" + game.name.replace(/\//g, '') + '.jpg')
+        }
+    } catch (e) {
+        res.status(500).json({ error: 'Server Error' });
     }
 })
 
