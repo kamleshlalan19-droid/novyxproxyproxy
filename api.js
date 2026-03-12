@@ -8,6 +8,7 @@ import fs from 'node:fs/promises';
 import { fileURLToPath } from "url";
 import { RedisStore } from "connect-redis";
 import { createClient } from "redis";
+import requestIp from'request-ip';
 
 const router = express.Router();
 
@@ -37,9 +38,7 @@ const generateRandomString = (length) => {
 };
 
 router.get('/ip', async (req, res) => {
-    let ip = req.socket?.remoteAddress || req.ip;
-
-    return ip;
+    return requestIp.getClientIp(req);
 })
 
 router.get('/hit/:game', async (req, res) => {
