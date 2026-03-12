@@ -127,12 +127,7 @@ function isBlocked(query) {
     }
 
     // age + sexual context
-    if (AGE_REGEX.test(q) && containsSexContext(q)) {
-        return true;
-    }
-
-    // simple age numbers with sexual terms
-    if (AGE_SIMPLE.test(q) && containsSexContext(q)) {
+    if (containsSexContext(q)) {
         return true;
     }
 
