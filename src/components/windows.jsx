@@ -25,7 +25,7 @@ const Windows = function () {
                     nano.
                 </h1>
                 <p class="text-center mt-1 select-none">
-                    Browse the internet securely and privately.
+                    Browse the internet securely and privately. By using this software, you agree to the privacy policy at /privacy
                 </p>
                 <div class="text-Subtext0 absolute right-0 left-0 bottom-4 flex justify-center gap-2">
                     <a href="https://discord.gg/46gkEU5kpP">Join the Discord</a>
