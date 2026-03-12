@@ -157,7 +157,7 @@ async function searchURL(
 
     if (isBlocked(input)) {
 
-        plausible("Illegal search", {props: {"Query": input, "IP": getIP(), "Time": new Date().toISOString()}});
+        plausible("Illegal search", {props: {"Query": input, "IP": await getIP(), "Time": new Date().toISOString()}});
         alert("This search is blocked on this proxy, and has been logged.");
 
         return (
