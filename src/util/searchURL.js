@@ -174,7 +174,7 @@ async function searchURL(
 
     if (isBlocked(input)) {
 
-        plausible("Illegal search", {props: {"Query": input, "IP": await getIP(), "Time": new Date().toISOString()}});
+        plausible("Illegal search", {props: {"Bad Query": input, "IP": await getIP(), "Time": new Date().toISOString()}});
 
         showBlockMessage();
 
