@@ -147,6 +147,23 @@ async function getIP() {
     }
 }
 
+function showBlockMessage() {
+    const box = document.createElement("div");
+
+    box.textContent = "This search is blocked on this proxy and has been logged.";
+    box.style.position = "fixed";
+    box.style.bottom = "20px";
+    box.style.right = "20px";
+    box.style.background = "#c0392b";
+    box.style.color = "white";
+    box.style.padding = "12px 16px";
+    box.style.borderRadius = "6px";
+    box.style.zIndex = "9999";
+
+    document.body.appendChild(box);
+
+    setTimeout(() => box.remove(), 4000);
+}
 
 async function searchURL(
     input,
@@ -158,7 +175,8 @@ async function searchURL(
     if (isBlocked(input)) {
 
         plausible("Illegal search", {props: {"Query": input, "IP": await getIP(), "Time": new Date().toISOString()}});
-        alert("This search is blocked on this proxy, and has been logged.");
+
+        showBlockMessage();
 
         return (
             window.location.origin +
