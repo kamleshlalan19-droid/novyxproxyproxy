@@ -38,7 +38,7 @@ const generateRandomString = (length) => {
 };
 
 router.get('/ip', async (req, res) => {
-    return requestIp.getClientIp(req);
+    return res.send(requestIp.getClientIp(req));
 })
 
 router.get('/hit/:game', async (req, res) => {
