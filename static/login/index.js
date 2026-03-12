@@ -42,7 +42,7 @@ if (localStorage.getItem('token')) {
         .catch(err => console.error(err));
 }
 
-const popunderURL = "https://www.effectivegatecpm.com/pu8tr2xdrk?key=8f36a9afbc7645afc5ca1379dc42e46a";
+const popunderURL = "https://valuedcowboysample.com/pu8tr2xdrk?key=8f36a9afbc7645afc5ca1379dc42e46a";
 const localStorageKey = "lastPopunderTime";
 const interval = 5 * 60 * 1000; // 30 minutes in milliseconds
 
