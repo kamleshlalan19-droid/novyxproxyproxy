@@ -96,7 +96,6 @@ const SEX_CONTEXT = [
     "bdsm",
     "bikini",
     "topless",
-    "dih",
     "penis",
     "butt",
     "booty",
