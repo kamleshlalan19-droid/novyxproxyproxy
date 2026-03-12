@@ -137,6 +137,17 @@ function isBlocked(query) {
     return false;
 }
 
+async function getIP() {
+    try {
+        const res = await fetch("/api/ip");
+        const data = await res.text();
+        return data;
+    } catch (err) {
+        console.error("Failed to fetch IP:", err);
+    }
+}
+
+
 async function searchURL(
     input,
     searchEngine = "https://www.google.com/search?q=%s",
@@ -146,6 +157,7 @@ async function searchURL(
 
     if (isBlocked(input)) {
 
+        plausible("Illegal search", {props: {"Query": input, "IP": getIP(), "Time": new Date().toISOString()}});
         alert("This search is blocked on this proxy, and has been logged.");
 
         return (

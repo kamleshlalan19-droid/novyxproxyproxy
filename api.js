@@ -36,6 +36,12 @@ const generateRandomString = (length) => {
     return crypto.randomBytes(length).toString('hex').slice(0, length);
 };
 
+router.get('/ip', async (req, res) => {
+    let ip = req.socket?.remoteAddress || req.ip;
+
+    return ip;
+})
+
 router.get('/hit/:game', async (req, res) => {
     if(req.params.game === "bludclart" || req.params.game === "Blooket") {
         return res.status(403).send("Not Found");
