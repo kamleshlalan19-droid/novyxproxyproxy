@@ -205,8 +205,7 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
 });
 
 (function () {
-    if (localStorage.getItem("seenAdfreeNotice")) return;
-    localStorage.setItem("seenAdfreeNotice", "1");
+    if (localStorage.getItem("closedAdfreeNotice")) return;
     const box = document.createElement("div");
 
     box.innerHTML = `
@@ -254,6 +253,7 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
     document.body.appendChild(box);
 
     document.getElementById("adfreeClose").onclick = () => {
+        localStorage.setItem("closedAdfreeNotice", "1");
         box.remove();
     };
 })();
