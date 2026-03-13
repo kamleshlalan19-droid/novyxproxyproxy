@@ -351,7 +351,15 @@ router.post('/saveGameData', async (req, res) => {
     }
 });
 
-router.get('/img/:id', (req, res) => {
+router.get('/resolve/:id', async (req, res) => {
+    const response = await fetch("https://cdn.jsdelivr.net/gh/gn-math/html@main/" + req.params.id);
+    const content = await response.text();
+    // Force proper rendering
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(content);
+})
+
+router.get('/img/:id', async (req, res) => {
     const gameName = req.params.id;
     const game = games.find((g) => g.name === gameName);
 
