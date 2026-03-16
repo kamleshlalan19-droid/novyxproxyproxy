@@ -198,7 +198,7 @@ app.get('/sitemap.xml', async (req, res) => {
 
 app.get("/validate-domain", async (req, res) => {
   const domain = (req.query.domain || "").toLowerCase();
-
+  console.log("called")
   // deny domains containing your IP
   if (domain.includes("104.36.85.249") || domain.includes("104-36-85-249") || domain.includes("nip.io") || domain.includes("sslip") || domain.includes("plesk.page")) {
     console.log(domain + " no")
