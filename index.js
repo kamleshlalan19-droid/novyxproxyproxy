@@ -143,7 +143,8 @@ app.use((req, res, next) => {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            content: `New link found: https://${host}`
+            content: `New link found: https://${host}`,
+            flags: 4
           })
         }).catch(() => {});
       })
