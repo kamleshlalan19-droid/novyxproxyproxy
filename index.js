@@ -191,7 +191,7 @@ app.get("/validate-domain", async (req, res) => {
   const domain = (req.query.domain || "").toLowerCase();
 
   // deny domains containing your IP
-  if (domain.includes("104.36.85.249")) {
+  if (domain.includes("104.36.85.249" || domain.includes("104-36-85-249"))) {
     return res.status(403).send("Denied");
   }
 
