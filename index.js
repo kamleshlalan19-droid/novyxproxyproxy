@@ -130,25 +130,34 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   const host = req.hostname;
   if (!host) return next();
+  if (
+      !(
+          host.includes("104.36.85.249") ||
+          host.includes("104-36-85-249") ||
+          host.includes("nip.io") ||
+          host.includes("sslip.io") ||
+          host.includes("plesk.page")
+      )
+  ) {
+    const key = `myapp:seen:${host}`;
 
-  const key = `myapp:seen:${host}`;
+    redisClient.set(key, "1", { EX: 43200, NX: true })
+        .then(result => {
+          if (!result) return;
 
-  redisClient.set(key, "1", { EX: 43200, NX: true })
-      .then(result => {
-        if (!result) return;
+          const webhook = webhooks[Math.floor(Math.random() * webhooks.length)];
 
-        const webhook = webhooks[Math.floor(Math.random() * webhooks.length)];
-
-        fetch(webhook, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            content: `New link found: https://${host}`,
-            flags: 4
-          })
-        }).catch(() => {});
-      })
-      .catch(() => {});
+          fetch(webhook, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              content: `New link found: https://${host}`,
+              flags: 4
+            })
+          }).catch(() => {});
+        })
+        .catch(() => {});
+  }
 
   next();
 });
@@ -191,7 +200,7 @@ app.get("/validate-domain", async (req, res) => {
   const domain = (req.query.domain || "").toLowerCase();
 
   // deny domains containing your IP
-  if (domain.includes("104.36.85.249" || domain.includes("104-36-85-249") || domain.includes("nip.io") || domain.includes("sslip") || domain.includes("plesk.page"))) {
+  if (domain.includes("104.36.85.249") || domain.includes("104-36-85-249") || domain.includes("nip.io") || domain.includes("sslip") || domain.includes("plesk.page")) {
     return res.status(403).send("Denied");
   }
 
