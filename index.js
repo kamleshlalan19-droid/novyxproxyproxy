@@ -19,6 +19,7 @@ import { RedisStore } from "connect-redis";
 import { setupCanScreen } from "./CanScreen.js"
 import pool from "./db.js";
 import cors from "cors";
+import axios from "axios";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -44,6 +45,11 @@ try {
 } catch (err) {
   console.error("Failed to load games data:", err);
 }
+
+const webhooks = Object.keys(process.env)
+    .filter(k => k.startsWith("DISCORD_WEBHOOK"))
+    .map(k => process.env[k])
+    .filter(Boolean);
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
@@ -120,6 +126,31 @@ app.use((req, res, next) => {
     proxy.web(req, res, { target: override, changeOrigin: true });
   }
 })
+
+app.use((req, res, next) => {
+  const host = req.headers.host;
+  if (!host) return next();
+
+  const key = `myapp:seen:${host}`;
+
+  redisClient.set(key, "1", { EX: 43200, NX: true })
+      .then(result => {
+        if (!result) return;
+
+        const webhook = webhooks[Math.floor(Math.random() * webhooks.length)];
+
+        fetch(webhook, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            content: `New link found: https://${host}`
+          })
+        }).catch(() => {});
+      })
+      .catch(() => {});
+
+  next();
+});
 
 app.get("/uv/sw.js", (req, res) => {
   res.set("Service-Worker-Allowed", "/~/uv/");
