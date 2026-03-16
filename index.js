@@ -188,7 +188,14 @@ app.get('/sitemap.xml', async (req, res) => {
 });
 
 app.get("/validate-domain", async (req, res) => {
-  res.status(200).send("OK");
+  const domain = (req.query.domain || "").toLowerCase();
+
+  // deny domains containing your IP
+  if (domain.includes("104.36.85.249")) {
+    return res.status(403).send("Denied");
+  }
+
+  return res.status(200).send("OK");
 });
 
 app.get("/account", async (req, res) => {
