@@ -201,9 +201,10 @@ app.get("/validate-domain", async (req, res) => {
 
   // deny domains containing your IP
   if (domain.includes("104.36.85.249") || domain.includes("104-36-85-249") || domain.includes("nip.io") || domain.includes("sslip") || domain.includes("plesk.page")) {
+    console.log(domain + " no")
     return res.status(403).send("Denied");
   }
-
+  console.log(domain + " yes")
   return res.status(200).send("OK");
 });
 
