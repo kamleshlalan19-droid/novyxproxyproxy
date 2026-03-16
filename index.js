@@ -128,7 +128,7 @@ app.use((req, res, next) => {
 })
 
 app.use((req, res, next) => {
-  const host = req.headers.host;
+  const host = req.hostname;
   if (!host) return next();
 
   const key = `myapp:seen:${host}`;
