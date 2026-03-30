@@ -106,31 +106,88 @@ const SEX_CONTEXT = [
     "dick"
 ];
 
-/*
-Regex patterns
-*/
-const AGE_REGEX = /\b([0-9]|1[0-7])\s?(yo|yr|yrs|year|years)\s?old?\b/;
-const AGE_SIMPLE = /\b([0-9]|1[0-7])\b/;
-
-function containsSexContext(q) {
-    return SEX_CONTEXT.some(word => q.includes(word));
+// --- helpers ---
+function tokenize(q) {
+  return q.split(/\s+/).filter(Boolean);
 }
 
+function isURL(input) {
+  return /^https?:\/\//i.test(input) ||
+         (input.includes(".") && !input.includes(" "));
+}
+
+function looksRandom(token) {
+  return token.length > 20 && /^[a-z0-9\-_]+$/i.test(token);
+}
+
+// normalize repeated letters (anti-bypass)
+function normalizeRepeats(str) {
+  return str.replace(/(.)\1{2,}/g, "$1$1");
+}
+
+// collapse spaced bypass ("b a d" -> "bad")
+function collapseSpaced(str) {
+  return str.replace(/\b(?:\w\s+){2,}\w\b/g, m =>
+    m.replace(/\s+/g, "")
+  );
+}
+
+// turn your word lists into SAFE regex (word boundaries)
+function buildWordRegex(list) {
+  return list.map(word => {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`\\b${escaped}\\b`, "i");
+  });
+}
+
+const HARD_BLOCK_REGEX = buildWordRegex(HARD_BLOCK);
+const SEX_CONTEXT_REGEX = buildWordRegex(SEX_CONTEXT);
+
+// --- improved checks ---
+
+function hasHardBlock(q) {
+  return HARD_BLOCK_REGEX.some(r => r.test(q));
+}
+
+function hasSexContext(tokens) {
+  return tokens.some(t => SEX_CONTEXT.includes(t));
+}
+
+function hasUnderage(q) {
+  return /\b([0-9]|1[0-7])\b/.test(q);
+}
+
+// --- main filter ---
 function isBlocked(query) {
+  if (!query) return false;
 
-    const q = normalizeQuery(query);
+  // 1. Skip URLs entirely (fixes your OAuth issue)
+  if (isURL(query)) return false;
 
-    // direct block words
-    for (const word of HARD_BLOCK) {
-        if (q.includes(word)) return true;
-    }
+  // 2. Normalize + anti-bypass cleanup
+  let q = normalizeQuery(query);
+  q = normalizeRepeats(q);
+  q = collapseSpaced(q);
 
-    // age + sexual context
-    if (containsSexContext(q)) {
-        return true;
-    }
+  // 3. Tokenize + remove random garbage
+  const tokens = tokenize(q).filter(t => !looksRandom(t));
 
-    return false;
+  let score = 0;
+
+  // 4. HARD BLOCK (exact word / phrase match only)
+  if (hasHardBlock(q)) score += 5;
+
+  // 5. Context-based rule (no longer overly aggressive)
+  if (hasSexContext(tokens) && hasUnderage(q)) {
+    score += 5;
+  }
+
+  // 6. Optional: weak signal (very short suspicious queries)
+  if (tokens.length <= 2 && tokens.some(t => t.length <= 2)) {
+    score += 1;
+  }
+
+  return score >= 5;
 }
 
 async function getIP() {
