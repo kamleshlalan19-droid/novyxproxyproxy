@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta http-equiv="Content-Security-Policy" content="
+default-src 'none';
+img-src 'self' https://a.impactradius-go.com https://imp.pxf.io;
+frame-src 'self' https://a.impactradius-go.com;
+">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Play <%= game.name %> Unblocked">
