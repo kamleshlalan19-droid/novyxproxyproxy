@@ -221,21 +221,21 @@
                         </article>
                         <article class="store-card">
                             <h3>Ad-Free for 30 Days</h3>
-                            <p>Best monthly option if you use the site regularly.</p>
+                            <p>Monthly option with a discounted store price.</p>
                             <div class="price-row">
-                                <div class="store-price">30 credits</div>
-                                <span>Same rate as current</span>
+                                <div class="store-price">25 credits</div>
+                                <span>30 days of access</span>
                             </div>
-                            <button class="button store-button" data-days="30" type="button">Buy 30 Days</button>
+                            <button class="button store-button" data-days="30" data-price="25" type="button">Buy 1 Month</button>
                         </article>
                         <article class="store-card">
-                            <h3>Ad-Free for 90 Days</h3>
-                            <p>Longer access with the same straight credit-to-day conversion.</p>
+                            <h3>Ad-Free Lifetime</h3>
+                            <p>Permanent ad-free access for this account.</p>
                             <div class="price-row">
-                                <div class="store-price">90 credits</div>
-                                <span>No bundle markup</span>
+                                <div class="store-price">100 credits</div>
+                                <span>One-time unlock</span>
                             </div>
-                            <button class="button store-button" data-days="90" type="button">Buy 90 Days</button>
+                            <button class="button store-button" data-days="36500" data-price="100" type="button">Buy Lifetime</button>
                         </article>
                     </div>
 
@@ -316,6 +316,7 @@
     for (const button of document.querySelectorAll('[data-days]')) {
         button.addEventListener('click', async () => {
             const days = Number(button.dataset.days);
+            const price = Number(button.dataset.price || days);
             button.disabled = true;
             feedback.textContent = 'Processing purchase...';
 
@@ -325,7 +326,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ days })
+                    body: JSON.stringify({ days, price })
                 });
 
                 const data = await response.json();
@@ -335,7 +336,9 @@
                 }
 
                 balanceEl.textContent = `${data.credits} credits`;
-                feedback.textContent = `Purchased ${days} days of ad-free access. Reloading...`;
+                feedback.textContent = days >= 36500
+                    ? 'Purchased lifetime ad-free access. Reloading...'
+                    : `Purchased ${days} days of ad-free access. Reloading...`;
                 window.setTimeout(() => window.location.reload(), 700);
             } catch (error) {
                 feedback.textContent = error.message || 'Purchase failed';

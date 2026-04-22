@@ -339,6 +339,7 @@ router.post('/switch', async (req, res) => {
 
 router.post('/store/adfree', async (req, res) => {
     const requestedDays = Number(req.body.days);
+    const requestedPrice = Number(req.body.price ?? req.body.days);
 
     if (!req.session.token) {
         return res.status(401).json({ error: "Not logged in" });
@@ -346,6 +347,10 @@ router.post('/store/adfree', async (req, res) => {
 
     if (!Number.isInteger(requestedDays) || requestedDays <= 0) {
         return res.status(400).json({ error: "Invalid amount" });
+    }
+
+    if (!Number.isInteger(requestedPrice) || requestedPrice <= 0) {
+        return res.status(400).json({ error: "Invalid price" });
     }
 
     const client = await pool.connect();
@@ -366,14 +371,14 @@ router.post('/store/adfree', async (req, res) => {
         const user = userResult.rows[0];
         const balance = getCreditBalance(user.data);
 
-        if (balance < requestedDays) {
+        if (balance < requestedPrice) {
             await client.query("ROLLBACK");
             return res.status(400).json({ error: "Not enough credits" });
         }
 
         await client.query(
             "UPDATE users SET data = $1 WHERE id = $2",
-            [setCreditBalance(user.data, balance - requestedDays), user.id]
+            [setCreditBalance(user.data, balance - requestedPrice), user.id]
         );
 
         await extendAdfreeForDays(client, user.id, requestedDays);
@@ -382,7 +387,7 @@ router.post('/store/adfree', async (req, res) => {
 
         return res.json({
             success: true,
-            credits: roundCredits(balance - requestedDays)
+            credits: roundCredits(balance - requestedPrice)
         });
     } catch (err) {
         await client.query("ROLLBACK");
