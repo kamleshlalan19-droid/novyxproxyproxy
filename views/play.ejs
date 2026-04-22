@@ -103,7 +103,7 @@
             <a class="brand" href="/">
                 <img src="/logo.png" alt="Logo">
                 <div class="brand-copy">
-                    <span class="brand-kicker">Now playing</span>
+                    <span class="brand-kicker">Play</span>
                     <span class="brand-name">CanLite</span>
                 </div>
             </a>
@@ -128,7 +128,6 @@
             <div class="section-heading">
                 <div>
                     <h1><%= game.name %></h1>
-                    <p>Better loading feedback, larger controls, a dedicated fullscreen path, and quick recovery if the embed stalls.</p>
                 </div>
                 <div class="hero-actions">
                     <a class="button-secondary" href="/games">Back to games</a>
@@ -141,15 +140,15 @@
                     <div class="player-meta-row">
                         <div class="player-meta-chip">
                             <span class="material-symbols-outlined">bolt</span>
-                            <span>Fast launch</span>
+                            <span>Play</span>
                         </div>
                         <div class="player-meta-chip">
                             <span class="material-symbols-outlined">open_in_full</span>
-                            <span>Fullscreen ready</span>
+                            <span>Fullscreen</span>
                         </div>
                         <div class="player-meta-chip">
                             <span class="material-symbols-outlined">favorite</span>
-                            <span>Favorites saved locally</span>
+                            <span>Favorites</span>
                         </div>
                     </div>
 
@@ -176,7 +175,6 @@
                                 loading="eager"
                                 allow="fullscreen; autoplay; gamepad *; clipboard-read; clipboard-write"
                                 referrerpolicy="no-referrer"
-                                <% if (game.type !== 'html5') { %>src="<%= gameHref %>"<% } %>
                             ></iframe>
                         </div>
                     </div>
@@ -207,6 +205,13 @@
                             </button>
                         </div>
                     </div>
+
+                    <aside class="promo-card player-ad-card">
+                        <h3>Advertisement</h3>
+                        <a href="https://freecash.pxf.io/gRoDx2">
+                            <img src="/assets/freecash.png" alt="Freecash" loading="lazy" decoding="async">
+                        </a>
+                    </aside>
                 </div>
 
                 <div class="stack">
@@ -220,15 +225,11 @@
                     </aside>
                     <aside class="promo-card">
                         <h3>Play tips</h3>
-                        <p>If the frame feels cramped, switch to fit mode or use fullscreen. If the game hangs on load, retry before leaving the page.</p>
+                        <p>Use fit mode or fullscreen if you want more space. If the game does not load, try reload.</p>
                     </aside>
                     <aside class="promo-card">
                         <h3>Status</h3>
                         <p id="playerSideStatus">Waiting for the game to report in.</p>
-                    </aside>
-                    <aside class="promo-card">
-                        <h3>Advertisement</h3>
-                        <a href="https://freecash.pxf.io/gRoDx2"><img src="/assets/freecash.png" alt="Freecash" loading="lazy" decoding="async"></a>
                     </aside>
                 </div>
             </div>
@@ -286,6 +287,7 @@
         const playerStatusText = document.getElementById("playerStatusText");
         const playerSideStatus = document.getElementById("playerSideStatus");
         const playerSpinner = document.getElementById("playerSpinner");
+        let readyCheckInterval;
         let loadTimeout;
 
         const getFavorites = () => {
@@ -309,6 +311,48 @@
             playerStatus.hidden = state === "ready";
         };
 
+        const clearReadyWatchers = () => {
+            window.clearTimeout(loadTimeout);
+            window.clearInterval(readyCheckInterval);
+        };
+
+        const tryMarkReady = () => {
+            try {
+                const frameWindow = iframe.contentWindow;
+                const frameDocument = iframe.contentDocument || frameWindow?.document;
+
+                if (!frameWindow || !frameDocument) {
+                    return false;
+                }
+
+                const href = frameWindow.location?.href || "";
+                const readyState = frameDocument.readyState;
+                const hasRenderableContent =
+                    frameDocument.body &&
+                    (frameDocument.body.childElementCount > 0 ||
+                        frameDocument.body.textContent.trim().length > 0);
+
+                if (
+                    readyState === "complete" &&
+                    href &&
+                    href !== "about:blank" &&
+                    hasRenderableContent
+                ) {
+                    clearReadyWatchers();
+                    setPlayerState(
+                        "ready",
+                        `${gameName} is ready`,
+                        "The game loaded successfully. Use reload if it freezes or switch to fullscreen for a cleaner layout."
+                    );
+                    return true;
+                }
+            } catch {
+                // Cross-frame access can fail briefly while the proxy frame is settling.
+            }
+
+            return false;
+        };
+
         const getLaunchUrl = () => {
             if (gameType !== "html5") {
                 return openTarget;
@@ -322,7 +366,7 @@
         };
 
         const armLoadTimeout = () => {
-            window.clearTimeout(loadTimeout);
+            clearReadyWatchers();
             loadTimeout = window.setTimeout(() => {
                 setPlayerState(
                     "stalled",
@@ -330,6 +374,7 @@
                     "The game is taking longer than expected. Try reloading the player or opening it in a dedicated tab."
                 );
             }, 12000);
+            readyCheckInterval = window.setInterval(tryMarkReady, 300);
         };
 
         const loadGame = async () => {
@@ -349,21 +394,19 @@
                 }
             }
 
-            iframe.src = getLaunchUrl();
+            const launchUrl = getLaunchUrl();
+
+            iframe.removeAttribute("src");
+            iframe.src = launchUrl;
             armLoadTimeout();
         };
 
         iframe.addEventListener("load", () => {
-            window.clearTimeout(loadTimeout);
-            setPlayerState(
-                "ready",
-                `${gameName} is ready`,
-                "The game loaded successfully. Use reload if it freezes or switch to fullscreen for a cleaner layout."
-            );
+            window.setTimeout(tryMarkReady, 120);
         });
 
         iframe.addEventListener("error", () => {
-            window.clearTimeout(loadTimeout);
+            clearReadyWatchers();
             setPlayerState(
                 "error",
                 "Unable to load the game",

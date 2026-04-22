@@ -315,9 +315,14 @@ body[data-theme-changing="true"] * {
 }
 
 .window-frame {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.window {
     position: absolute;
     inset: 0;
-    overflow: hidden;
 }
 
 .window-frame iframe {

@@ -253,6 +253,19 @@ img {
     min-height: 100vh;
 }
 
+#particles-js {
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    pointer-events: none;
+}
+
+#particles-js canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
 .noise {
     position: fixed;
     inset: 0;
@@ -886,7 +899,7 @@ img {
 .player-status {
     position: absolute;
     inset: 0;
-    z-index: 2;
+    z-index: 4;
     display: grid;
     place-items: center;
     padding: 20px;
@@ -895,6 +908,7 @@ img {
         linear-gradient(180deg, rgba(3, 10, 15, 0.56), rgba(3, 10, 15, 0.86));
     backdrop-filter: blur(12px);
     transition: opacity 180ms ease, visibility 180ms ease;
+    pointer-events: auto;
 }
 
 .player-status[hidden] {
@@ -910,6 +924,12 @@ img {
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(6, 19, 29, 0.9);
     box-shadow: var(--shadow);
+}
+
+.embed-container[data-state="loading"] .game-frame-shell,
+.embed-container[data-state="stalled"] .game-frame-shell,
+.embed-container[data-state="error"] .game-frame-shell {
+    pointer-events: none;
 }
 
 .player-status-card h2 {
@@ -947,6 +967,15 @@ img {
     gap: 12px;
     flex-wrap: wrap;
     padding-top: 16px;
+}
+
+.player-ad-card {
+    margin-top: 18px;
+}
+
+.player-ad-card img {
+    width: 100%;
+    border-radius: 18px;
 }
 
 .player-toolbar-group {
