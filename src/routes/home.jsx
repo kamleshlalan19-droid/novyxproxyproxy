@@ -146,6 +146,15 @@ const Home = function () {
         }
     };
 
+    const goToPreviousPage = () => {
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        window.location.href = "/";
+    };
+
     const forward = () => {
         const currentTab = this.tabs[this.current];
         if (currentTab?.iframe?.contentWindow) {
@@ -415,6 +424,14 @@ const Home = function () {
                     class:command-full={use(this.sidebar, (sidebar) => !sidebar)}
                 >
                     <div class="proxy-command-left">
+                        <button
+                            on:click={goToPreviousPage}
+                            aria-label="Back to previous page"
+                            title="Back to previous page"
+                            class="proxy-command-btn"
+                        >
+                            <ArrowLeft />
+                        </button>
                         <button
                             on:click={() => toggleSidebar("tabs")}
                             aria-label="Tabs Sidebar"
