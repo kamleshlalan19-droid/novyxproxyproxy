@@ -1,0 +1,31 @@
+.section-heading {
+    align-items: center;
+}
+
+.player-shell {
+    padding: 16px;
+}
+
+.player-status-card {
+    background: rgba(17, 24, 31, 0.92);
+}
+
+.promo-card {
+    background: rgba(255, 255, 255, 0.025);
+}
+
+@media (max-width: 820px) {
+    .section-heading {
+        align-items: start;
+    }
+
+    .section-heading .hero-actions {
+        width: 100%;
+    }
+
+    .section-heading .hero-actions .button-secondary,
+    .section-heading .hero-actions .button-ghost {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 0;
+    }
+}

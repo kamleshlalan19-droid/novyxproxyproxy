@@ -1,27 +1,58 @@
-var appElement = document.getElementById('app');
-var typewriter = new Typewriter(appElement, {
-    loop: true,
-    delay: 75,
-});
-typewriter
-    .typeString('Fast, Secure & Anonymous Browsing')
-    .pauseFor(2000)
-    .deleteAll()
-    .typeString('Play Unblocked Games Anywhere!')
-    .pauseFor(2000)
-    .deleteAll()
-    .typeString('Experience CanLite – Your Ultimate Proxy & Gaming Hub')
-    .pauseFor(2000)
-    .start();
+var panicKey = localStorage.getItem('settings_panicKey') || '`';
+var panicWebsite =
+    localStorage.getItem('settings_panicUrl') || 'https://drive.google.com';
 
-// Panic Key Functionality
-var panicKey = localStorage.getItem('panicKey');
-var panicWebsite = localStorage.getItem('panicWebsite');
+const splashLines = [
+    'Fast access, clean layout, no wasted space.',
+    'Open the route you need and move.',
+    'Proxy, games, and current links.',
+    'Use Discord when the domain changes.',
+];
+
 $(document).keydown(function (e) {
     if (e.key === panicKey) {
         window.location.href = panicWebsite;
     }
 });
 
-// Set current year in the footer
-document.getElementById('year').textContent = new Date().getFullYear();
+(() => {
+    const timeEl = document.getElementById('landing-live-time');
+    const dateEl = document.getElementById('landing-live-date');
+    const splashEl = document.querySelector('.landing-subtitle');
+
+    const renderMeta = () => {
+        const now = new Date();
+
+        if (timeEl) {
+            timeEl.textContent = now.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+            });
+        }
+
+        if (dateEl) {
+            dateEl.textContent = now.toLocaleDateString([], {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+            });
+        }
+    };
+
+    const rotateSplash = () => {
+        if (!splashEl) return;
+
+        let index = 0;
+        splashEl.textContent = splashLines[index];
+
+        setInterval(() => {
+            index = (index + 1) % splashLines.length;
+            splashEl.textContent = splashLines[index];
+        }, 4000);
+    };
+
+    renderMeta();
+    setInterval(renderMeta, 1000);
+    rotateSplash();
+})();

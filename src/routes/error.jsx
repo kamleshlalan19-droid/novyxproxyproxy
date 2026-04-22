@@ -6,18 +6,23 @@ const Error = function () {
     this.cloakIcon = localStorage.getItem("@nano/cloak/icon") || "";
 
     return (
-        <div class="h-full flex flex-col justify-center items-center">
+        <div class="error-shell">
             <Head
                 bind:theme={use(this.theme)}
                 bind:cloakTitle={use(this.cloakTitle)}
                 bind:cloakIcon={use(this.cloakIcon)}
             />
-            <h1 class="text-center text-Blue text-4xl font-bold select-none">
-                error.
-            </h1>
-            <p class="text-center mt-1 select-none">
-                The requested page cannot be found.
-            </p>
+            <div class="proxy-panel error-card">
+                <h1>Route Not Found</h1>
+                <p>
+                    The requested page cannot be found. Head back to the proxy
+                    shell and launch a new tab.
+                </p>
+                <div class="legal-nav justify-center">
+                    <a class="legal-link" href="/proxe">Open proxy</a>
+                    <a class="legal-link" href="/">Go home</a>
+                </div>
+            </div>
         </div>
     );
 };

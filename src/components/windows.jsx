@@ -11,24 +11,33 @@ const Windows = function () {
             }
         }, 100);
     });
+
     return (
         <div
             bind:this={use(this.windows)}
-            class="fixed top-0 right-0 bg-Crust w-full h-[calc(100%_-_4.25rem)] flex flex-col justify-center items-center select-none overflow-hidden iframe-transitions"
-            class:iframe-sidebar-open={use(this.sidebar)}
+            class="proxy-stage proxy-panel window-frame"
+            class:stage-full={use(this.sidebar, (sidebar) => !sidebar)}
         >
-            <div
-                class="block h-full w-full relative flex flex-col justify-center"
-                class:hidden={use(this.currentHasURL)}
-            >
-                <h1 class="text-center text-Blue text-4xl font-bold select-none">
-                    nano.
-                </h1>
-                <p class="text-center mt-1 select-none">
-                    Browse the internet securely and privately. By using this software, you agree to the privacy policy at /privacy
-                </p>
-                <div class="text-Subtext0 absolute right-0 left-0 bottom-4 flex justify-center gap-2">
-                    <a href="https://discord.gg/46gkEU5kpP">Join the Discord</a>
+            <div class="proxy-stage-topbar">
+                <div class="proxy-stage-title">
+                    {use(this.tabs, (tabs) =>
+                        tabs[this.current]?.title || "New Tab",
+                    )}
+                </div>
+                <div class="proxy-stage-status">
+                    {use(
+                        this.searchEngine,
+                        (searchEngine) =>
+                            searchEngine.includes("%s")
+                                ? "Search enabled"
+                                : "Direct mode",
+                    )}
+                </div>
+            </div>
+            <div class:hidden={use(this.currentHasURL)} class="window-empty">
+                <div class="window-empty-simple">
+                    <strong>New Tab</strong>
+                    <p>Type a URL or search above.</p>
                 </div>
             </div>
         </div>

@@ -2,90 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Canlite unblocked free web proxy</title>
+  <title>CanLite Proxy</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Access CanLite for a secure, free web unbl0cker and an extensive collection of unbl0cked gam3s for school! Enjoy fast, anonymous access to popular games and websites, bipassing restrictions safely on any network.">
+  <meta name="description" content="Access CanLite for a secure, free web unbl0cker and an extensive collection of unbl0cked gam3s for school. Enjoy fast, anonymous access to popular games and websites.">
   <link rel="icon" href="/logo.svg">
   <link rel="canonical" href="https://canlite.org">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
   <script defer src="/uv/uv.bundle.js"></script>
   <script defer src="/uv/uv.config.js"></script>
   <script defer src="/partner.js"></script>
-  <script defer src="../static/partner/index.js"></script>
   <script defer data-domain="trueanalytics.online" src="https://trueanalyticz.online/js/script.js"></script>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-16773478205"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'AW-16773478205');
-</script>
-
-  <style>
-    #corner-ad {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      width: 125px;
-      z-index: 9999;
-      background: transparent;
-      font-family: sans-serif;
-    }
-
-    #corner-ad iframe {
-      width: 125px;
-      height: 125px;
-      border: 0;
-      padding: 0;
-      background-color: transparent;
-    }
-
-    #corner-ad a {
-      display: block;
-      text-align: right;
-      font-size: 12px;
-    }
-
-    #close-btn {
-      margin-top: 4px;
-      width: 100%;
-      background: #111;
-      color: #fff;
-      border: none;
-      font-size: 12px;
-      padding: 4px 0;
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-
-    #close-btn.enabled {
-      opacity: 1;
-      cursor: pointer;
-    }
-  </style>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16773478205"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-16773478205');
+  </script>
 </head>
 <body>
   <div id="app"></div>
   <script type="module" src="/src/main.jsx"></script>
 
-  <!-- Bottom-Left Corner Ad with Working Close Button + Timer -->
-
   <script>
-
     document.addEventListener("DOMContentLoaded", () => {
-      // Canonical setup
       const canonical = document.querySelector("link[rel='canonical']");
       if (canonical) {
         canonical.href = `https://canlite.org${location.pathname}${location.search}`;
       }
 
-      // Ad tag conditionally
-      // if (!location.hostname.includes(".org") || location.hostname !== "psybolt.com") {
-      //   window.aclib?.runAutoTag?.({ zoneId: 'yhqj50takh' });
-      // }
-
-      // Save localStorage if token exists
       if (localStorage.getItem('token')) {
         window.addEventListener("storage", () => {
           const { token, ...rest } = localStorage;
@@ -99,11 +46,9 @@
         });
       }
 
-      // Verify proxy script loaded
       if (!Array.from(document.scripts).some(s => s.src.includes('uv.bundle.js'))) {
         alert('Script not imported, proxy will not work. Please join the discord for other links.');
       }
-
     });
 
     window.onload = () => {

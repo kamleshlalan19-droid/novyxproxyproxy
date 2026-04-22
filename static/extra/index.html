@@ -2,26 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta description="Unblocked Games on CanLite">
+    <meta description="Extra tools on CanLite">
     <meta name="viewport" content="width=device-width">
-    <title>CanLite - Unblocked Games</title>
-
-    <!-- Analytics and Ads -->
+    <title>CanLite - Extras</title>
     <script defer data-domain="trueanalytics.online" src="https://trueanalyticz.online/js/script.js"></script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1655414789495559" crossorigin="anonymous"></script>
-
-    <!-- Stylesheets -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link href="/games/games.css" rel="stylesheet" type="text/css">
-    <link href="/games/style.css" rel="stylesheet" type="text/css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0">
+    <script src="/theme.js"></script>
+    <link rel="stylesheet" href="/site.css">
     <link rel="stylesheet" href="/login/style.css">
     <link rel="stylesheet" href="/settings/style.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script type="text/javascript" src="/partner.js"></script>
-
-    <!-- Canonical URL -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const baseUrl = "https://canlite.org";
@@ -35,59 +30,11 @@
             link.setAttribute("href", canonicalUrl);
         });
     </script>
-
-    <style>
-        .pagination-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            gap: 10px;
-        }
-        .page-input {
-            width: 50px;
-            text-align: center;
-            padding: 5px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .page-input:focus {
-            outline: 2px solid blue;
-        }
-        .total-pages {
-            font-size: 16px;
-        }
-    </style>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const removeAdsInsideGameCard = () => {
-                document.querySelectorAll(
-                    '.g .google-auto-placed, ' +
-                    // only remove ins.adsbygoogle if it’s NOT marked manual
-                    '.g ins.adsbygoogle:not(.manual-ad), ' +
-                    '.g iframe[src*="googlesyndication"]:not(.manual-ad), ' +
-                    '.g iframe[src*="doubleclick"]:not(.manual-ad)'
-                ).forEach(el => el.remove());
-            };
-
-            // Run once right away
-            removeAdsInsideGameCard();
-
-            // Observe DOM changes
-            if (document.body) {
-                const observer = new MutationObserver(removeAdsInsideGameCard);
-                observer.observe(document.body, { childList: true, subtree: true });
-            }
-        });
-    </script>
-
 </head>
 
 <body>
-<!-- Authentication Modal -->
-<div id="authModal" class="modal" >
+<div class="noise"></div>
+<div id="authModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
         <div class="modal-tabs">
@@ -118,116 +65,105 @@
     </div>
 </div>
 
-<!-- Navigation Bar -->
-<div class="nav">
-    <div class="logo" onclick="window.open('/', '_self')">
-        <img src="/logo.png" alt="CanLite">
-        <h3>CanLite</h3>
-    </div>
-    <div class="nav-items">
-        <li><a href="/"><span class="material-symbols-outlined">home</span> Home</a></li>
-        <li><a href="/games"><span class="material-symbols-outlined">stadia_controller</span> Games</a></li>
-        <li><a href="/proxe"><span class="material-symbols-outlined">language</span> Proxe</a></li>
-        <li><a href="/extra"><span class="material-symbols-outlined">add</span> Extra</a></li>
-        <li><a href="/partners"><span class="material-symbols-outlined">person</span>Partners</a></li>
-        <li><a id="loginModalBtn"><span id="loginSpan" class="material-symbols-outlined">login</span>Login / Register</a></li>
-    </div>
-    <div style="display: flex; align-items: center; gap: 15px;">
-        <a id="settingsBtn" href="#"><span class="material-symbols-outlined">settings</span> Settings</a>
-        <div class="time" id="time-clock"></div>
-    </div>
+<div class="site-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <img src="/logo.png" alt="CanLite">
+                <div class="brand-copy">
+                    <span class="brand-kicker">Extras</span>
+                    <span class="brand-name">CanLite</span>
+                </div>
+            </a>
+            <div class="nav-links">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link" href="/games">Games</a>
+                <a class="nav-link" href="/proxe">Proxy</a>
+                <a class="nav-link active" href="/extra">Extra</a>
+                <a class="nav-link" href="/partners">Partners</a>
+            </div>
+            <div class="nav-tools">
+                <a id="settingsBtn" class="utility-chip" href="#"><span class="material-symbols-outlined">settings</span>Settings</a>
+                <a id="loginModalBtn" class="utility-chip" href="#"><span id="loginSpan" class="material-symbols-outlined">login</span>Login</a>
+                <div class="utility-chip clock-chip" id="time-clock"></div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="page">
+        <section class="site-section">
+            <div class="section-heading">
+                <div>
+                    <h1>Extras</h1>
+                    <p>Extras is where CanLite keeps the useful stuff that people still want close by: standout launches, special tools, and pages that are worth opening without digging through the main library.</p>
+                </div>
+            </div>
+
+            <div class="portal-grid">
+                <a class="game-card" href="/play/1v1.lol">
+                    <img src="/d/1v1.lol.jpg" alt="1v1.lol">
+                    <div class="game-card-body">
+                        <div class="game-card-label"><span class="material-symbols-outlined">sports_esports</span>Featured</div>
+                        <h3>1v1.lol</h3>
+                    </div>
+                </a>
+                <a class="game-card" href="/play/Roblox">
+                    <img src="/assets/roblox.png" alt="Roblox">
+                    <div class="game-card-body">
+                        <div class="game-card-label"><span class="material-symbols-outlined">sports_esports</span>Popular</div>
+                        <h3>Roblox</h3>
+                    </div>
+                </a>
+                <a class="game-card" href="/play/Fortnite">
+                    <img src="/assets/fortnite.jpg" alt="Fortnite">
+                    <div class="game-card-body">
+                        <div class="game-card-label"><span class="material-symbols-outlined">sports_esports</span>Popular</div>
+                        <h3>Fortnite</h3>
+                    </div>
+                </a>
+                <a class="game-card" href="/play/Blooket">
+                    <img src="/assets/blooket.png" alt="Blooket">
+                    <div class="game-card-body">
+                        <div class="game-card-label"><span class="material-symbols-outlined">bolt</span>Tool</div>
+                        <h3>Blooket Cheats</h3>
+                    </div>
+                </a>
+                <a class="game-card" href="/play/bludclart">
+                    <img src="/assets/blud.png" alt="Free TV and Movies">
+                    <div class="game-card-body">
+                        <div class="game-card-label"><span class="material-symbols-outlined">movie</span>Media</div>
+                        <h3>Free TV and Movies</h3>
+                    </div>
+                </a>
+                <a class="game-card" href="/play/linkgenerator">
+                    <img src="/logo.png" alt="CanLite Link Generator">
+                    <div class="game-card-body">
+                        <div class="game-card-label"><span class="material-symbols-outlined">link</span>Utility</div>
+                        <h3>CanLite Link Generator</h3>
+                    </div>
+                </a>
+            </div>
+        </section>
+    </main>
 </div>
 
-<h1 style="text-align: center;">Extra</h1>
-
-<!-- Game Library -->
-<div class="g-container">
-    <a class="g" href="/play/1v1.lol">
-        <img src="/d/1v1.lol.jpg" alt="1v1.lol">
-        <h3>1v1.lol Unblocked</h3>
-    </a>
-    <a class="g" href="/play/Roblox">
-        <img src="/assets/roblox.png" alt="roblox">
-        <h3>Roblox Unblocked</h3>
-    </a>
-    <a class="g" href="/play/Fortnite">
-        <img src="/assets/fortnite.jpg" alt="fortnite">
-        <h3>Fortnite Unblocked</h3>
-    </a>
-    <a class="g" href="/play/Blooket">
-        <img src="/assets/blooket.png" alt="blooket">
-        <h3>Blooket Cheats</h3>
-    </a>
-    <a class="g" href="/play/bludclart">
-        <img src="/assets/blud.png" alt="bludcart">
-        <h3>Free TV and Movies</h3>
-    </a>
-    <a class="g" href="/play/linkgenerator">
-        <img src="/logo.png" alt="linkgen">
-        <h3>CanLite Link Generator</h3>
-    </a>
-</div>
-
-<!-- Background Particles -->
-<div id="particles-js"></div>
-
-<!-- Footer -->
-<footer style="
-  background-color: rgba(0, 0, 0, 0.8);
-  padding: 20px 10px;
-  text-align: center;
-  color: #FFFFFF;
-  box-shadow: 0 -2px 5px rgba(255, 87, 51, 0.8);
-  position: relative; /* Ensures it stays at the bottom of the screen */
-  bottom: 0;
-  left: 0;
-  width: 100%; /* Prevent horizontal overflow */
-  z-index: 10;
-  box-sizing: border-box; /* Includes padding in width calculation */
-  overflow: hidden; /* Hides any overflow from box-shadow or content */
-  margin: 0; /* Avoid unintended margin causing overflow */
-">
-    <div style="
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 15px;
-  ">
-        <a href="/privacy" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">Privacy Policy</a>
-        <a href="mailto:canlite24@outlook.com" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">Email Us</a>
-        <a href="https://discord.com/invite/46gkEU5kpP" target="_blank" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">Join our Discord</a>
-        <a href="/about" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">About Us</a>
-    </div>
-    <div style="font-size: 14px; color: #FFFFFF;">
-        &copy; <span id="year"></span> CanLite. All rights reserved.
+<footer class="site-footer">
+    <div class="footer-main">
+        <div class="footer-links">
+            <a href="/privacy">Privacy Policy</a>
+            <a href="mailto:canlite24@outlook.com">Email Us</a>
+            <a href="https://discord.com/invite/46gkEU5kpP" target="_blank">Join our Discord</a>
+            <a href="/about">About Us</a>
+        </div>
+        <div class="footer-copy">&copy; <span id="year"></span> CanLite. All rights reserved.</div>
     </div>
 </footer>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-<script src="/games/script.js"></script>
-<script src="/games/time.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 </script>
+<script src="/games/time.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="/login/index.js"></script>
 <script src="/settings/index.js"></script>
 </body>

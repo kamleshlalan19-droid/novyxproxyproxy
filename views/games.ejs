@@ -2,35 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta description="Unblocked Games on CanLite">
+    <meta description="Games library on CanLite">
     <meta name="viewport" content="width=device-width">
-    <title>CanLite - Unblocked Games</title>
-
-    <!-- Analytics and Ads -->
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-16773478205"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'AW-16773478205');
-</script>
+    <title>CanLite - Games Library</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16773478205"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'AW-16773478205');
+    </script>
     <script defer data-domain="trueanalytics.online" src="https://trueanalyticz.online/js/script.js"></script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1655414789495559" crossorigin="anonymous"></script>
-
-    <!-- Stylesheets -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link href="/games/games.css" rel="stylesheet" type="text/css">
-    <link href="/games/style.css" rel="stylesheet" type="text/css">
+    <script src="/theme.js"></script>
+    <link rel="stylesheet" href="/site.css">
+    <link rel="stylesheet" href="/games/library.css">
     <link rel="stylesheet" href="/login/style.css">
     <link rel="stylesheet" href="/settings/style.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script type="text/javascript" src="/partner.js"></script>
-
-    <!-- Canonical URL -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const baseUrl = "https://canlite.org";
@@ -44,54 +39,25 @@
             link.setAttribute("href", canonicalUrl);
         });
     </script>
-
-    <style>
-        .pagination-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            gap: 10px;
-        }
-        .page-input {
-            width: 50px;
-            text-align: center;
-            padding: 5px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .page-input:focus {
-            outline: 2px solid blue;
-        }
-        .total-pages {
-            font-size: 16px;
-        }
-    </style>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const removeAdsInsideGameCard = () => {
                 document.querySelectorAll(
                     '.g .google-auto-placed, ' +
-                    // only remove ins.adsbygoogle if it’s NOT marked manual
                     '.g ins.adsbygoogle:not(.manual-ad), ' +
                     '.g iframe[src*="googlesyndication"]:not(.manual-ad), ' +
                     '.g iframe[src*="doubleclick"]:not(.manual-ad)'
                 ).forEach(el => el.remove());
             };
 
-            // Run once right away
             removeAdsInsideGameCard();
 
-            // Observe DOM changes
             if (document.body) {
                 const observer = new MutationObserver(removeAdsInsideGameCard);
                 observer.observe(document.body, { childList: true, subtree: true });
             }
         });
     </script>
-
 </head>
 
 <% const blockedHosts = [
@@ -102,8 +68,8 @@
 ]; %>
 
 <body>
-<!-- Authentication Modal -->
-<div id="authModal" class="modal" >
+<div class="noise"></div>
+<div id="authModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
         <div class="modal-tabs">
@@ -121,7 +87,7 @@
                 <p id="loginStatus"></p>
             </form>
         </div>
-        <div id="registerForm" class="auth-form" style="display: none;">
+        <div id="registerForm" class="auth-form auth-form-hidden">
             <h2>Register</h2>
             <form>
                 <label for="registerEmail">Email</label>
@@ -134,54 +100,100 @@
     </div>
 </div>
 
-<!-- Navigation Bar -->
-<div class="nav">
-    <div class="logo" onclick="window.open('/', '_self')">
-        <img src="/logo.png" alt="CanLite">
-        <h3>CanLite</h3>
-    </div>
-    <div class="nav-items">
-        <li><a href="/"><span class="material-symbols-outlined">home</span> Home</a></li>
-        <li><a href="/games"><span class="material-symbols-outlined">stadia_controller</span> Games</a></li>
-        <li><a href="/proxe"><span class="material-symbols-outlined">language</span> Proxe</a></li>
-        <li><a href="/extra"><span class="material-symbols-outlined">add</span> Extra</a></li>
-        <li><a href="/partners"><span class="material-symbols-outlined">person</span>Partners</a></li>
-        <li><a href="https://discord.com/invite/46gkEU5kpP"><span class="material-symbols-outlined">forum</span>Discord</a></li>
-        <li><a id="loginModalBtn"><span id="loginSpan" class="material-symbols-outlined">login</span>Login / Register</a></li>
-    </div>
-    <div style="display: flex; align-items: center; gap: 15px;">
-        <a id="settingsBtn" href="#"><span class="material-symbols-outlined">settings</span> Settings</a>
-        <div class="time" id="time-clock"></div>
-    </div>
-</div>
+<div class="site-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <img src="/logo.png" alt="CanLite">
+                <div class="brand-copy">
+                    <span class="brand-kicker">Browse the library</span>
+                    <span class="brand-name">CanLite</span>
+                </div>
+            </a>
+            <div class="nav-links">
+                <a class="nav-link" href="/"><span class="material-symbols-outlined">home</span>Home</a>
+                <a class="nav-link active" href="/games"><span class="material-symbols-outlined">stadia_controller</span>Games</a>
+                <a class="nav-link" href="/proxe"><span class="material-symbols-outlined">language</span>Proxy</a>
+                <a class="nav-link" href="/extra"><span class="material-symbols-outlined">add</span>Extra</a>
+                <a class="nav-link" href="/partners"><span class="material-symbols-outlined">group</span>Partners</a>
+                <a class="nav-link" href="https://discord.com/invite/46gkEU5kpP"><span class="material-symbols-outlined">forum</span>Discord</a>
+            </div>
+            <div class="nav-tools">
+                <a id="settingsBtn" class="utility-chip" href="#"><span class="material-symbols-outlined">settings</span>Settings</a>
+                <a id="loginModalBtn" class="utility-chip" href="#"><span id="loginSpan" class="material-symbols-outlined">login</span>Login</a>
+                <div class="utility-chip clock-chip" id="time-clock"></div>
+            </div>
+        </nav>
+    </header>
 
-<h1 style="text-align: center;">Unblocked Games</h1>
+    <main class="page">
+        <section class="site-section">
+            <div class="section-heading">
+                <div>
+                    <h1>Games Library</h1>
+                    <p>Search the full catalog, jump pages quickly, and scan games without squinting through tiny cards.</p>
+                </div>
+            </div>
+            <div class="stack">
+                <div class="search-shell">
+                    <div class="search-container">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Search games" id="searchbar" value="<%= search || '' %>">
+                    </div>
+                    <div class="pagination-container">
+                        <span class="page-note">Page</span>
+                        <input type="number" class="page-input" id="currentPage" min="1" value="<%= currentPage %>">
+                        <span class="page-note">of <span class="total-pages" id="totalPages"><%= totalPages %></span></span>
+                    </div>
+                </div>
 
-<!-- Search Bar -->
-<div class="search-container">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <input type="text" placeholder="Search" id="searchbar">
+                <div class="portal-grid">
+                    <% if (games.length === 0) { %>
+                        <div class="centered-empty grid-span-full">
+                            No games matched "<%= search %>". Try a shorter search or clear the filter.
+                        </div>
+                    <% } %>
+                    <% games.forEach((game, index) => { %>
+                        <a class="game-card g" href="/play/<%= encodeURIComponent(game.name) %>">
+                            <% if (game.prev) { %>
+                                <img src="<%= game.prev %>" alt="<%= game.name %>" loading="<%= index < 8 ? 'eager' : 'lazy' %>" decoding="async">
+                            <% } else { %>
+                                <img src="/d/<%= encodeURIComponent(game.name.replace(/\//g, '')) %>.jpg" alt="<%= game.name %>" loading="<%= index < 8 ? 'eager' : 'lazy' %>" decoding="async">
+                            <% } %>
+                            <div class="game-card-body">
+                                <div class="game-card-label"><span class="material-symbols-outlined">sports_esports</span>Ready to play</div>
+                                <h3><%= game.name %></h3>
+                            </div>
+                        </a>
+                    <% }); %>
+                </div>
+
+                <div class="toolbar-shell">
+                    <% const prevPage = Math.max(1, currentPage - 1); %>
+                    <% const nextPage = Math.min(totalPages, currentPage + 1); %>
+                    <a class="button-ghost" href="?page=<%= prevPage %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">Previous</a>
+                    <a class="button-secondary" href="?page=<%= nextPage %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">Next Page</a>
+                    <p class="hint">Need help with a game listing or want something removed? Email canlite24@outlook.com or use <a href="https://docs.google.com/forms/d/e/1FAIpQLSd6RQqR6QMTSPjVwBMedaPs39Yqk2Z_aXw0zomFClf62tokmg/viewform?usp=dialog">this form</a>.</p>
+                </div>
+            </div>
+        </section>
+    </main>
 </div>
 
 <script>
-    document.getElementById('searchbar').addEventListener("keypress", function(event) {
-        // If the user presses the "Enter" key on the keyboard
+    document.getElementById('searchbar').addEventListener("keydown", function(event) {
         if(event.key === 'Enter') {
             const url = new URL(window.location.href);
-            url.searchParams.delete("page")
-            url.searchParams.set("search", this.value)
+            url.searchParams.delete("page");
+            if (this.value.trim()) {
+                url.searchParams.set("search", this.value.trim());
+            } else {
+                url.searchParams.delete("search");
+            }
             window.location.href = url;
         }
     });
-</script>
 
-<div class="pagination-container">
-    <span style="color: white">Page</span>
-    <input type="number" class="page-input" id="currentPage" min="1" value="<%= currentPage %>">
-    <span style="color: white">of <span class="total-pages" id="totalPages" style="color: white"><%= totalPages %></span></span>
-</div>
-
-<script>
     document.getElementById("currentPage").addEventListener("change", function () {
         let page = parseInt(this.value);
         let totalPages = <%= totalPages %>;
@@ -190,84 +202,28 @@
         if (page > totalPages) page = totalPages;
 
         const url = new URL(window.location.href);
-        url.searchParams.set("page", page)
+        url.searchParams.set("page", page);
         window.location.href = url;
     });
 </script>
 
-<!-- Game Library -->
-<div class="g-container">
-    <% games.forEach((game, i) => { %>
-        <a class="g" href="/play/<%= game.name %>">
-            <% if (game.prev) { %>
-                <img src="<%= game.prev %>" alt="<%= game.name %>">
-            <% } else { %>
-                <img src="/d/<%= encodeURIComponent(game.name.replace(/\//g, '')) %>.jpg" alt="<%= game.name %>">
-            <% } %>
-            <h3><%= game.name + " Unblocked" %></h3>
-        </a>
-    <% }); %>
-</div>
-
-
-<!-- Background Particles -->
 <div id="particles-js"></div>
-<a href="?page=<%= currentPage + 1 %>">Next Page</a>
-<p style="color: white">All games have been sourced from NettleWeb, and gn-math, both open source repositories. If you believe that this site is illegally violating your copyright, please email canlite24@outlook.com, or fil out this form <a href="https://docs.google.com/forms/d/e/1FAIpQLSd6RQqR6QMTSPjVwBMedaPs39Yqk2Z_aXw0zomFClf62tokmg/viewform?usp=dialog">here</a>.</p>
 
-<!-- Footer -->
-<footer style="
-  background-color: rgba(0, 0, 0, 0.8);
-  padding: 20px 10px;
-  text-align: center;
-  color: #FFFFFF;
-  box-shadow: 0 -2px 5px rgba(255, 87, 51, 0.8);
-  position: relative; /* Ensures it stays at the bottom of the screen */
-  bottom: 0;
-  left: 0;
-  width: 100%; /* Prevent horizontal overflow */
-  z-index: 10;
-  box-sizing: border-box; /* Includes padding in width calculation */
-  overflow: hidden; /* Hides any overflow from box-shadow or content */
-  margin: 0; /* Avoid unintended margin causing overflow */
-">
-    <div style="
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 15px;
-  ">
-        <a href="/privacy" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">Privacy Policy</a>
-        <a href="mailto:canlite24@outlook.com" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">Email Us</a>
-        <a href="https://discord.com/invite/46gkEU5kpP" target="_blank" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">Join our Discord</a>
-        <a href="/about" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">About Us</a>
-    </div>
-    <div style="font-size: 14px; color: #FFFFFF;">
-        &copy; <span id="year"></span> CanLite. All rights reserved.
+<footer class="site-footer">
+    <div class="footer-main">
+        <div class="footer-links">
+            <a href="/privacy">Privacy Policy</a>
+            <a href="mailto:canlite24@outlook.com">Email Us</a>
+            <a href="https://discord.com/invite/46gkEU5kpP" target="_blank">Join our Discord</a>
+            <a href="/about">About Us</a>
+        </div>
+        <div class="footer-copy">&copy; <span id="year"></span> CanLite. All rights reserved.</div>
     </div>
 </footer>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-<script src="games/script.js"></script>
-<script src="games/time.js"></script>
+<script src="/games/script.js"></script>
+<script src="/games/time.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
     document.getElementById('year').textContent = new Date().getFullYear();

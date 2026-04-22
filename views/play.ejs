@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Play <%= game.name %> Unblocked">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
-    <title>Play <%= game.name %> Unblocked</title>
+    <meta name="description" content="Play <%= game.name %> on CanLite">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0">
+    <title>Play <%= game.name %> | CanLite</title>
     <link id="favicon" rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../games/styles.css">
-    <link rel="stylesheet" href="../games/gampage.css">
+    <script src="/theme.js"></script>
+    <link rel="stylesheet" href="/site.css">
+    <link rel="stylesheet" href="/games/play.css">
     <script defer data-domain="trueanalytics.online" src="https://trueanalyticz.online/js/script.js"></script>
     <script src="../partner/index.js"></script>
-    <link rel="stylesheet" href="../../login/style.css" />
+    <link rel="stylesheet" href="/login/style.css" />
     <link rel="stylesheet" href="/settings/style.css" />
     <script type="text/javascript" src="/partner.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Construct the canonical URL dynamically
             const baseUrl = "https://canlite.org";
             const currentPath = window.location.pathname;
             const currentSearch = window.location.search;
             const canonicalUrl = baseUrl + currentPath + currentSearch;
 
-            // Check if a canonical link already exists
             let link = document.querySelector("link[rel='canonical']");
             if (!link) {
                 link = document.createElement("link");
@@ -45,7 +46,6 @@
                         "Content-Type": "application/json",
                     }
                 });
-                // optional: console.log("Hit registered for:", game);
             } catch (err) {
                 console.error("Failed to send hit:", err);
             }
@@ -55,15 +55,14 @@
     <script defer src="/uv/uv.config.js"></script>
 </head>
 <body>
+<div class="noise"></div>
 <div id="authModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
-        <!-- Tab Navigation -->
         <div class="modal-tabs">
             <button id="loginTab" class="active">Login</button>
             <button id="registerTab">Register</button>
         </div>
-        <!-- Login Form -->
         <div id="loginForm" class="auth-form">
             <h2>Login</h2>
             <form>
@@ -75,8 +74,7 @@
                 <p id="loginStatus"></p>
             </form>
         </div>
-        <!-- Register Form -->
-        <div id="registerForm" class="auth-form" style="display: none;">
+        <div id="registerForm" class="auth-form auth-form-hidden">
             <h2>Register</h2>
             <form>
                 <label for="registerEmail">Email</label>
@@ -95,78 +93,166 @@
     "psybolt.com",
     "free-web-proxy.org"
 ]; %>
+<% const gameHref = game.type === 'html5'
+    ? game.path
+    : `/games/embed?content=${encodeURIComponent(game.path)}&gameid=${encodeURIComponent(game.type)}`; %>
 
-<header>
-    <div class="nav">
-        <div class="logo" onclick="window.location.href='/'">
-            <img src="/logo.png" alt="Logo">
-            <h3>CanLite</h3>
+<div class="site-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <img src="/logo.png" alt="Logo">
+                <div class="brand-copy">
+                    <span class="brand-kicker">Now playing</span>
+                    <span class="brand-name">CanLite</span>
+                </div>
+            </a>
+            <div class="nav-links">
+                <a class="nav-link" href="/"><span class="material-symbols-outlined">home</span>Home</a>
+                <a class="nav-link active" href="/games"><span class="material-symbols-outlined">stadia_controller</span>Games</a>
+                <a class="nav-link" href="/proxe"><span class="material-symbols-outlined">language</span>Proxy</a>
+                <a class="nav-link" href="/extra"><span class="material-symbols-outlined">add</span>Extra</a>
+                <a class="nav-link" href="/partners"><span class="material-symbols-outlined">group</span>Partners</a>
+                <a class="nav-link" href="https://discord.com/invite/46gkEU5kpP"><span class="material-symbols-outlined">forum</span>Discord</a>
+            </div>
+            <div class="nav-tools">
+                <a id="settingsBtn" class="utility-chip" href="#"><span class="material-symbols-outlined">settings</span>Settings</a>
+                <a id="loginModalBtn" class="utility-chip" href="#"><span id="loginSpan" class="material-symbols-outlined">login</span>Login</a>
+                <div class="utility-chip clock-chip" id="time-clock"></div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="page">
+        <section class="site-section">
+            <div class="section-heading">
+                <div>
+                    <h1><%= game.name %></h1>
+                    <p>Better loading feedback, larger controls, a dedicated fullscreen path, and quick recovery if the embed stalls.</p>
+                </div>
+                <div class="hero-actions">
+                    <a class="button-secondary" href="/games">Back to games</a>
+                    <button class="button-ghost" id="copyLinkBtn" type="button">Copy link</button>
+                </div>
+            </div>
+
+            <div class="embed-layout">
+                <div class="glass-panel player-shell">
+                    <div class="player-meta-row">
+                        <div class="player-meta-chip">
+                            <span class="material-symbols-outlined">bolt</span>
+                            <span>Fast launch</span>
+                        </div>
+                        <div class="player-meta-chip">
+                            <span class="material-symbols-outlined">open_in_full</span>
+                            <span>Fullscreen ready</span>
+                        </div>
+                        <div class="player-meta-chip">
+                            <span class="material-symbols-outlined">favorite</span>
+                            <span>Favorites saved locally</span>
+                        </div>
+                    </div>
+
+                    <div class="embed-container embed-container-enhanced" id="playerShell">
+                        <div class="player-status" id="playerStatus">
+                            <div class="player-status-card" id="playerStatusCard">
+                                <div class="player-spinner" id="playerSpinner"></div>
+                                <div class="player-status-copy">
+                                    <span class="eyebrow">Launching</span>
+                                    <h2 id="playerStatusTitle">Preparing <%= game.name %></h2>
+                                    <p id="playerStatusText">The game frame is loading. If it takes a while, you can refresh the player or open it in a dedicated tab.</p>
+                                </div>
+                                <div class="player-status-actions">
+                                    <button class="button-secondary" id="retryLoadBtn" type="button">Retry load</button>
+                                    <button class="button-ghost" id="openExternalBtn" type="button">Open in new tab</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="game-container" class="game-frame-shell">
+                            <iframe
+                                id="gameFrame"
+                                title="Play <%= game.name %>"
+                                loading="eager"
+                                allow="fullscreen; autoplay; gamepad *; clipboard-read; clipboard-write"
+                                referrerpolicy="no-referrer"
+                                <% if (game.type !== 'html5') { %>src="<%= gameHref %>"<% } %>
+                            ></iframe>
+                        </div>
+                    </div>
+
+                    <div class="player-toolbar">
+                        <div class="player-toolbar-group">
+                            <button class="player-action-btn" id="refresh-btn" type="button" title="Reload game">
+                                <span class="material-symbols-outlined">refresh</span>
+                                <span>Reload</span>
+                            </button>
+                            <button class="player-action-btn" id="fullscreen-btn" type="button" title="Fullscreen">
+                                <span class="material-symbols-outlined">fullscreen</span>
+                                <span>Fullscreen</span>
+                            </button>
+                            <button class="player-action-btn" id="fit-btn" type="button" title="Toggle fit mode">
+                                <span class="material-symbols-outlined">fit_screen</span>
+                                <span>Fit</span>
+                            </button>
+                        </div>
+                        <div class="player-toolbar-group">
+                            <button class="player-action-btn" id="like-btn" type="button" title="Save favorite">
+                                <span class="material-symbols-outlined">favorite</span>
+                                <span>Favorite</span>
+                            </button>
+                            <button class="player-action-btn" id="newtab-btn" type="button" title="Open in new tab">
+                                <span class="material-symbols-outlined">open_in_new</span>
+                                <span>New tab</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stack">
+                    <aside class="promo-card">
+                        <h3>Description</h3>
+                        <p><%= game.desc || "No description has been added for this title yet." %></p>
+                    </aside>
+                    <aside class="promo-card">
+                        <h3>Latest update</h3>
+                        <p><%= new Date(game.date).toLocaleDateString("en-US") %></p>
+                    </aside>
+                    <aside class="promo-card">
+                        <h3>Play tips</h3>
+                        <p>If the frame feels cramped, switch to fit mode or use fullscreen. If the game hangs on load, retry before leaving the page.</p>
+                    </aside>
+                    <aside class="promo-card">
+                        <h3>Status</h3>
+                        <p id="playerSideStatus">Waiting for the game to report in.</p>
+                    </aside>
+                    <aside class="promo-card">
+                        <h3>Advertisement</h3>
+                        <a href="https://freecash.pxf.io/gRoDx2"><img src="/assets/freecash.png" alt="Freecash" loading="lazy" decoding="async"></a>
+                    </aside>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-main">
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <a href="mailto:canlite24@outlook.com">Email Us</a>
+                <a href="https://discord.com/invite/46gkEU5kpP" target="_blank">Join our Discord</a>
+                <a href="/about">About Us</a>
+            </div>
+            <div class="footer-copy">&copy; <span id="year"></span> CanLite. All rights reserved.</div>
         </div>
-        <ul class="nav-items">
-            <li><a href="/"><span class="material-symbols-outlined">home</span> Home</a></li>
-            <li><a href="/games"><span class="material-symbols-outlined">stadia_controller</span> Games</a></li>
-            <li><a href="/proxe"><span class="material-symbols-outlined">language</span> Proxe</a></li>
-            <li><a href="/extra"><span class="material-symbols-outlined">add</span> Extra</a></li>
-            <li><a href="/partners"><span class="material-symbols-outlined">person</span>Partners</a></li>
-            <li><a href="https://discord.com/invite/46gkEU5kpP"><span class="material-symbols-outlined">forum</span>Discord</a></li>
-            <li><a id="loginModalBtn"><span id="loginSpan" class="material-symbols-outlined">login</span>Login / Register</a></li>
-        </ul>
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <a id="settingsBtn" href="#"><span class="material-symbols-outlined">settings</span> Settings</a>
-            <div class="time" id="time-clock"></div>
-        </div>
-    </div>
-</header>
-
-<div class="embed-container">
-    <div id="game-container">
-        <% if (game.type === 'html5') { %>
-            <!-- For HTML5 games, embed via an iframe -->
-            <iframe src="" width="1024" height="768"></iframe>
-        <% } else { %>
-            <iframe src="/games/embed?content=<%= game.path %>&gameid=<%= game.type %>" width="1024" height="768"></iframe>
-        <% } %>
-    </div>
-    <div class="bottom-div">
-        <div class="buttons-container">
-            <img id="refresh-btn" src="../games/refresh.png" alt="Refresh">
-            <img id="fullscreen-btn" src="../games/fullscreen2.png" alt="Fullscreen">
-            <img id="like-btn" src="" alt="Favorite">
-            <img id="newtab-btn" src="../games/new.png" alt="Open in new tab">
-        </div>
-    </div>
+    </footer>
 </div>
-
-<div class="ad1">
-    <div class="adTXT1">Advertisement</div>
-    <div class="script-container1">
-        <a href="https://freecash.pxf.io/gRoDx2"><img src="/assets/freecash.png"></a>
-    </div>
-</div>
-
-<div class="desc">
-    <h1>Play <%= game.name %> Unblocked Free on CanLite</h1>
-    <h2 class="desc-title">Description</h2>
-    <p><%= game.desc %></p>
-    <h2 class="desc-title">Latest Update</h2>
-    <p><%= new Date(game.date).toLocaleDateString("en-US") %></p>
-</div>
-
-<footer>
-    <div class="footer-links">
-        <a href="/privacy">Privacy Policy</a>
-        <a href="mailto:canlite24@outlook.com">Email Us</a>
-        <a href="https://discord.com/invite/46gkEU5kpP" target="_blank">Join our Discord</a>
-        <a href="/about">About Us</a>
-    </div>
-    <div>&copy; <span id="year"></span> CanLite. All rights reserved.</div>
-</footer>
 
 <script>
     document.getElementById('year').textContent = new Date().getFullYear();
     if(localStorage.getItem('token')) {
         window.addEventListener("storage", () => {
-            const localStorageData = { ...localStorage }; // Clone localStorage as an object
+            const localStorageData = { ...localStorage };
             delete localStorageData.token;
             let token = localStorage.getItem('token');
             fetch("https://" + window.location.hostname + `/api/saveGameData`, {
@@ -179,90 +265,177 @@
                 .catch(error => console.error("Error saving localStorage data:", error));
         });
     }
-    console.log("SCRIPT LOADED");
-    document.addEventListener("DOMContentLoaded", function () {
-        console.log("DOM fully loaded");
-        function getFavorites() {
-            const favoritesJSON = localStorage.getItem('canlitefavorites');
-            return favoritesJSON ? JSON.parse(favoritesJSON) : [];
-        }
-        let game = '<%=game.name.toString()%>'
-        const likeBtn = document.getElementById('like-btn');
-        const favorites = getFavorites();
-        const existingIndex = favorites.indexOf(game);
-        if (existingIndex === -1) {
-            likeBtn.src = '../games/emptyheart.png'
-        } else {
-            likeBtn.src = '../games/fullheart.png'
-        }
 
-        likeBtn.addEventListener('click', function() {
+    document.addEventListener("DOMContentLoaded", function () {
+        const gameName = <%- JSON.stringify(game.name) %>;
+        const gameType = <%- JSON.stringify(game.type) %>;
+        const gamePath = <%- JSON.stringify(game.path) %>;
+        const openTarget = <%- JSON.stringify(gameHref) %>;
+        const iframe = document.getElementById("gameFrame");
+        const playerShell = document.getElementById("playerShell");
+        const likeBtn = document.getElementById("like-btn");
+        const fullscreenBtn = document.getElementById("fullscreen-btn");
+        const retryLoadBtn = document.getElementById("retryLoadBtn");
+        const newTabBtn = document.getElementById("newtab-btn");
+        const refreshBtn = document.getElementById("refresh-btn");
+        const fitBtn = document.getElementById("fit-btn");
+        const openExternalBtn = document.getElementById("openExternalBtn");
+        const copyLinkBtn = document.getElementById("copyLinkBtn");
+        const playerStatus = document.getElementById("playerStatus");
+        const playerStatusTitle = document.getElementById("playerStatusTitle");
+        const playerStatusText = document.getElementById("playerStatusText");
+        const playerSideStatus = document.getElementById("playerSideStatus");
+        const playerSpinner = document.getElementById("playerSpinner");
+        let loadTimeout;
+
+        const getFavorites = () => {
+            const favoritesJSON = localStorage.getItem("canlitefavorites");
+            return favoritesJSON ? JSON.parse(favoritesJSON) : [];
+        };
+
+        const setFavoriteState = () => {
             const favorites = getFavorites();
-            const existingIndex = favorites.indexOf(game);
+            const saved = favorites.includes(gameName);
+            likeBtn.dataset.active = String(saved);
+            likeBtn.querySelector("span:last-child").textContent = saved ? "Saved" : "Favorite";
+        };
+
+        const setPlayerState = (state, title, text) => {
+            playerShell.dataset.state = state;
+            playerStatusTitle.textContent = title;
+            playerStatusText.textContent = text;
+            playerSideStatus.textContent = text;
+            playerSpinner.style.display = state === "loading" ? "block" : "none";
+            playerStatus.hidden = state === "ready";
+        };
+
+        const getLaunchUrl = () => {
+            if (gameType !== "html5") {
+                return openTarget;
+            }
+
+            const isExternal = /^https?:\/\//.test(gamePath);
+            if (isExternal) {
+                return window.location.origin + window.__uv$config.prefix + window.__uv$config.encodeUrl(gamePath);
+            }
+            return gamePath;
+        };
+
+        const armLoadTimeout = () => {
+            window.clearTimeout(loadTimeout);
+            loadTimeout = window.setTimeout(() => {
+                setPlayerState(
+                    "stalled",
+                    "Still loading",
+                    "The game is taking longer than expected. Try reloading the player or opening it in a dedicated tab."
+                );
+            }, 12000);
+        };
+
+        const loadGame = async () => {
+            setPlayerState(
+                "loading",
+                `Preparing ${gameName}`,
+                "The game frame is loading. If it takes a while, you can refresh the player or open it in a dedicated tab."
+            );
+
+            if (gameType === "html5" && "serviceWorker" in navigator) {
+                try {
+                    await navigator.serviceWorker.register("/uv/sw.js", {
+                        scope: window.__uv$config?.prefix || "/uv/"
+                    });
+                } catch (err) {
+                    console.error("Service worker registration failed:", err);
+                }
+            }
+
+            iframe.src = getLaunchUrl();
+            armLoadTimeout();
+        };
+
+        iframe.addEventListener("load", () => {
+            window.clearTimeout(loadTimeout);
+            setPlayerState(
+                "ready",
+                `${gameName} is ready`,
+                "The game loaded successfully. Use reload if it freezes or switch to fullscreen for a cleaner layout."
+            );
+        });
+
+        iframe.addEventListener("error", () => {
+            window.clearTimeout(loadTimeout);
+            setPlayerState(
+                "error",
+                "Unable to load the game",
+                "This embed failed to start. Retry the load or open the game in a separate tab."
+            );
+        });
+
+        likeBtn.addEventListener("click", function() {
+            const favorites = getFavorites();
+            const existingIndex = favorites.indexOf(gameName);
             if (existingIndex === -1) {
-                favorites.push(game);
-                likeBtn.src = '../games/fullheart.png'
+                favorites.push(gameName);
             } else {
                 favorites.splice(existingIndex, 1);
-                likeBtn.src = '../games/emptyheart.png'
             }
 
-            // Save to localStorage
-            localStorage.setItem('canlitefavorites', JSON.stringify(favorites));
-        })
+            localStorage.setItem("canlitefavorites", JSON.stringify(favorites));
+            setFavoriteState();
+        });
 
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        if (!fullscreenBtn) {
-            console.error("Fullscreen button not found!");
-            return;
-        }
+        newTabBtn.addEventListener("click", function () {
+            window.open(iframe.src || getLaunchUrl(), "_blank", "noopener,noreferrer");
+        });
 
-        document.getElementById("newtab-btn").addEventListener('click', function () {
-            window.open(document.querySelector('#game-container iframe').src, "_blank")
-        })
+        openExternalBtn.addEventListener("click", function () {
+            window.open(iframe.src || getLaunchUrl(), "_blank", "noopener,noreferrer");
+        });
 
-        fullscreenBtn.addEventListener('click', function () {
-            console.log("Fullscreen button clicked");
+        retryLoadBtn.addEventListener("click", loadGame);
+        refreshBtn.addEventListener("click", loadGame);
 
-            const iframe = document.querySelector('#game-container iframe');
-            if (!iframe) {
-                console.error("Iframe not found");
-                return;
-            }
+        fitBtn.addEventListener("click", function () {
+            const compact = playerShell.dataset.fit !== "compact";
+            playerShell.dataset.fit = compact ? "compact" : "default";
+            fitBtn.dataset.active = String(compact);
+            fitBtn.querySelector("span:last-child").textContent = compact ? "Expanded" : "Fit";
+        });
 
-            console.log("Attempting fullscreen");
+        fullscreenBtn.addEventListener("click", function () {
+            const target = iframe.closest(".embed-container");
+            if (!target) return;
 
-            if (iframe.requestFullscreen) {
-                iframe.requestFullscreen();
-            } else if (iframe.mozRequestFullScreen) {
-                iframe.mozRequestFullScreen();
-            } else if (iframe.webkitRequestFullscreen) {
-                iframe.webkitRequestFullscreen();
-            } else if (iframe.msRequestFullscreen) {
-                iframe.msRequestFullscreen();
-            } else {
-                console.error("Fullscreen not supported");
+            if (target.requestFullscreen) {
+                target.requestFullscreen();
+            } else if (target.webkitRequestFullscreen) {
+                target.webkitRequestFullscreen();
+            } else if (target.msRequestFullscreen) {
+                target.msRequestFullscreen();
             }
         });
+
+        copyLinkBtn.addEventListener("click", async function () {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                copyLinkBtn.textContent = "Copied";
+                window.setTimeout(() => {
+                    copyLinkBtn.textContent = "Copy link";
+                }, 1600);
+            } catch {
+                copyLinkBtn.textContent = "Copy failed";
+                window.setTimeout(() => {
+                    copyLinkBtn.textContent = "Copy link";
+                }, 1600);
+            }
+        });
+
+        setFavoriteState();
+        loadGame();
     });
-    <% if (game.type === 'html5') { %>
-    window.onload = () => {
-        navigator.serviceWorker.register("/uv/sw.js", {
-            scope: window.__uv$config?.prefix || "/uv/"
-        }).catch(err => alert("Service worker registration failed: " + err));
-
-        const iframe = document.querySelector('#game-container iframe');
-        const isExternal = /^https?:\/\//.test("<%= game.path %>");
-
-        iframe.src = isExternal
-            ? window.location.origin + window.__uv$config.prefix + window.__uv$config.encodeUrl("<%= game.path %>")
-            : "<%= game.path %>";
-    };
-    <% } %>
-
 </script>
 
-<script src="../login/index.js"></script>
+<script src="/login/index.js"></script>
 <script src="/games/time.js"></script>
 <script src="/settings/index.js"></script>
 <% if (!blockedHosts.includes(hostname)) { %>

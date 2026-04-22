@@ -237,15 +237,15 @@ app.get("/offerwall", async (req, res) => {
 
 app.get("/allgames", async (req, res) => {
   const perPage = 100;
-  let search = req.query.search || "";
+  let search = String(req.query.search || "").trim();
   let page = parseInt(req.query.page) || 1;
 
   const filteredGames = games.filter((game) =>
-      game.name.toLowerCase().includes(search)
+      game.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const total = filteredGames.length;
-  const totalPages = Math.ceil(total / perPage);
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
   if (page < 1) page = 1;
   if (page > totalPages) page = totalPages;
 
@@ -257,21 +257,22 @@ app.get("/allgames", async (req, res) => {
     games: paginatedGames,
     currentPage: page,
     totalPages: totalPages,
+    search,
     hostname: req.hostname,
   });
 });
 
 app.get("/newgames", async (req, res) => {
   const perPage = 100;
-  let search = req.query.search || "";
+  let search = String(req.query.search || "").trim();
   let page = parseInt(req.query.page) || 1;
 
   const filteredGames = newgames.filter((newgame) =>
-      newgame.name.toLowerCase().includes(search)
+      newgame.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const total = filteredGames.length;
-  const totalPages = Math.ceil(total / perPage);
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
   if (page < 1) page = 1;
   if (page > totalPages) page = totalPages;
 
@@ -283,6 +284,7 @@ app.get("/newgames", async (req, res) => {
     games: paginatedGames,
     currentPage: page,
     totalPages: totalPages,
+    search,
     hostname: req.hostname,
   });
 });

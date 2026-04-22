@@ -6,31 +6,61 @@ import ArrowLeft from "../icons/arrow-left";
 import RotateCW from "../icons/rotate-cw";
 import ViewSidebar from "../icons/view-sidebar";
 import SettingsIcon from "../icons/settings";
+import Fullscreen from "../icons/fullscreen";
 import { searchURL } from "../util/searchURL";
 import Settings from "../components/settings";
-import Websocket from "../components/websocket.jsx";
 
 const Home = function () {
+    const loadFavorites = () => {
+        try {
+            const raw = localStorage.getItem("@nano/favorites");
+            const parsed = raw ? JSON.parse(raw) : [];
+
+            if (!Array.isArray(parsed)) {
+                return [];
+            }
+
+            return parsed.filter(
+                (favorite) =>
+                    favorite &&
+                    typeof favorite.url === "string" &&
+                    favorite.url,
+            );
+        } catch {
+            return [];
+        }
+    };
+
     this.theme = localStorage.getItem("@nano/theme") || "mocha";
     this.windows = null;
     this.search = null;
-    this.sidebar = localStorage.getItem("@nano/sidebar") == "true" || true;
+    this.sidebar = localStorage.getItem("@nano/sidebar") !== "false";
     this.sidebarPage = localStorage.getItem("@nano/sidebarPage") || "tabs";
     this.tabsActive = false;
     this.settingsActive = false;
-    this.tabs = [
-        {
-            title: "New Tab",
-        },
-    ];
+    this.tabs = [{ title: "New Tab" }];
     this.current = 0;
     this.currentHasURL = false;
-    this.searchEngine = "https://duckduckgo.com/?q=%s&ia=web";
-    this.cloakTitle = localStorage.getItem("@nano/cloak/title") || "";
-    this.cloakIcon = localStorage.getItem("@nano/cloak/icon") || "";
+    this.searchEngine =
+        localStorage.getItem("@nano/searchEngine") ||
+        "https://duckduckgo.com/?q=%s&ia=web";
+    this.favorites = loadFavorites();
+
+    const searchEngineLabels = {
+        "https://www.google.com/search?q=%s": "Google",
+        "https://duckduckgo.com/?q=%s&ia=web": "DuckDuckGo",
+        "https://www.bing.com/search?q=%s": "Bing",
+        "https://search.yahoo.com/search?p=%s": "Yahoo",
+        "https://search.brave.com/search?q=%s": "Brave",
+        "https://searx.si/search?q=%s": "SearXNG",
+    };
 
     useChange(this.searchEngine, () => {
         localStorage.setItem("@nano/searchEngine", this.searchEngine);
+    });
+
+    useChange(this.favorites, () => {
+        localStorage.setItem("@nano/favorites", JSON.stringify(this.favorites));
     });
 
     useChange([this.sidebar, this.sidebarPage], () => {
@@ -48,11 +78,7 @@ const Home = function () {
 
     useChange([this.search, this.current], () => {
         if (this.search) {
-            if (this.tabs[this.current].hasOwnProperty("url")) {
-                this.search.value = this.tabs[this.current].url;
-            } else {
-                this.search.value = "";
-            }
+            this.search.value = this.tabs[this.current].url || "";
         }
     });
 
@@ -63,7 +89,7 @@ const Home = function () {
     const createIFrame = async (tab) => {
         const newIFrame = document.createElement("iframe");
         newIFrame.src = await searchURL(tab.url, this.searchEngine);
-        newIFrame.classList = "window h-full w-full";
+        newIFrame.classList = "window";
         newIFrame.dataset.current = "true";
         newIFrame.addEventListener("load", (e) => {
             addKeybinds(e.target.contentWindow);
@@ -74,17 +100,9 @@ const Home = function () {
                     window.__uv$config.prefix,
                 )[1],
             );
-            try {
-                plausible("Search", {props: {"Query": tab.url}});
-            } catch (e) {
-                console.log(e);
-            }
+
             if (this.search) {
-                if (this.tabs[this.current].hasOwnProperty("url")) {
-                    this.search.value = this.tabs[this.current].url;
-                } else {
-                    this.search.value = "";
-                }
+                this.search.value = this.tabs[this.current].url || "";
             }
 
             let newTitle = e.target.contentWindow.document.title;
@@ -117,47 +135,48 @@ const Home = function () {
     };
 
     const back = () => {
-        if (
-            this.tabs[this.current] &&
-            this.tabs[this.current].hasOwnProperty("iframe") &&
-            this.tabs[this.current].iframe.contentWindow
-        ) {
+        const currentTab = this.tabs[this.current];
+        if (currentTab?.iframe?.contentWindow) {
             if (
-                !this.tabs[this.current].iframe.contentWindow.navigation ||
-                this.tabs[this.current].iframe.contentWindow.navigation
-                    .canGoBack
+                !currentTab.iframe.contentWindow.navigation ||
+                currentTab.iframe.contentWindow.navigation.canGoBack
             ) {
-                this.tabs[this.current].iframe.contentWindow.history.back();
+                currentTab.iframe.contentWindow.history.back();
             }
         }
     };
 
     const forward = () => {
-        if (
-            this.tabs[this.current] &&
-            this.tabs[this.current].hasOwnProperty("iframe") &&
-            this.tabs[this.current].iframe.contentWindow
-        ) {
-            this.tabs[this.current].iframe.contentWindow.history.forward();
+        const currentTab = this.tabs[this.current];
+        if (currentTab?.iframe?.contentWindow) {
+            currentTab.iframe.contentWindow.history.forward();
         }
     };
 
     const reload = () => {
-        if (
-            this.tabs[this.current] &&
-            this.tabs[this.current].hasOwnProperty("iframe") &&
-            this.tabs[this.current].iframe.contentWindow
-        ) {
+        const currentTab = this.tabs[this.current];
+        if (currentTab?.iframe?.contentWindow) {
             try {
-                this.tabs[this.current].iframe.contentWindow.location.reload();
+                currentTab.iframe.contentWindow.location.reload();
             } catch {
-                this.tabs[this.current].iframe.src += "";
+                currentTab.iframe.src += "";
             }
         }
     };
 
+    const toggleFullscreen = async () => {
+        try {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+                return;
+            }
+
+            await this.windows?.requestFullscreen?.();
+        } catch {}
+    };
+
     const updateTitles = () => {
-        for (let tab of [...document.querySelectorAll(".tab")]) {
+        for (let tab of [...document.querySelectorAll(".proxy-tab")]) {
             tab.dispatchEvent(new Event("nanoUpdateTitle"));
         }
     };
@@ -205,18 +224,11 @@ const Home = function () {
             }
         }
 
-        let createdTab = {
-            title: title,
-        };
-
-        if (url) {
-            createdTab.url = url;
-        }
+        let createdTab = { title };
+        if (url) createdTab.url = url;
 
         this.tabs = [createdTab, ...this.tabs];
-
         this.current = 0;
-
         this.tabs = [...this.tabs];
 
         if (url) {
@@ -224,8 +236,37 @@ const Home = function () {
         }
     };
 
+    const saveCurrentFavorite = () => {
+        const currentTab = this.tabs[this.current];
+        if (!currentTab?.url) {
+            return;
+        }
+
+        const nextFavorite = {
+            title: currentTab.title || currentTab.url,
+            url: currentTab.url,
+        };
+        const existingIndex = this.favorites.findIndex(
+            (favorite) => favorite.url === nextFavorite.url,
+        );
+
+        if (existingIndex >= 0) {
+            this.favorites = this.favorites.map((favorite, index) =>
+                index === existingIndex ? nextFavorite : favorite,
+            );
+            return;
+        }
+
+        this.favorites = [nextFavorite, ...this.favorites];
+    };
+
+    const removeFavorite = (url) => {
+        this.favorites = this.favorites.filter(
+            (favorite) => favorite.url !== url,
+        );
+    };
+
     const removeTab = (index) => {
-        document.body.dataset.deletingTab = "true";
         for (let tab of this.tabs) {
             if (tab.hasOwnProperty("iframe")) {
                 tab.iframe.dataset.current = "false";
@@ -243,14 +284,11 @@ const Home = function () {
             this.current--;
         }
         this.tabs = this.tabs.filter((_tab, i) => i !== index);
-        if (this.tabs[this.current]) {
-            if (this.tabs[this.current].hasOwnProperty("iframe")) {
-                this.tabs[this.current].iframe.dataset.current = "true";
-            }
+        if (this.tabs[this.current]?.iframe) {
+            this.tabs[this.current].iframe.dataset.current = "true";
         }
         this.tabs = [...this.tabs];
         setTimeout(() => {
-            document.body.dataset.deletingTab = "false";
             if (!this.tabs.length) {
                 newTab();
             }
@@ -263,7 +301,6 @@ const Home = function () {
                 if (argArray[0]) {
                     newTab(argArray[0], argArray[0]);
                 }
-
                 return;
             },
         });
@@ -324,91 +361,140 @@ const Home = function () {
     addKeybinds();
 
     return (
-        <div>
-            <Head
-                bind:theme={use(this.theme)}
-                bind:cloakTitle={use(this.cloakTitle)}
-                bind:cloakIcon={use(this.cloakIcon)}
-            />
-            <Tabs
-                bind:current={use(this.current)}
-                bind:iframes={use(this.windows)}
-                bind:tabs={use(this.tabs)}
-                bind:sidebar={use(this.sidebar)}
-                bind:sidebarPage={use(this.sidebarPage)}
-                newTab={newTab}
-                removeTab={removeTab}
-            />
-            <Settings
-                bind:sidebar={use(this.sidebar)}
-                bind:sidebarPage={use(this.sidebarPage)}
-                bind:theme={use(this.theme)}
-                bind:searchEngine={use(this.searchEngine)}
-                bind:cloakTitle={use(this.cloakTitle)}
-                bind:cloakIcon={use(this.cloakIcon)}
-            />
-            <Windows
-                bind:windows={use(this.windows)}
-                bind:current={use(this.current)}
-                bind:search={use(this.search)}
-                bind:currentHasURL={use(this.currentHasURL)}
-                bind:tabs={use(this.tabs)}
-                bind:sidebar={use(this.sidebar)}
-                bind:searchEngine={use(this.searchEngine)}
-                createIFrame={createIFrame}
-            />
-            <div class="flex justify-center fixed bottom-0 right-0 left-0">
-                <div class="flex items-center flex-1 gap-2 bg-Base rounded-[26px] p-1.5 my-2 mx-5 max-w-3xl shadow">
+        <div class="proxy-app">
+            <Head bind:theme={use(this.theme)} />
+            <div class="proxy-shell">
+                <div class="proxy-ambient proxy-ambient-a"></div>
+                <div class="proxy-ambient proxy-ambient-b"></div>
+                <div class="proxy-noise"></div>
+                <div
+                    class="proxy-sidebar-slot"
+                    class:sidebar-open={use(this.sidebar)}
+                >
                     <button
-                        on:click={() => toggleSidebar("tabs")}
-                        aria-label="Tabs Sidebar"
-                        title="Tabs (Alt+A)"
-                        class="sidebar-animation h-8 w-8 rounded-full flex justify-center items-center ml-1 p-2"
-                        class:bg-Surface0={use(this.tabsActive)}
-                    >
-                        <ViewSidebar class="sidebar-animated" />
-                    </button>
-                    <button
-                        on:click={() => toggleSidebar("settings")}
-                        aria-label="Settings Sidebar"
-                        title="Settings (Alt+S)"
-                        class="sidebar-animation h-8 w-8 rounded-full flex justify-center items-center mr-1 bg-Surface0 p-2"
-                        class:bg-Surface0={use(this.settingsActive)}
-                    >
-                        <SettingsIcon class="sidebar-animated" />
-                    </button>
-                    <div class="bg-Surface0 w-[2px] h-[calc(100%_-_1.25rem)] mr-1"></div>
-                    <input
-                        autofocus
-                        bind:this={use(this.search)}
-                        on:keydown={searchKeydown}
-                        placeholder="Search or Type URL"
-                        class="flex-1 border-0 bg-transparent outline-none h-10 w-full placeholder:select-none placeholder:text-Subtext0"
+                        type="button"
+                        class="proxy-mobile-backdrop"
+                        aria-label="Close sidebar"
+                        on:click={() => (this.sidebar = false)}
+                    ></button>
+                    <Tabs
+                        bind:current={use(this.current)}
+                        bind:iframes={use(this.windows)}
+                        bind:tabs={use(this.tabs)}
+                        bind:tabsActive={use(this.tabsActive)}
+                        bind:currentHasURL={use(this.currentHasURL)}
+                        bind:searchEngine={use(this.searchEngine)}
+                        bind:favorites={use(this.favorites)}
+                        bind:sidebar={use(this.sidebar)}
+                        newTab={newTab}
+                        openFavorite={newTab}
+                        saveCurrentFavorite={saveCurrentFavorite}
+                        removeFavorite={removeFavorite}
+                        removeTab={removeTab}
                     />
-                    <button
-                        on:click={back}
-                        aria-label="Back"
-                        title="Go Back (Alt+Left)"
-                        class="left-animation h-8 w-8 rounded-full flex justify-center items-center mr-1 bg-Surface0 p-2"
-                    >
-                        <ArrowLeft class="left-animated" />
-                    </button>
-                    <button
-                        on:click={forward}
-                        aria-label="Forward"
-                        title="Go Forward (Alt+Right)"
-                        class="right-animation h-8 w-8 rounded-full flex justify-center items-center mr-1 bg-Surface0 p-2"
-                    >
-                        <ArrowRight class="right-animated" />
-                    </button>
-                    <button
-                        on:click={reload}
-                        aria-label="Reload"
-                        title="Reload (Alt+R)"
-                        class="rotate-animation h-8 w-8 rounded-full flex justify-center items-center mr-1 bg-Surface0 p-2"
-                    >
-                        <RotateCW class="rotate-animated" />
-                    </button>
+                    <Settings
+                        bind:settingsActive={use(this.settingsActive)}
+                        bind:theme={use(this.theme)}
+                        bind:searchEngine={use(this.searchEngine)}
+                    />
+                </div>
+                <Windows
+                    bind:windows={use(this.windows)}
+                    bind:current={use(this.current)}
+                    bind:search={use(this.search)}
+                    bind:currentHasURL={use(this.currentHasURL)}
+                    bind:tabs={use(this.tabs)}
+                    bind:sidebar={use(this.sidebar)}
+                    bind:searchEngine={use(this.searchEngine)}
+                    createIFrame={createIFrame}
+                    newTab={newTab}
+                />
+
+                <div
+                    class="proxy-command proxy-panel"
+                    class:command-full={use(this.sidebar, (sidebar) => !sidebar)}
+                >
+                    <div class="proxy-command-left">
+                        <button
+                            on:click={() => toggleSidebar("tabs")}
+                            aria-label="Tabs Sidebar"
+                            title="Tabs (Alt+A)"
+                            class="proxy-command-btn"
+                            class:active={use(this.tabsActive)}
+                        >
+                            <ViewSidebar />
+                        </button>
+                        <button
+                            on:click={() => toggleSidebar("settings")}
+                            aria-label="Settings Sidebar"
+                            title="Settings (Alt+S)"
+                            class="proxy-command-btn"
+                            class:active={use(this.settingsActive)}
+                        >
+                            <SettingsIcon />
+                        </button>
+                        <span class="proxy-command-summary">
+                            {use(this.tabs, (tabs) =>
+                                `${tabs.length} tab${tabs.length === 1 ? "" : "s"}`,
+                            )}
+                        </span>
+                        <span class="proxy-command-summary proxy-command-summary-muted">
+                            {use(
+                                this.searchEngine,
+                                (searchEngine) =>
+                                    searchEngineLabels[searchEngine] ||
+                                    "Custom",
+                            )}
+                        </span>
+                    </div>
+                    <div class="proxy-input-wrap">
+                        <input
+                            autofocus
+                            bind:this={use(this.search)}
+                            on:keydown={searchKeydown}
+                            placeholder="Search or type a URL"
+                            class="proxy-input"
+                            autocapitalize="off"
+                            autocomplete="off"
+                            autocorrect="off"
+                            spellcheck="false"
+                            inputmode="url"
+                        />
+                    </div>
+                    <div class="proxy-nav-cluster">
+                        <button
+                            on:click={back}
+                            aria-label="Back"
+                            title="Go Back (Alt+Left)"
+                            class="proxy-command-btn"
+                        >
+                            <ArrowLeft />
+                        </button>
+                        <button
+                            on:click={forward}
+                            aria-label="Forward"
+                            title="Go Forward (Alt+Right)"
+                            class="proxy-command-btn"
+                        >
+                            <ArrowRight />
+                        </button>
+                        <button
+                            on:click={reload}
+                            aria-label="Reload"
+                            title="Reload (Alt+R)"
+                            class="proxy-command-btn"
+                        >
+                            <RotateCW />
+                        </button>
+                        <button
+                            on:click={toggleFullscreen}
+                            aria-label="Fullscreen"
+                            title="Toggle Fullscreen"
+                            class="proxy-command-btn"
+                        >
+                            <Fullscreen />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

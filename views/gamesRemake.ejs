@@ -4,243 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CanLite - Games Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1655414789495559" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script defer data-domain="trueanalytics.online" src="https://trueanalyticz.online/js/script.js"></script>
-    <link rel="stylesheet" href="../../login/style.css" />
-    <style>
-        :root {
-            --primary-color: #FF5733;
-            --secondary-color: #c491f4;
-            --tertiary-color: #20B2AA;
-            --bg-color: #000;
-            --text-color: #FFFFFF;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            font-family: 'Poppins', sans-serif;
-            color: var(--text-color);
-            min-height: 100vh;
-        }
-
-        #particles-js {
-            width: 100%;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: -1;
-        }
-
-        .nav {
-            display: flex;
-            justify-content: space-evenly;
-            align-items: center;
-            padding: 5px;
-            background-color: rgba(0, 0, 0, 0.8);
-            box-shadow: 0 0 5px 2.5px var(--primary-color);
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .logo img {
-            width: 50px;
-            border-radius: 50%;
-        }
-
-        .logo h3 {
-            font-family: 'Poppins', sans-serif;
-            font-size: 25px;
-            margin-left: 5px;
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color), var(--tertiary-color));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .time {
-            margin-left: auto;
-            color: var(--text-color);
-            margin-right: 15px;
-        }
-
-        .nav-items {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            list-style-type: none;
-            flex-grow: 1;
-            margin: 0;
-            padding: 0;
-        }
-
-        .nav-items li {
-            margin-right: 20px;
-        }
-
-        .nav-items li:last-child {
-            margin-right: 0;
-        }
-
-        .nav-items li a {
-            color: var(--text-color);
-            font-family: 'Poppins', sans-serif;
-            text-decoration: none;
-            cursor: pointer;
-            font-size: 18px;
-            transition: all 0.4s ease;
-        }
-
-        .nav-items li a:hover {
-            background: linear-gradient(to right, var(--secondary-color), var(--tertiary-color));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .main-content {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .section {
-            margin-bottom: 40px;
-        }
-
-        .section h2 {
-            font-size: 32px;
-            margin-bottom: 20px;
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
-        }
-
-        .games-grid {
-            display: grid;
-            gap: 15px;
-            justify-content: center;
-        }
-
-        .top-games-grid {
-            grid-template-columns: repeat(3, 1fr);
-            max-width: 800px;
-            margin: 0 auto 20px;
-        }
-
-        .top-games-small {
-            grid-template-columns: repeat(5, 1fr);
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .favorites-grid, .last-played-grid {
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .game-card {
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            text-align: center;
-            text-decoration: none;
-            color: var(--text-color);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .game-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(255, 87, 51, 0.3);
-        }
-
-        .game-card.large {
-            padding: 20px;
-        }
-
-        .game-card.medium {
-            padding: 15px;
-        }
-
-        .game-card.small {
-            padding: 10px;
-        }
-
-        .game-card img {
-            width: 100%;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .game-card.large img {
-            height: 200px;
-            object-fit: cover;
-        }
-
-        .game-card.medium img {
-            height: 150px;
-            object-fit: cover;
-        }
-
-        .game-card.small img {
-            height: 120px;
-            object-fit: cover;
-        }
-
-        .game-card h3 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .game-card.large h3 {
-            font-size: 20px;
-        }
-
-        .game-card.medium h3 {
-            font-size: 18px;
-        }
-
-        .view-all-container {
-            display: flex;
-            justify-content: center;
-            padding: 30px 0;
-            margin-top: 20px;
-        }
-
-        .view-all-btn {
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 12px 30px;
-            font-size: 18px;
-            font-family: 'Poppins', sans-serif;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .view-all-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(255, 87, 51, 0.5);
-        }
-    </style>
+    <script src="/theme.js"></script>
+    <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/games/home.css" />
+    <link rel="stylesheet" href="/login/style.css" />
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const removeAdsInsideGameCard = () => {
@@ -252,22 +26,19 @@
                 ).forEach(el => el.remove());
             };
 
-            // Run once right away
             removeAdsInsideGameCard();
 
-            // Only create observer if body exists
             if (document.body) {
                 const observer = new MutationObserver(removeAdsInsideGameCard);
                 observer.observe(document.body, { childList: true, subtree: true });
             }
         });
     </script>
-
 </head>
 <body>
+<div class="noise"></div>
 
-<!-- Authentication Modal -->
-<div id="authModal" class="modal" >
+<div id="authModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
         <div class="modal-tabs">
@@ -285,7 +56,7 @@
                 <p id="loginStatus"></p>
             </form>
         </div>
-        <div id="registerForm" class="auth-form" style="display: none;">
+        <div id="registerForm" class="auth-form auth-form-hidden">
             <h2>Register</h2>
             <form>
                 <label for="registerEmail">Email</label>
@@ -305,194 +76,179 @@
     "free-web-proxy.org"
 ]; %>
 
-<!-- Navigation Bar -->
-<div class="nav">
-    <div class="logo" onclick="window.open('/', '_self')">
-        <img src="/logo.png" alt="CanLite">
-        <h3>CanLite</h3>
-    </div>
-    <div class="nav-items">
-        <li><a href="/"><span class="material-symbols-outlined">home</span> Home</a></li>
-        <li><a href="/games"><span class="material-symbols-outlined">stadia_controller</span> Games</a></li>
-        <li><a href="/proxe"><span class="material-symbols-outlined">language</span> Proxe</a></li>
-        <li><a href="/extra"><span class="material-symbols-outlined">add</span> Extra</a></li>
-        <li><a href="/partners"><span class="material-symbols-outlined">person</span>Partners</a></li>
-        <li><a href="https://discord.com/invite/46gkEU5kpP"><span class="material-symbols-outlined">forum</span>Discord</a></li>
-        <li><a id="loginModalBtn"><span id="loginSpan" class="material-symbols-outlined">login</span>Login / Register</a></li>
-    </div>
-    <div class="time" id="time-clock"></div>
-</div>
+<div class="site-shell">
+    <header class="site-header">
+        <nav class="site-nav">
+            <a class="brand" href="/">
+                <img src="/logo.png" alt="CanLite">
+                <div class="brand-copy">
+                    <span class="brand-kicker">Featured arcade</span>
+                    <span class="brand-name">CanLite</span>
+                </div>
+            </a>
+            <div class="nav-links">
+                <a class="nav-link" href="/"><span class="material-symbols-outlined">home</span>Home</a>
+                <a class="nav-link active" href="/games"><span class="material-symbols-outlined">stadia_controller</span>Games</a>
+                <a class="nav-link" href="/proxe"><span class="material-symbols-outlined">language</span>Proxy</a>
+                <a class="nav-link" href="/extra"><span class="material-symbols-outlined">add</span>Extra</a>
+                <a class="nav-link" href="/partners"><span class="material-symbols-outlined">group</span>Partners</a>
+                <a class="nav-link" href="https://discord.com/invite/46gkEU5kpP"><span class="material-symbols-outlined">forum</span>Discord</a>
+            </div>
+            <div class="nav-tools">
+                <a id="loginModalBtn" class="utility-chip" href="#"><span id="loginSpan" class="material-symbols-outlined">login</span>Login</a>
+                <div class="utility-chip clock-chip" id="time-clock"></div>
+            </div>
+        </nav>
+    </header>
 
-<div class="view-all-container">
-    <a href="/newgames" class="view-all-btn">View New Games</a>
-</div>
+    <main class="page">
+        <section class="hero">
+            <div class="hero-panel">
+                <span class="eyebrow">Play something good</span>
+                <h1>Shiny, fast, and actually fun to browse.</h1>
+                <p class="hero-lead">Start with the biggest games, jump into new releases, and keep your favorites close without digging through a crowded list.</p>
+                <div class="button-row">
+                    <a href="/newgames" class="button">View new games</a>
+                    <a href="/allgames" class="button-secondary">Browse all titles</a>
+                </div>
+            </div>
+            <div class="hero-panel hero-side">
+                <div class="mini-panel">
+                    <strong>Your favorites stay here</strong>
+                    <p>Saved games load right on this page so you can get back in fast.</p>
+                </div>
+                <div class="mini-panel">
+                    <strong>Big games up front</strong>
+                    <p>The most-played titles are easy to spot first, with larger cards that are actually readable.</p>
+                </div>
+                <div class="mini-panel">
+                    <strong>Easy to scan</strong>
+                    <p>Featured games, favorites, and the full library each have their own space so you can find what you want faster.</p>
+                </div>
+            </div>
+        </section>
 
-<div class="main-content">
-    <!-- Top Games Section -->
-    <div class="section">
-        <h2>🔥 Top Games</h2>
+        <section class="site-section">
+            <div class="section-heading">
+                <div>
+                    <h2>Top Games</h2>
+                    <p>The most-played games show up first so you can jump straight into the hits.</p>
+                </div>
+            </div>
+            <div class="portal-grid portal-grid-featured">
+                <% topGamesFirst.forEach(function(game) { %>
+                    <a href="/play/<%= encodeURIComponent(game.name) %>" class="game-card">
+                        <% if (game.prev) { %>
+                            <img src="<%= game.prev %>" alt="<%= game.name %>" loading="eager" decoding="async">
+                        <% } else { %>
+                            <img src="/d/<%= encodeURIComponent(game.name.replace(/\//g, '')) %>.jpg" alt="<%= game.name %>" loading="eager" decoding="async">
+                        <% } %>
+                        <div class="game-card-body">
+                            <div class="game-card-label"><span class="material-symbols-outlined">local_fire_department</span>Trending now</div>
+                            <h3><%= game.name %></h3>
+                            <p>Instant launch, fullscreen support, and favorites saving.</p>
+                        </div>
+                    </a>
+                <% }); %>
+                <% topGamesRest.forEach(function(game) { %>
+                    <a href="/play/<%= encodeURIComponent(game.name) %>" class="game-card">
+                        <% if (game.prev) { %>
+                            <img src="<%= game.prev %>" alt="<%= game.name %>" loading="lazy" decoding="async">
+                        <% } else { %>
+                            <img src="/d/<%= encodeURIComponent(game.name.replace(/\//g, '')) %>.jpg" alt="<%= game.name %>" loading="lazy" decoding="async">
+                        <% } %>
+                        <div class="game-card-body">
+                            <div class="game-card-label"><span class="material-symbols-outlined">sports_esports</span>Popular pick</div>
+                            <h3><%= game.name %></h3>
+                        </div>
+                    </a>
+                <% }); %>
+            </div>
+        </section>
 
-        <!-- Top 3 Games - Large Cards -->
-        <div class="games-grid top-games-grid">
-            <% topGamesFirst.forEach(function(game) { %>
-                <a href="/play/<%= game.name %>" class="game-card large"  style="display: block; text-decoration: none; color: inherit;">
-                    <% if (game.prev) { %>
-                        <img src="<%= game.prev %>" alt="<%= game.name %>">
-                    <% } else { %>
-                        <img src="/d/<%= encodeURIComponent(game.name.replace(/\//g, '')) %>.jpg" alt="<%= game.name %>">
-                    <% } %>
-                    <h3><%= game.name + " Unblocked"%></h3>
-                </a>
-            <% }); %>
-        </div>
-
-        <!-- Next 5 Games - Small Cards -->
-        <div class="games-grid top-games-small">
-            <% topGamesRest.forEach(function(game) { %>
-                <a href="/play/<%= game.name %>" class="game-card small"  style="display: block; text-decoration: none; color: inherit;">
-                    <% if (game.prev) { %>
-                        <img src="<%= game.prev %>" alt="<%= game.name %>">
-                    <% } else { %>
-                        <img src="/d/<%= encodeURIComponent(game.name.replace(/\//g, '')) %>.jpg" alt="<%= game.name %>">
-                    <% } %>
-                    <h3><%= game.name + " Unblocked"%></h3>
-                </a>
-            <% }); %>
-        </div>
-    </div>
-
-    <!-- Your Favorites Section -->
-    <div class="section">
-        <h2>⭐ Your Favorites</h2>
-        <div id="favorites-container">
-            <div class="games-grid top-games-small" id="favorites-grid">
+        <section class="site-section">
+            <div class="section-heading">
+                <div>
+                    <h2>Your Favorites</h2>
+                    <p>Your saved games show up here right away so your go-to picks are always close.</p>
+                </div>
+            </div>
+            <div class="portal-grid" id="favorites-grid">
                 <script>
                     function renderFavorites() {
-                        const favorites = JSON.parse(localStorage.getItem('canlitefavorites') || []);
+                        const favorites = JSON.parse(localStorage.getItem('canlitefavorites') || '[]');
                         const favoritesGrid = document.getElementById('favorites-grid');
-                        const noFavoritesMsg = document.getElementById('no-favorites-msg');
 
-                        // Clear existing content
                         favoritesGrid.innerHTML = '';
 
-                        // Show message if no favorites
                         if (favorites.length === 0) {
-                            if (!noFavoritesMsg) {
-                                favoritesGrid.innerHTML = '';
-                            } else {
-                                noFavoritesMsg.style.display = 'block';
-                            }
+                            favoritesGrid.innerHTML = '<div class="centered-empty grid-span-full">No favorites yet. Tap the heart on any play page to build your own rail.</div>';
                             return;
                         }
 
-                        // Hide "no favorites" message
-                        if (noFavoritesMsg) noFavoritesMsg.style.display = 'none';
-
-                        // Create favorite items
                         favorites.forEach(gameSlug => {
                             const gameCard = document.createElement('a');
-                            gameCard.className = 'game-card small';
-                            gameCard.href = `/play/${gameSlug}`;
-                            gameCard.style.display = 'block';
-                            gameCard.style.textDecoration = 'none';
-                            gameCard.style.color = 'inherit';
-
+                            gameCard.className = 'game-card';
+                            gameCard.href = `/play/${encodeURIComponent(gameSlug)}`;
                             gameCard.innerHTML = `
-            <img src="/api/img/${gameSlug}" alt="${gameSlug}">
-            <h3>${gameSlug} Unblocked</h3>
-        `;
+                                <img src="/api/img/${gameSlug}" alt="${gameSlug}">
+                                <div class="game-card-body">
+                                    <div class="game-card-label"><span class="material-symbols-outlined">favorite</span>Saved</div>
+                                    <h3>${gameSlug}</h3>
+                                </div>
+                            `;
 
                             favoritesGrid.appendChild(gameCard);
                         });
                     }
-                    renderFavorites()
+
+                    renderFavorites();
                 </script>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
 </div>
 
-<div class="view-all-container">
-    <a href="/allgames" class="view-all-btn">View All Games</a>
-</div>
-
-<!-- Background Particles -->
 <div id="particles-js"></div>
 
 <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 <script>
-    // Initialize particles
     particlesJS('particles-js', {
         particles: {
             number: { value: 80, density: { enable: true, value_area: 800 } },
-            color: { value: '#FF5733' },
+            color: { value: '#18b7ff' },
             shape: { type: 'circle' },
-            opacity: { value: 0.5, random: false },
+            opacity: { value: 0.38, random: false },
             size: { value: 3, random: true },
-            line_linked: { enable: true, distance: 150, color: '#c491f4', opacity: 0.4, width: 1 },
-            move: { enable: true, speed: 6, direction: 'none', random: false, straight: false, out_mode: 'out', bounce: false }
+            line_linked: { enable: true, distance: 150, color: '#7ee3ff', opacity: 0.24, width: 1 },
+            move: { enable: true, speed: 3.5, direction: 'none', random: false, straight: false, out_mode: 'out', bounce: false }
         },
         interactivity: {
             detect_on: 'canvas',
             events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' }, resize: true },
-            modes: { grab: { distance: 400, line_linked: { opacity: 1 } }, bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 }, repulse: { distance: 200, duration: 0.4 }, push: { particles_nb: 4 }, remove: { particles_nb: 2 } }
+            modes: { repulse: { distance: 140, duration: 0.3 }, push: { particles_nb: 4 } }
         },
         retina_detect: true
     });
 </script>
 
-<footer style="
-  background-color: rgba(0, 0, 0, 0.8);
-  padding: 20px 10px;
-  text-align: center;
-  color: #FFFFFF;
-  box-shadow: 0 -2px 5px rgba(255, 87, 51, 0.8);
-  position: relative; /* Ensures it stays at the bottom of the screen */
-  bottom: 0;
-  left: 0;
-  width: 100%; /* Prevent horizontal overflow */
-  z-index: 10;
-  box-sizing: border-box; /* Includes padding in width calculation */
-  overflow: hidden; /* Hides any overflow from box-shadow or content */
-  margin: 0; /* Avoid unintended margin causing overflow */
-">
-    <div style="
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 15px;
-  ">
-        <a href="/privacy" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">Privacy Policy</a>
-        <a href="mailto:canlite24@outlook.com" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">Email Us</a>
-        <a href="https://discord.com/invite/46gkEU5kpP" target="_blank" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">Join our Discord</a>
-        <a href="/about" style="
-      color: #c491f4;
-      text-decoration: none;
-      transition: color 0.4s;
-    ">About Us</a>
-    </div>
-    <div style="font-size: 14px; color: #FFFFFF;">
-        &copy; <span id="year"></span> CanLite. All rights reserved.
+<footer class="site-footer">
+    <div class="footer-main">
+        <div class="footer-links">
+            <a href="/privacy">Privacy Policy</a>
+            <a href="mailto:canlite24@outlook.com">Email Us</a>
+            <a href="https://discord.com/invite/46gkEU5kpP" target="_blank">Join our Discord</a>
+            <a href="/about">About Us</a>
+        </div>
+        <div class="footer-copy">&copy; <span id="year"></span> CanLite. All rights reserved.</div>
     </div>
 </footer>
+
 <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 </script>
-<script src="/login/index.js"></script></body>
-<script src="games/time.js"></script>
+<script src="/login/index.js"></script>
+<script src="/games/time.js"></script>
 <% if (!blockedHosts.includes(hostname)) { %>
     <script async type='text/javascript' src='/api/ad' defer></script>
 <% } %>

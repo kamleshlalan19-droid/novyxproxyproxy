@@ -1,7 +1,7 @@
 const ChevronDown = function () {
     return (
         <svg
-            class={this.class}
+            class={this.class || ""}
             class:hidden={this["class:hidden"]}
             xmlns="http://www.w3.org/2000/svg"
             width="24"

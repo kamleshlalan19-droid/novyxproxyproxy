@@ -1,7 +1,7 @@
 const Bing = function () {
     return (
         <svg
-            class={this.class}
+            class={this.class || ""}
             height="24"
             width="24"
             xmlns="http://www.w3.org/2000/svg"

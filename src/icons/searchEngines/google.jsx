@@ -1,7 +1,7 @@
 const Google = function () {
     return (
         <svg
-            class={this.class}
+            class={this.class || ""}
             xmlns="http://www.w3.org/2000/svg"
             height="24"
             viewBox="0 0 24 24"

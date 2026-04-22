@@ -1,0 +1,33 @@
+.search-shell {
+    gap: 14px;
+}
+
+.search-shell .search-container {
+    min-width: min(100%, 320px);
+}
+
+.toolbar-shell {
+    justify-content: space-between;
+}
+
+.toolbar-shell .hint {
+    flex: 1 1 320px;
+    margin: 0;
+}
+
+.portal-grid {
+    gap: 18px;
+}
+
+@media (max-width: 640px) {
+    .pagination-container {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .toolbar-shell .button-ghost,
+    .toolbar-shell .button-secondary {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 0;
+    }
+}

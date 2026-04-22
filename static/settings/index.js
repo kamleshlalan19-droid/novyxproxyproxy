@@ -1,6 +1,17 @@
 // Settings Management
 class SettingsManager {
     constructor() {
+        this.themes = [
+            { id: 'mocha', title: 'Mocha' },
+            { id: 'macchiato', title: 'Macchiato' },
+            { id: 'frappe', title: 'Frappe' },
+            { id: 'latte', title: 'Latte' },
+            { id: 'nord', title: 'Nord' },
+            { id: 'rose-pine', title: 'Rose Pine' },
+            { id: 'moss', title: 'Moss' },
+            { id: 'gruvbox', title: 'Gruvbox' },
+            { id: 'night', title: 'Night' }
+        ];
         this.init();
     }
 
@@ -15,6 +26,9 @@ class SettingsManager {
         this.initSettingsModal();
         // Initialize about:blank cloak - only on initial page load, not on navigation
         // Check sessionStorage FIRST to avoid any interference
+        if (localStorage.getItem("aboutBlank") !== "true") {
+            sessionStorage.removeItem("aboutBlankActivated");
+        }
         const alreadyActivated = sessionStorage.getItem("aboutBlankActivated");
         const aboutBlankEnabled = localStorage.getItem("aboutBlank") === "true";
         console.log('[SettingsManager] Initializing, aboutBlankActivated:', alreadyActivated, 'aboutBlankEnabled:', aboutBlankEnabled);
@@ -66,6 +80,7 @@ class SettingsManager {
     // Load settings from localStorage
     loadSettings() {
         this.settings = {
+            theme: localStorage.getItem('@nano/theme') || 'mocha',
             customTitle: localStorage.getItem('settings_customTitle') || '',
             customFavicon: localStorage.getItem('settings_customFavicon') || '',
             panicKey: localStorage.getItem('settings_panicKey') || '`',
@@ -75,6 +90,7 @@ class SettingsManager {
 
     // Save settings to localStorage
     saveSettings() {
+        localStorage.setItem('@nano/theme', this.settings.theme);
         localStorage.setItem('settings_customTitle', this.settings.customTitle);
         localStorage.setItem('settings_customFavicon', this.settings.customFavicon);
         localStorage.setItem('settings_panicKey', this.settings.panicKey);
@@ -83,6 +99,11 @@ class SettingsManager {
 
     // Apply settings to the page
     applySettings() {
+        document.documentElement.dataset.theme = this.settings.theme;
+        if (document.body) {
+            document.body.dataset.theme = this.settings.theme;
+        }
+
         // Apply custom title
         if (this.settings.customTitle) {
             document.title = this.settings.customTitle;
@@ -192,6 +213,13 @@ class SettingsManager {
                 <h2>Settings</h2>
                 <form id="settingsForm">
                     <div class="settings-group">
+                        <label for="siteTheme">Theme</label>
+                        <select id="siteTheme" class="styled-select">
+                            ${this.themes.map((theme) => `<option value="${theme.id}">${theme.title}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div class="settings-group">
                         <label for="customTitle">Page Title</label>
                         <input type="text" id="customTitle" placeholder="Leave empty for default">
                     </div>
@@ -258,6 +286,7 @@ class SettingsManager {
 
     // Populate settings form with current values
     populateSettingsForm() {
+        document.getElementById('siteTheme').value = this.settings.theme;
         document.getElementById('customTitle').value = this.settings.customTitle;
         document.getElementById('customFavicon').value = this.settings.customFavicon;
         document.getElementById('panicKey').value = this.settings.panicKey;
@@ -270,6 +299,7 @@ class SettingsManager {
 
     // Save settings from form
     saveSettingsFromForm() {
+        this.settings.theme = document.getElementById('siteTheme').value || 'mocha';
         this.settings.customTitle = document.getElementById('customTitle').value.trim();
         this.settings.customFavicon = document.getElementById('customFavicon').value.trim();
         this.settings.panicKey = document.getElementById('panicKey').value || '`';
@@ -287,12 +317,15 @@ class SettingsManager {
     // Reset settings to defaults
     resetSettings() {
         this.settings = {
+            theme: 'mocha',
             customTitle: '',
             customFavicon: '',
             panicKey: '`',
             panicUrl: 'https://drive.google.com',
             openInAboutBlank: false
         };
+        localStorage.setItem('aboutBlank', 'false');
+        sessionStorage.removeItem('aboutBlankActivated');
         this.saveSettings();
         this.applySettings();
     }
