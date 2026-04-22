@@ -469,7 +469,7 @@ server.on("upgrade", async (req, socket, head) => {
     }
 
     try {
-      const override = req.session?.siteOverride;
+      const override = req.session?.siteOveride || req.session?.siteOverride;
       if (override) {
         proxy.ws(req, socket, head, { target: override, changeOrigin: true });
       } else if (bareServer.shouldRoute(req)) {

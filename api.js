@@ -58,6 +58,33 @@ const extendAdfreeForDays = async (client, userId, days) => {
     );
 };
 
+const ADFREE_PLANS = {
+    week: {
+        price: 7,
+        days: 7,
+    },
+    month: {
+        price: 25,
+        days: 30,
+    },
+    lifetime: {
+        price: 100,
+        days: 36500,
+    },
+};
+
+const getCpxExpectedHash = (transId) => {
+    const cpxSecureHash = process.env.CPX_SECURE_HASH;
+    if (!cpxSecureHash || !transId) {
+        return null;
+    }
+
+    return crypto
+        .createHash("md5")
+        .update(`${transId}-${cpxSecureHash}`)
+        .digest("hex");
+};
+
 router.get('/ip', async (req, res) => {
     return res.send(requestIp.getClientIp(req));
 })
@@ -247,14 +274,48 @@ router.get('/ad', async (req, res) => {
 });
 
 router.get('/postback', async (req, res) => {
+    let replayKey = null;
+
     try {
         const {
             status,
+            trans_id,
             user_id,
-            amount_local
+            amount_local,
+            hash
         } = req.query;
+
+        const transactionId = String(trans_id || "");
+        const providedHash = String(hash || "").toLowerCase();
+        const expectedHash = getCpxExpectedHash(transactionId);
+
+        if (!expectedHash || !providedHash) {
+            return res.status(403).send("forbidden");
+        }
+
+        const providedHashBuffer = Buffer.from(providedHash, "utf8");
+        const expectedHashBuffer = Buffer.from(expectedHash, "utf8");
+
+        if (
+            providedHashBuffer.length !== expectedHashBuffer.length ||
+            !crypto.timingSafeEqual(providedHashBuffer, expectedHashBuffer)
+        ) {
+            return res.status(403).send("forbidden");
+        }
+
+        replayKey = `myapp:cpx:postback:${transactionId}`;
+        const replayResult = await redisClient.set(replayKey, "1", { NX: true, EX: 60 * 60 * 24 * 90 });
+
+        if (!replayResult) {
+            return res.send("OK");
+        }
+
+        if (!["1", "2"].includes(String(status))) {
+            return res.send("invalid");
+        }
+
         const credits = roundCredits(parseFloat(amount_local));
-        if (!credits || !user_id) {
+        if (!credits || !user_id || !transactionId) {
             return res.send("invalid");
         }
 
@@ -283,6 +344,9 @@ router.get('/postback', async (req, res) => {
         }
         res.send("OK");
     } catch (err) {
+        if (replayKey) {
+            await redisClient.del(replayKey).catch(() => {});
+        }
         console.error(err);
         res.status(500).send("error");
     }
@@ -334,23 +398,20 @@ router.post('/switch', async (req, res) => {
         return res.status(400).send("Invalid site");
     }
     req.session.siteOveride = site;
-    res.redirect('/')
+    req.session.siteOverride = site;
+    res.redirect(site)
 })
 
 router.post('/store/adfree', async (req, res) => {
-    const requestedDays = Number(req.body.days);
-    const requestedPrice = Number(req.body.price ?? req.body.days);
+    const requestedPlan = String(req.body.plan || "");
+    const plan = ADFREE_PLANS[requestedPlan];
 
     if (!req.session.token) {
         return res.status(401).json({ error: "Not logged in" });
     }
 
-    if (!Number.isInteger(requestedDays) || requestedDays <= 0) {
-        return res.status(400).json({ error: "Invalid amount" });
-    }
-
-    if (!Number.isInteger(requestedPrice) || requestedPrice <= 0) {
-        return res.status(400).json({ error: "Invalid price" });
+    if (!plan) {
+        return res.status(400).json({ error: "Invalid plan" });
     }
 
     const client = await pool.connect();
@@ -371,23 +432,24 @@ router.post('/store/adfree', async (req, res) => {
         const user = userResult.rows[0];
         const balance = getCreditBalance(user.data);
 
-        if (balance < requestedPrice) {
+        if (balance < plan.price) {
             await client.query("ROLLBACK");
             return res.status(400).json({ error: "Not enough credits" });
         }
 
         await client.query(
             "UPDATE users SET data = $1 WHERE id = $2",
-            [setCreditBalance(user.data, balance - requestedPrice), user.id]
+            [setCreditBalance(user.data, balance - plan.price), user.id]
         );
 
-        await extendAdfreeForDays(client, user.id, requestedDays);
+        await extendAdfreeForDays(client, user.id, plan.days);
 
         await client.query("COMMIT");
 
         return res.json({
             success: true,
-            credits: roundCredits(balance - requestedPrice)
+            credits: roundCredits(balance - plan.price),
+            plan: requestedPlan
         });
     } catch (err) {
         await client.query("ROLLBACK");

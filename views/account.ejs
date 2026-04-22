@@ -127,6 +127,18 @@
             min-height: 24px;
             color: #9ff0ca;
         }
+
+        .styled-select {
+            color: var(--text);
+            background: color-mix(in srgb, var(--surface-strong) 92%, black 8%);
+            border-color: var(--border);
+            appearance: none;
+        }
+
+        .styled-select option {
+            color: var(--text);
+            background: var(--surface-strong);
+        }
     </style>
 </head>
 
@@ -217,7 +229,7 @@
                                 <div class="store-price">7 credits</div>
                                 <span>1 credit per day</span>
                             </div>
-                            <button class="button store-button" data-days="7" type="button">Buy 7 Days</button>
+                            <button class="button store-button" data-plan="week" data-label="7 days" type="button">Buy 7 Days</button>
                         </article>
                         <article class="store-card">
                             <h3>Ad-Free for 30 Days</h3>
@@ -226,7 +238,7 @@
                                 <div class="store-price">25 credits</div>
                                 <span>30 days of access</span>
                             </div>
-                            <button class="button store-button" data-days="30" data-price="25" type="button">Buy 1 Month</button>
+                            <button class="button store-button" data-plan="month" data-label="1 month" type="button">Buy 1 Month</button>
                         </article>
                         <article class="store-card">
                             <h3>Ad-Free Lifetime</h3>
@@ -235,7 +247,7 @@
                                 <div class="store-price">100 credits</div>
                                 <span>One-time unlock</span>
                             </div>
-                            <button class="button store-button" data-days="36500" data-price="100" type="button">Buy Lifetime</button>
+                            <button class="button store-button" data-plan="lifetime" data-label="lifetime" type="button">Buy Lifetime</button>
                         </article>
                     </div>
 
@@ -313,10 +325,10 @@
     const feedback = document.getElementById('store-feedback');
     const balanceEl = document.getElementById('credit-balance');
 
-    for (const button of document.querySelectorAll('[data-days]')) {
+    for (const button of document.querySelectorAll('[data-plan]')) {
         button.addEventListener('click', async () => {
-            const days = Number(button.dataset.days);
-            const price = Number(button.dataset.price || days);
+            const plan = button.dataset.plan;
+            const label = button.dataset.label || 'ad-free access';
             button.disabled = true;
             feedback.textContent = 'Processing purchase...';
 
@@ -326,7 +338,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ days, price })
+                    body: JSON.stringify({ plan })
                 });
 
                 const data = await response.json();
@@ -336,9 +348,7 @@
                 }
 
                 balanceEl.textContent = `${data.credits} credits`;
-                feedback.textContent = days >= 36500
-                    ? 'Purchased lifetime ad-free access. Reloading...'
-                    : `Purchased ${days} days of ad-free access. Reloading...`;
+                feedback.textContent = `Purchased ${label} of ad-free access. Reloading...`;
                 window.setTimeout(() => window.location.reload(), 700);
             } catch (error) {
                 feedback.textContent = error.message || 'Purchase failed';
