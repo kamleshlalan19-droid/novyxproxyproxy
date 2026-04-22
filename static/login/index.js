@@ -66,12 +66,12 @@ function openPopunder() {
 }
 
 // Trigger only on user interaction
-document.addEventListener("click", function handler() {
-    if (shouldOpenPopunder()) {
-        openPopunder();
-    }
-    document.removeEventListener("click", handler); // trigger only once per page load
-});
+// document.addEventListener("click", function handler() {
+//     if (shouldOpenPopunder()) {
+//         openPopunder();
+//     }
+//     document.removeEventListener("click", handler); // trigger only once per page load
+// });
 
 const modal = document.getElementById("authModal");
 const btn = document.getElementById("loginModalBtn");
