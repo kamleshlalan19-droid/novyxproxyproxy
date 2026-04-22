@@ -15,6 +15,119 @@
     <script src="/theme.js"></script>
     <link rel="stylesheet" href="/site.css">
     <link rel="stylesheet" href="/settings/style.css">
+    <style>
+        .store-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .store-summary {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .store-stat,
+        .store-card,
+        .perk-card {
+            background: rgba(14, 18, 31, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 22px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+        }
+
+        .store-stat strong,
+        .store-card strong,
+        .perk-card strong {
+            display: block;
+            font-size: 1.7rem;
+            margin-top: 10px;
+        }
+
+        .store-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(127, 227, 190, 0.12);
+            color: #9ff0ca;
+            font-size: 0.86rem;
+            font-weight: 600;
+        }
+
+        .store-actions,
+        .perk-grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        }
+
+        .store-card h3,
+        .perk-card h3 {
+            margin-bottom: 8px;
+        }
+
+        .store-card p,
+        .perk-card p,
+        .store-stat p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 18px 0 14px;
+        }
+
+        .price-row span {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.62);
+        }
+
+        .store-price {
+            font-size: 1.55rem;
+            font-weight: 700;
+        }
+
+        .store-note {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.76);
+        }
+
+        .store-note a {
+            color: #9ff0ca;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .store-button[disabled] {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .coming-soon {
+            color: #ffcf88;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        #store-feedback {
+            min-height: 24px;
+            color: #9ff0ca;
+        }
+    </style>
 </head>
 
 <body>
@@ -48,38 +161,135 @@
             <div class="section-heading">
                 <div>
                     <h1>Your Account</h1>
-                    <p>Manage the local site override for this device and trigger the offerwall flow for temporary ad-free access.</p>
+                    <p>Manage this device, collect credits from the offerwall, and spend them in the store.</p>
                 </div>
             </div>
-            <div class="detail-grid">
+
+            <div class="store-grid">
+                <div class="store-summary">
+                    <article class="store-stat">
+                        <span class="store-kicker"><span class="material-symbols-outlined">savings</span>Balance</span>
+                        <strong id="credit-balance"><%= credits %> credits</strong>
+                        <p>Offerwall rewards now land here as store credits.</p>
+                    </article>
+                    <article class="store-stat">
+                        <span class="store-kicker"><span class="material-symbols-outlined">visibility_off</span>Ad-Free</span>
+                        <strong>
+                            <% if (adfree.active) { %>
+                                Active
+                            <% } else { %>
+                                Inactive
+                            <% } %>
+                        </strong>
+                        <p>
+                            <% if (adfree.active) { %>
+                                Ends <%= adfree.expiresAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) %> with about <%= adfree.daysRemaining %> days left.
+                            <% } else { %>
+                                Buy ad-free access at the same rate as before: 1 credit per day.
+                            <% } %>
+                        </p>
+                    </article>
+                    <article class="store-stat">
+                        <span class="store-kicker"><span class="material-symbols-outlined">mail</span>Account</span>
+                        <strong><%= email %></strong>
+                        <p>Your credits and purchases are tied to this account.</p>
+                    </article>
+                </div>
+
                 <article class="info-card">
-                    <h3>Switch Site</h3>
-                    <p>What site would you like this link to be on this device? To switch back to CanLite, go to <code>/reset</code>. If you are a site owner and want your site added, DM CanLite on Discord or send an email.</p>
-                    <form action="/api/switch" method="POST" class="stack" style="margin-top:18px;">
-                        <label for="site-select">Choose a site</label>
-                        <select id="site-select" name="site" class="styled-select">
-                            <option value="https://trigonometry.texasmath.net">US5</option>
-                            <option value="https://gr4ys0n.github.io">Gaming Escape</option>
-                            <option value="https://securedweb.xyz">Secured Web</option>
-                            <option value="https://flamepass.com">Flamepass</option>
-                            <option value="https://watch.bludclart.com">Bludclart</option>
-                            <option value="https://wqgqvswarit.swarit.104.36.84.31.nip.io/">Pizza Edition</option>
-                        </select>
-                        <div class="button-row">
-                            <button type="submit" class="button">Switch</button>
+                    <div class="section-heading" style="margin-bottom: 18px;">
+                        <div>
+                            <h2>Store</h2>
+                            <p>Spend your balance on account perks. Private link products are listed now and locked until launch.</p>
                         </div>
-                    </form>
-                    <form action="/api/logout" method="POST" style="margin-top:18px;">
-                        <button type="submit" class="button-ghost">Logout</button>
-                    </form>
-                </article>
-                <article class="info-card">
-                    <h3>Disable Ads</h3>
-                    <p>Complete a survey to disable ads for a week. It may take a few hours after completion before the account updates.</p>
-                    <div class="button-row" style="margin-top:18px;">
-                        <button class="button-secondary" onclick="window.location.href='/offerwall'" type="button">Disable Ads</button>
+                    </div>
+
+                    <div class="store-note">
+                        <span>Need more credits? Finish surveys on the offerwall and come back here to spend them.</span>
+                        <a href="/offerwall">Open Offerwall</a>
+                    </div>
+
+                    <div class="store-actions" style="margin-top: 18px;">
+                        <article class="store-card">
+                            <h3>Ad-Free for 7 Days</h3>
+                            <p>Removes ads for one week on the current account.</p>
+                            <div class="price-row">
+                                <div class="store-price">7 credits</div>
+                                <span>1 credit per day</span>
+                            </div>
+                            <button class="button store-button" data-days="7" type="button">Buy 7 Days</button>
+                        </article>
+                        <article class="store-card">
+                            <h3>Ad-Free for 30 Days</h3>
+                            <p>Best monthly option if you use the site regularly.</p>
+                            <div class="price-row">
+                                <div class="store-price">30 credits</div>
+                                <span>Same rate as current</span>
+                            </div>
+                            <button class="button store-button" data-days="30" type="button">Buy 30 Days</button>
+                        </article>
+                        <article class="store-card">
+                            <h3>Ad-Free for 90 Days</h3>
+                            <p>Longer access with the same straight credit-to-day conversion.</p>
+                            <div class="price-row">
+                                <div class="store-price">90 credits</div>
+                                <span>No bundle markup</span>
+                            </div>
+                            <button class="button store-button" data-days="90" type="button">Buy 90 Days</button>
+                        </article>
+                    </div>
+
+                    <p id="store-feedback" style="margin-top: 16px;"></p>
+
+                    <div class="perk-grid" style="margin-top: 10px;">
+                        <article class="perk-card">
+                            <h3>Private Links</h3>
+                            <p>Reserved for fully private link access once the feature launches.</p>
+                            <div class="price-row">
+                                <div class="store-price">10 credits / month</div>
+                                <span class="coming-soon">Coming soon</span>
+                            </div>
+                            <button class="button-ghost store-button" type="button" disabled>Private Links Locked</button>
+                        </article>
+                        <article class="perk-card">
+                            <h3>Semi-Private Links</h3>
+                            <p>Lower-cost tier for semi-private link access when it goes live.</p>
+                            <div class="price-row">
+                                <div class="store-price">5 credits / month</div>
+                                <span class="coming-soon">Coming soon</span>
+                            </div>
+                            <button class="button-ghost store-button" type="button" disabled>Semi-Private Locked</button>
+                        </article>
                     </div>
                 </article>
+
+                <div class="detail-grid">
+                    <article class="info-card">
+                        <h3>Switch Site</h3>
+                        <p>What site would you like this link to be on this device? To switch back to CanLite, go to <code>/reset</code>. If you are a site owner and want your site added, DM CanLite on Discord or send an email.</p>
+                        <form action="/api/switch" method="POST" class="stack" style="margin-top:18px;">
+                            <label for="site-select">Choose a site</label>
+                            <select id="site-select" name="site" class="styled-select">
+                                <option value="https://trigonometry.texasmath.net">US5</option>
+                                <option value="https://gr4ys0n.github.io">Gaming Escape</option>
+                                <option value="https://securedweb.xyz">Secured Web</option>
+                                <option value="https://flamepass.com">Flamepass</option>
+                                <option value="https://watch.bludclart.com">Bludclart</option>
+                                <option value="https://wqgqvswarit.swarit.104.36.84.31.nip.io/">Pizza Edition</option>
+                            </select>
+                            <div class="button-row">
+                                <button type="submit" class="button">Switch</button>
+                            </div>
+                        </form>
+                    </article>
+                    <article class="info-card">
+                        <h3>Session</h3>
+                        <p>Use the offerwall to earn credits, then spend them in the store above. Logging out does not remove your balance.</p>
+                        <div class="button-row" style="margin-top:18px;">
+                            <button id="logout-button" type="button" class="button-ghost">Logout</button>
+                        </div>
+                    </article>
+                </div>
             </div>
         </section>
     </main>
@@ -99,6 +309,46 @@
 
 <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    const feedback = document.getElementById('store-feedback');
+    const balanceEl = document.getElementById('credit-balance');
+
+    for (const button of document.querySelectorAll('[data-days]')) {
+        button.addEventListener('click', async () => {
+            const days = Number(button.dataset.days);
+            button.disabled = true;
+            feedback.textContent = 'Processing purchase...';
+
+            try {
+                const response = await fetch('/api/store/adfree', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ days })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Purchase failed');
+                }
+
+                balanceEl.textContent = `${data.credits} credits`;
+                feedback.textContent = `Purchased ${days} days of ad-free access. Reloading...`;
+                window.setTimeout(() => window.location.reload(), 700);
+            } catch (error) {
+                feedback.textContent = error.message || 'Purchase failed';
+            } finally {
+                button.disabled = false;
+            }
+        });
+    }
+
+    document.getElementById('logout-button').addEventListener('click', async () => {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/';
+    });
 </script>
 <script src="/games/time.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

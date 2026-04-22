@@ -20,6 +20,7 @@ import { setupCanScreen } from "./CanScreen.js"
 import pool from "./db.js";
 import cors from "cors";
 import axios from "axios";
+import { getCreditBalance, roundCredits } from "./store.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,6 +28,40 @@ const app = express();
 const routeCache = new Map();;
 const bareServer = createBareServer("/b/");
 const proxy = httpProxy.createProxyServer({ ws: true, changeOrigin: true });
+
+const getAdfreeSummary = async (userId) => {
+  const adfreeResult = await pool.query(
+      "SELECT expiration FROM adfree WHERE id = $1",
+      [userId]
+  );
+
+  if (adfreeResult.rowCount === 0) {
+    return {
+      active: false,
+      expiresAt: null,
+      daysRemaining: 0
+    };
+  }
+
+  const expiration = new Date(adfreeResult.rows[0].expiration);
+
+  if (expiration <= new Date()) {
+    await pool.query("DELETE FROM adfree WHERE id = $1", [userId]);
+    return {
+      active: false,
+      expiresAt: null,
+      daysRemaining: 0
+    };
+  }
+
+  const msRemaining = expiration.getTime() - Date.now();
+
+  return {
+    active: true,
+    expiresAt: expiration,
+    daysRemaining: roundCredits(msRemaining / 86400000)
+  };
+};
 
 let games = [];
 const gamesFilePath = path.join(__dirname, "end.json");
@@ -207,11 +242,18 @@ app.get("/validate-domain", async (req, res) => {
 
 app.get("/account", async (req, res) => {
   if (req.session.token) {
-    const tokenResult = await pool.query('SELECT token, admin FROM users WHERE token = $1', [req.session.token]);
+    const tokenResult = await pool.query('SELECT id, token, admin, data, email FROM users WHERE token = $1', [req.session.token]);
     if (tokenResult.rowCount === 0) {
       return res.status(400).json(false); // Account does not exist
     } else {
-      res.render("account");
+      const user = tokenResult.rows[0];
+      const adfree = await getAdfreeSummary(user.id);
+
+      res.render("account", {
+        credits: getCreditBalance(user.data),
+        email: user.email,
+        adfree,
+      });
     }
   } else {
     return res.status(400).json(false);
@@ -224,10 +266,13 @@ app.get("/offerwall", async (req, res) => {
     if (tokenResult.rowCount === 0) {
       return res.status(400).json(false); // Account does not exist
     } else {
-      const result = await pool.query('SELECT id, email FROM users WHERE token = $1', [req.session.token]);
+      const result = await pool.query('SELECT id, email, data FROM users WHERE token = $1', [req.session.token]);
+      const adfree = await getAdfreeSummary(result.rows[0].id);
       res.render("offerwall", {
         id: result.rows[0].id,
         email: result.rows[0].email,
+        credits: getCreditBalance(result.rows[0].data),
+        adfree,
       });
     }
   } else {

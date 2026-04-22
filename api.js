@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { RedisStore } from "connect-redis";
 import { createClient } from "redis";
 import requestIp from'request-ip';
+import { getCreditBalance, roundCredits, setCreditBalance } from "./store.js";
 
 const router = express.Router();
 
@@ -35,6 +36,26 @@ try {
 // Utility function to generate random strings
 const generateRandomString = (length) => {
     return crypto.randomBytes(length).toString('hex').slice(0, length);
+};
+
+const extendAdfreeForDays = async (client, userId, days) => {
+    const existing = await client.query(
+        "SELECT expiration FROM adfree WHERE id = $1",
+        [userId]
+    );
+
+    if (existing.rowCount > 0) {
+        await client.query(
+            "UPDATE adfree SET expiration = GREATEST(expiration, NOW()) + ($1 * INTERVAL '1 day') WHERE id = $2",
+            [days, userId]
+        );
+        return;
+    }
+
+    await client.query(
+        "INSERT INTO adfree (id, expiration) VALUES ($1, NOW() + ($2 * INTERVAL '1 day'))",
+        [userId, days]
+    );
 };
 
 router.get('/ip', async (req, res) => {
@@ -232,48 +253,33 @@ router.get('/postback', async (req, res) => {
             user_id,
             amount_local
         } = req.query;
-        const days = parseFloat(amount_local);
-        if (!days || !user_id) {
+        const credits = roundCredits(parseFloat(amount_local));
+        if (!credits || !user_id) {
             return res.send("invalid");
         }
-        // check if user already has adfree
-        const existing = await pool.query(
-            "SELECT expiration FROM adfree WHERE id = $1",
+
+        const userResult = await pool.query(
+            "SELECT data FROM users WHERE id = $1",
             [user_id]
         );
+
+        if (userResult.rowCount === 0) {
+            return res.send("invalid");
+        }
+
+        const currentBalance = getCreditBalance(userResult.rows[0].data);
+
         if (status === "1") {
-            if (existing.rowCount > 0) {
-                // extend expiration
-                await pool.query(
-                    "UPDATE adfree SET expiration = expiration + ($1 * INTERVAL '1 day') WHERE id = $2",
-                    [days, user_id]
-                );
-            } else {
-                // create new expiration from now
-                await pool.query(
-                    "INSERT INTO adfree (id, expiration) VALUES ($1, NOW() + ($2 * INTERVAL '1 day'))",
-                    [user_id, days]
-                );
-            }
+            await pool.query(
+                "UPDATE users SET data = $1 WHERE id = $2",
+                [setCreditBalance(userResult.rows[0].data, currentBalance + credits), user_id]
+            );
         }
         if (status === "2") {
-            if (existing.rowCount === 0) {
-                return res.send("ok");
-            }
-            const expiration = new Date(existing.rows[0].expiration);
-            const newExpiration = new Date(expiration.getTime() - days * 86400000);
-            if (newExpiration <= new Date()) {
-                await pool.query(
-                    "DELETE FROM adfree WHERE id = $1",
-                    [user_id]
-                );
-            } else {
-                await pool.query(
-                    "UPDATE adfree SET expiration = expiration - ($1 * INTERVAL '1 day') WHERE id = $2",
-                    [days, user_id]
-                );
-
-            }
+            await pool.query(
+                "UPDATE users SET data = $1 WHERE id = $2",
+                [setCreditBalance(userResult.rows[0].data, currentBalance - credits), user_id]
+            );
         }
         res.send("OK");
     } catch (err) {
@@ -330,6 +336,62 @@ router.post('/switch', async (req, res) => {
     req.session.siteOveride = site;
     res.redirect('/')
 })
+
+router.post('/store/adfree', async (req, res) => {
+    const requestedDays = Number(req.body.days);
+
+    if (!req.session.token) {
+        return res.status(401).json({ error: "Not logged in" });
+    }
+
+    if (!Number.isInteger(requestedDays) || requestedDays <= 0) {
+        return res.status(400).json({ error: "Invalid amount" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const userResult = await client.query(
+            "SELECT id, data FROM users WHERE token = $1 FOR UPDATE",
+            [req.session.token]
+        );
+
+        if (userResult.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ error: "Account not found" });
+        }
+
+        const user = userResult.rows[0];
+        const balance = getCreditBalance(user.data);
+
+        if (balance < requestedDays) {
+            await client.query("ROLLBACK");
+            return res.status(400).json({ error: "Not enough credits" });
+        }
+
+        await client.query(
+            "UPDATE users SET data = $1 WHERE id = $2",
+            [setCreditBalance(user.data, balance - requestedDays), user.id]
+        );
+
+        await extendAdfreeForDays(client, user.id, requestedDays);
+
+        await client.query("COMMIT");
+
+        return res.json({
+            success: true,
+            credits: roundCredits(balance - requestedDays)
+        });
+    } catch (err) {
+        await client.query("ROLLBACK");
+        console.error(err);
+        return res.status(500).json({ error: "Store purchase failed" });
+    } finally {
+        client.release();
+    }
+});
 
 // Save Game Data
 router.post('/saveGameData', async (req, res) => {
