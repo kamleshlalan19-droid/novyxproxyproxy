@@ -254,7 +254,8 @@ app.get("/account", async (req, res) => {
         hostname: req.hostname,
       });
 
-      res.render("account", {
+      res.render("account-shell", {
+        initialPanel: "account",
         credits: getCreditBalance(user.data),
         email: user.email,
         adfree,
@@ -273,14 +274,17 @@ app.get("/link-management", async (req, res) => {
       return res.status(400).json(false);
     }
 
+    const adfree = await getAdfreeSummary(user.id);
     const privateLink = await getAccountPrivateLink({
       userId: user.id,
       hostname: req.hostname,
     });
 
-    return res.render("link-management", {
+    return res.render("account-shell", {
+      initialPanel: "link-management",
       credits: getCreditBalance(user.data),
       email: user.email,
+      adfree,
       privateLink,
     });
   }

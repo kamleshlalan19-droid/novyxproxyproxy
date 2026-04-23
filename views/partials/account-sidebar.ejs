@@ -1,20 +1,19 @@
 <aside class="account-sidebar">
     <div class="account-sidebar-card">
-        <span class="account-sidebar-kicker">Menu</span>
         <h2><%= sidebarTitle || "Account" %></h2>
-        <p><%= sidebarDescription || "Manage your account and private-link tools." %></p>
+        <p><%= sidebarDescription || "Manage your account and private links." %></p>
     </div>
 
     <nav class="account-sidebar-card account-nav">
-        <a class="account-nav-link <%= currentPage === 'account' ? 'active' : '' %>" href="/account">
+        <button class="account-nav-link <%= currentPage === 'account' ? 'active' : '' %>" type="button" data-account-panel-target="account">
             <span class="material-symbols-outlined">person</span>
             <span>Account</span>
-        </a>
+        </button>
         <% if (showLinkManagement || currentPage === 'link-management') { %>
-            <a class="account-nav-link <%= currentPage === 'link-management' ? 'active' : '' %>" href="/link-management">
+            <button class="account-nav-link <%= currentPage === 'link-management' ? 'active' : '' %>" type="button" data-account-panel-target="link-management">
                 <span class="material-symbols-outlined">link</span>
                 <span>Link Management</span>
-            </a>
+            </button>
         <% } %>
     </nav>
 
