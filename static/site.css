@@ -1107,6 +1107,8 @@ img {
     position: relative;
     width: min(100%, 470px);
     margin: min(9vh, 72px) auto 0;
+    max-height: calc(100vh - 36px);
+    overflow-y: auto;
     padding: 26px;
     border-radius: 26px;
     border: 1px solid var(--border);

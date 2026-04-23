@@ -43,8 +43,8 @@
                     email,
                     sidebarTitle: "Private Links",
                     sidebarDescription: isPrivateLinkHost
-                        ? "You are on the private link host, so host-only controls are available."
-                        : "Open this page on the private link host to access host-only controls."
+                        ? "Manage this private link and the people who can use it."
+                        : "Open this page on your private link to manage access."
                 }) %>
 
                 <div class="account-main">
@@ -55,7 +55,7 @@
                                     <h2>Create Or Edit</h2>
                                     <p>Set the domain, hidden login path, and cover destination for your private link.</p>
                                 </div>
-                                <span class="manager-kicker">Configuration</span>
+                                <span class="manager-kicker">Setup</span>
                             </div>
 
                             <form id="private-link-form" class="private-link-form">
@@ -66,7 +66,7 @@
                                             <option value="byo" selected>Bring your own link</option>
                                             <option value="provided" disabled>Use a provided link (disabled)</option>
                                         </select>
-                                        <small>Provided links stay disabled for now, but the billing path already exists.</small>
+                                        <small>Choose the type of private link you want to use.</small>
                                     </label>
                                     <label class="field">
                                         <span>Login path</span>
@@ -105,9 +105,9 @@
                             <div class="manager-section-head">
                                 <div>
                                     <h3>Your Private Links</h3>
-                                    <p>Saved links appear here with copy-friendly values instead of living inside the editor.</p>
+                                    <p>Saved links appear here with copy-friendly values.</p>
                                 </div>
-                                <span class="manager-kicker">Saved</span>
+                                <span class="manager-kicker">Links</span>
                             </div>
                             <div id="private-link-list" class="private-link-list"></div>
                         </section>
@@ -118,7 +118,7 @@
                                     <h3>People With Access</h3>
                                     <p>Add or remove up to 20 allowed account emails for this private link.</p>
                                 </div>
-                                <span class="manager-kicker">Owner Only</span>
+                                <span class="manager-kicker">Access</span>
                             </div>
                             <form id="private-link-member-form" class="inline-form">
                                 <label class="field">
@@ -134,12 +134,12 @@
                         <% if (isPrivateLinkHost && hasPaidPrivateLink) { %>
                             <section class="manager-section">
                                 <div class="manager-section-head">
-                                    <div>
-                                        <h3>Slush Pool</h3>
-                                        <p>Fund this link from personal credits and track who has chipped in.</p>
-                                    </div>
-                                    <span class="manager-kicker">Private Link Only</span>
+                                <div>
+                                    <h3>Slush Pool</h3>
+                                    <p>Fund this link from personal credits and track who has chipped in.</p>
                                 </div>
+                                <span class="manager-kicker">Funding</span>
+                            </div>
 
                                 <div class="slush-summary">
                                     <div class="private-link-stat">
@@ -248,7 +248,6 @@
                         </div>
                         <div class="private-link-badge-row">
                             <span class="private-link-badge">${escapeHtml(privateLinkState.role || 'owner')}</span>
-                            ${privateLinkState.activeHost ? '<span class="private-link-badge">current host</span>' : ''}
                             <span class="private-link-badge">${escapeHtml(privateLinkState.linkSource === 'provided' ? 'provided' : 'bring your own')}</span>
                         </div>
                     </div>

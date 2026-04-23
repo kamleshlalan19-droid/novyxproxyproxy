@@ -1,5 +1,7 @@
 .settings-modal-content {
     max-width: 500px;
+    width: min(100%, 500px);
+    margin: 0 auto;
 }
 
 .settings-group {
@@ -30,6 +32,10 @@
 .settings-reset-btn {
     margin-right: 10px;
     margin-top: 10px;
+}
+
+#settingsModal {
+    padding: 20px;
 }
 
 #settingsBtn {
