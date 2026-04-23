@@ -101,7 +101,7 @@ router.post('/check', async (req, res) => {
 
     try {
         const tokenResult = await pool.query(
-            'SELECT id, token, admin FROM users WHERE token = $1',
+            'SELECT id, token, admin, email FROM users WHERE token = $1',
             [token]
         );
 
@@ -203,7 +203,7 @@ router.post('/register', async (req, res) => {
             'INSERT INTO users (email, token, salt, password, verified, data, id, admin) VALUES ($1, $2, $3, $4, false, $5, $6, false)',
             [email, token, salt, hashedPass, "{}", userId]
         );
-        setSessionUser(req, { id: userId, token, admin: false });
+        setSessionUser(req, { id: userId, token, admin: false, email });
         return res.send(token);
     } catch (err) {
         console.error(err);

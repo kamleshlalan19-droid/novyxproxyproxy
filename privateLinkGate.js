@@ -1,6 +1,6 @@
 import { authenticateUserCredentials } from "./auth.js";
 import { getPrivateLinkByDomain, userCanAccessPrivateLink } from "./privateLinks.js";
-import { getSessionUser, setSessionUser } from "./sessionUser.js";
+import { getSessionUserSnapshot, setSessionUser } from "./sessionUser.js";
 
 const renderPrivateLinkLogin = (res, privateLink, error = null, status = 200) => {
     return res.status(status).render("private-link-login", {
@@ -10,6 +10,18 @@ const renderPrivateLinkLogin = (res, privateLink, error = null, status = 200) =>
     });
 };
 
+const saveSession = (req) =>
+    new Promise((resolve, reject) => {
+        req.session.save((error) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+
+            resolve();
+        });
+    });
+
 export const createPrivateLinkRequestGate = ({ proxy }) => {
     return async (req, res, next) => {
         try {
@@ -18,7 +30,7 @@ export const createPrivateLinkRequestGate = ({ proxy }) => {
                 return next();
             }
 
-            const sessionUser = await getSessionUser(req);
+            const sessionUser = getSessionUserSnapshot(req);
             const hasAccess = sessionUser
                 ? await userCanAccessPrivateLink(privateLink, sessionUser.id)
                 : false;
@@ -62,6 +74,7 @@ export const createPrivateLinkRequestGate = ({ proxy }) => {
                     }
 
                     setSessionUser(req, result.user);
+                    await saveSession(req);
                     return res.redirect("/");
                 }
             }
@@ -85,7 +98,7 @@ export const canAccessPrivateLinkUpgrade = async (req) => {
         return null;
     }
 
-    const sessionUser = await getSessionUser(req);
+    const sessionUser = getSessionUserSnapshot(req);
     if (!sessionUser) {
         return false;
     }

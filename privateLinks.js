@@ -79,6 +79,23 @@ const mapLinkRow = (row) => {
     };
 };
 
+const enrichPrivateLink = async (link) => {
+    if (!link) {
+        return null;
+    }
+
+    const [members, contributionSummary] = await Promise.all([
+        fetchMembers(link.id),
+        fetchContributionSummary(link.id),
+    ]);
+
+    return {
+        ...link,
+        members,
+        contributionSummary,
+    };
+};
+
 const fetchMembers = async (linkId) => {
     const result = await pool.query(
         `SELECT users.id, users.email, private_link_members.created_at
@@ -126,7 +143,7 @@ const fetchContributionSummary = async (linkId) => {
     return summary;
 };
 
-const fetchPrivateLink = async (whereClause, params) => {
+const fetchPrivateLinkRecord = async (whereClause, params) => {
     const result = await pool.query(
         `SELECT id, owner_user_id, domain, cover_url, login_path, link_source, monthly_cost_credits,
                 slush_pool_credits, provider_enabled, created_at, updated_at
@@ -140,17 +157,7 @@ const fetchPrivateLink = async (whereClause, params) => {
         return null;
     }
 
-    const link = mapLinkRow(result.rows[0]);
-    const [members, contributionSummary] = await Promise.all([
-        fetchMembers(link.id),
-        fetchContributionSummary(link.id),
-    ]);
-
-    return {
-        ...link,
-        members,
-        contributionSummary,
-    };
+    return mapLinkRow(result.rows[0]);
 };
 
 const cachePrivateLink = async (cacheKey, value) => {
@@ -175,7 +182,7 @@ export const getPrivateLinkByDomain = async (domain) => {
         return cached;
     }
 
-    const link = await fetchPrivateLink("domain = $1", [normalizedDomain]);
+    const link = await fetchPrivateLinkRecord("domain = $1", [normalizedDomain]);
     await cachePrivateLink(linkCacheKey(normalizedDomain), link);
     return link;
 };
@@ -194,7 +201,8 @@ export const getOwnedPrivateLink = async (ownerUserId) => {
         return cached;
     }
 
-    const link = await fetchPrivateLink("owner_user_id = $1", [ownerUserId]);
+    const linkRecord = await fetchPrivateLinkRecord("owner_user_id = $1", [ownerUserId]);
+    const link = await enrichPrivateLink(linkRecord);
     await cachePrivateLink(ownerCacheKey(ownerUserId), link);
     return link;
 };
@@ -253,8 +261,13 @@ export const getAccountPrivateLink = async ({ userId, hostname }) => {
     ]);
 
     if (hostLink && (await userCanAccessPrivateLink(hostLink, userId))) {
+        const fullHostLink =
+            ownedLink && Number(ownedLink.id) === Number(hostLink.id)
+                ? ownedLink
+                : await enrichPrivateLink(hostLink);
+
         return {
-            ...hostLink,
+            ...fullHostLink,
             role: Number(hostLink.ownerUserId) === Number(userId) ? "owner" : "member",
             activeHost: true,
         };
@@ -281,7 +294,7 @@ export const refreshPrivateLink = async (linkId) => {
         return null;
     }
 
-    const existing = await fetchPrivateLink("id = $1", [linkId]);
+    const existing = await enrichPrivateLink(await fetchPrivateLinkRecord("id = $1", [linkId]));
     await invalidatePrivateLinkCaches(existing);
     await cachePrivateLink(linkCacheKey(existing.domain), existing);
     await cachePrivateLink(ownerCacheKey(existing.ownerUserId), existing);

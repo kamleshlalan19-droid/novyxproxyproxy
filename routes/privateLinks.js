@@ -1,6 +1,6 @@
 import express from "express";
-import { getAccountPrivateLink } from "../privateLinks.js";
-import { getSessionUser } from "../sessionUser.js";
+import { getAccountPrivateLink, getPrivateLinkByDomain } from "../privateLinks.js";
+import { getSessionUserSnapshot } from "../sessionUser.js";
 import {
     addPrivateLinkMemberForOwner,
     contributeToPrivateLink,
@@ -11,13 +11,23 @@ import {
 const router = express.Router();
 
 const requireSessionUser = async (req, res) => {
-    const user = await getSessionUser(req);
+    const user = getSessionUserSnapshot(req);
     if (!user) {
         res.status(401).json({ error: "Not logged in" });
         return null;
     }
 
     return user;
+};
+
+const requirePrivateLinkHost = async (req, res) => {
+    const hostLink = await getPrivateLinkByDomain(req.hostname);
+    if (!hostLink) {
+        res.status(403).json({ error: "This action is only available on the private link itself" });
+        return null;
+    }
+
+    return hostLink;
 };
 
 router.get("/account", async (req, res) => {
@@ -64,10 +74,19 @@ router.post("/members", async (req, res) => {
         return;
     }
 
+    const hostLink = await requirePrivateLinkHost(req, res);
+    if (!hostLink) {
+        return;
+    }
+
     try {
         const result = await addPrivateLinkMemberForOwner(user, req.body.email);
         if (result.error) {
             return res.status(result.status || 400).json({ error: result.error });
+        }
+
+        if (Number(result.privateLink.id) !== Number(hostLink.id)) {
+            return res.status(403).json({ error: "Member management is only available on that private link" });
         }
 
         res.json({ success: true, privateLink: result.privateLink });
@@ -83,10 +102,19 @@ router.delete("/members/:userId", async (req, res) => {
         return;
     }
 
+    const hostLink = await requirePrivateLinkHost(req, res);
+    if (!hostLink) {
+        return;
+    }
+
     try {
         const result = await removePrivateLinkMemberForOwner(user.id, req.params.userId);
         if (result.error) {
             return res.status(result.status || 400).json({ error: result.error });
+        }
+
+        if (Number(result.privateLink.id) !== Number(hostLink.id)) {
+            return res.status(403).json({ error: "Member management is only available on that private link" });
         }
 
         res.json({ success: true, privateLink: result.privateLink });
@@ -102,6 +130,11 @@ router.post("/contribute", async (req, res) => {
         return;
     }
 
+    const hostLink = await requirePrivateLinkHost(req, res);
+    if (!hostLink) {
+        return;
+    }
+
     try {
         const result = await contributeToPrivateLink({
             user,
@@ -111,6 +144,10 @@ router.post("/contribute", async (req, res) => {
 
         if (result.error) {
             return res.status(result.status || 400).json({ error: result.error });
+        }
+
+        if (Number(result.privateLink.id) !== Number(hostLink.id)) {
+            return res.status(403).json({ error: "The slush pool is only available on that private link" });
         }
 
         res.json({
