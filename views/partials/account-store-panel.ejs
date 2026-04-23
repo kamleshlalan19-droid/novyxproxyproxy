@@ -2,7 +2,6 @@
     <div class="section-heading">
         <div>
             <h1>Your Account</h1>
-            <p>Manage your balance, account perks, and device session from one place.</p>
         </div>
     </div>
 
@@ -10,7 +9,6 @@
         <article class="store-stat">
             <span class="store-kicker"><span class="material-symbols-outlined">savings</span>Balance</span>
             <strong><%= credits %> credits</strong>
-            <p>Open the offerwall to earn more.</p>
         </article>
         <article class="store-stat">
             <span class="store-kicker"><span class="material-symbols-outlined">visibility_off</span>Ad-Free</span>
@@ -26,7 +24,6 @@
         <article class="store-stat">
             <span class="store-kicker"><span class="material-symbols-outlined">mail</span>Account</span>
             <strong><%= email %></strong>
-            <p>Your credits and purchases are tied to this account.</p>
         </article>
     </div>
 
@@ -38,14 +35,12 @@
         </div>
 
         <div class="store-note">
-            <span>Need more credits? Finish surveys on the offerwall and come back here to spend them.</span>
             <a href="/offerwall">Open Offerwall</a>
         </div>
 
         <div class="store-actions" style="margin-top: 18px;">
             <article class="store-card">
                 <h3>Ad-Free for 7 Days</h3>
-                <p>Removes ads for one week on the current account.</p>
                 <div class="price-row">
                     <div class="store-price">7 credits</div>
                 </div>
@@ -53,7 +48,6 @@
             </article>
             <article class="store-card">
                 <h3>Ad-Free for 30 Days</h3>
-                <p>Monthly option with a discounted store price.</p>
                 <div class="price-row">
                     <div class="store-price">25 credits</div>
                 </div>
@@ -61,7 +55,6 @@
             </article>
             <article class="store-card">
                 <h3>Ad-Free Lifetime</h3>
-                <p>Permanent ad-free access for this account.</p>
                 <div class="price-row">
                     <div class="store-price">100 credits</div>
                 </div>
@@ -74,16 +67,13 @@
         <div class="perk-grid" style="margin-top: 10px;">
             <article class="perk-card">
                 <h3>Bring Your Own Private Link</h3>
-                <p>Attach your own domain, choose a cover URL and login path, and keep it running at 0 credits per month.</p>
                 <div class="price-row">
                     <div class="store-price">0 credits / month</div>
-                    <span>Available now</span>
                 </div>
                 <button class="button-ghost panel-link-trigger" data-account-panel-target="link-management" type="button">Open Link Management</button>
             </article>
             <article class="perk-card">
                 <h3>Provided Private Links</h3>
-                <p>A hosted option for private links.</p>
                 <div class="price-row">
                     <div class="store-price">10 credits / month</div>
                     <span class="coming-soon">Coming soon</span>
@@ -92,7 +82,6 @@
             </article>
             <article class="perk-card">
                 <h3>Semi-Private Links</h3>
-                <p>Lower-cost tier for semi-private link access when it goes live.</p>
                 <div class="price-row">
                     <div class="store-price">5 credits / month</div>
                     <span class="coming-soon">Coming soon</span>
@@ -105,7 +94,6 @@
     <div class="detail-grid">
         <article class="info-card">
             <h3>Switch Site</h3>
-            <p>What site would you like this link to be on this device? To switch back to CanLite, go to <code>/reset</code>. If you are a site owner and want your site added, DM CanLite on Discord or send an email.</p>
             <form action="/api/switch" method="POST" class="stack" style="margin-top:18px;">
                 <label for="site-select">Choose a site</label>
                 <select id="site-select" name="site" class="styled-select">
@@ -124,7 +112,6 @@
 
         <article class="info-card">
             <h3>Session</h3>
-            <p>Logging out does not remove your balance.</p>
             <div class="button-row" style="margin-top:18px;">
                 <button id="logout-button" type="button" class="button-ghost">Logout</button>
             </div>

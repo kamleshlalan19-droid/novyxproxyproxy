@@ -32,11 +32,7 @@
                     currentPage: initialPanel,
                     showLinkManagement,
                     credits,
-                    email,
-                    sidebarTitle: "Workspace",
-                    sidebarDescription: showLinkManagement
-                        ? "Switch between account tools and private-link management without leaving this screen."
-                        : "Account tools stay here, with private-link setup available when you need it."
+                    email
                 }) %>
 
                 <div class="account-main">
@@ -232,7 +228,6 @@
                     </div>
                     ${canManagePrivateLink ? `
                         <div class="private-link-card-meta">
-                            <span style="color: rgba(255,255,255,0.68);">Use the editor above only when you want to change this link.</span>
                             <button type="button" class="button-ghost button-tiny" data-edit-private-link="current">Edit Link</button>
                         </div>
                     ` : ''}

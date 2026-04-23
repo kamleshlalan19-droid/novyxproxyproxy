@@ -5,7 +5,6 @@
     <div class="section-heading">
         <div>
             <h1>Link Management</h1>
-            <p>Create, edit, and manage private links without crowding the account store.</p>
         </div>
     </div>
 
@@ -14,9 +13,7 @@
             <div class="manager-section-head">
                 <div>
                     <h2>Create Or Edit</h2>
-                    <p>Set the domain, hidden login path, and cover destination for your private link.</p>
                 </div>
-                <span class="manager-kicker">Setup</span>
             </div>
 
             <form id="private-link-form" class="private-link-form">
@@ -27,12 +24,10 @@
                             <option value="byo" selected>Bring your own link</option>
                             <option value="provided" disabled>Use a provided link (disabled)</option>
                         </select>
-                        <small>Choose the type of private link you want to use.</small>
                     </label>
                     <label class="field">
                         <span>Login path</span>
                         <input id="private-link-login-path" type="text" placeholder="/secret-login" value="/login" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
-                        <small>Anyone who opens this path on your private domain gets the login page.</small>
                     </label>
                 </div>
 
@@ -40,12 +35,10 @@
                     <label class="field">
                         <span>Private domain</span>
                         <input id="private-link-domain" type="text" placeholder="study.example.com" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
-                        <small>This should point at this CanLite deployment.</small>
                     </label>
                     <label class="field">
                         <span>Cover URL</span>
                         <input id="private-link-cover-url" type="url" placeholder="https://example.org" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
-                        <small>Unauthenticated traffic on the private domain gets proxied here unless it hits the login path.</small>
                     </label>
                 </div>
 
@@ -66,9 +59,7 @@
             <div class="manager-section-head">
                 <div>
                     <h3>Your Private Links</h3>
-                    <p>Saved links appear here with copy-friendly values.</p>
                 </div>
-                <span class="manager-kicker">Links</span>
             </div>
             <div id="private-link-list" class="private-link-list"></div>
         </section>
@@ -77,15 +68,12 @@
             <div class="manager-section-head">
                 <div>
                     <h3>People With Access</h3>
-                    <p>Add or remove up to 20 allowed account emails for this private link.</p>
                 </div>
-                <span class="manager-kicker">Access</span>
             </div>
             <form id="private-link-member-form" class="inline-form">
                 <label class="field">
                     <span>Add account email</span>
                     <input id="private-link-member-email" type="email" placeholder="friend@example.com">
-                    <small>Only the owner can grant or revoke access.</small>
                 </label>
                 <button type="submit" class="button">Add Person</button>
             </form>
@@ -97,9 +85,7 @@
                 <div class="manager-section-head">
                     <div>
                         <h3>Slush Pool</h3>
-                        <p>Fund this link from personal credits and track who has chipped in.</p>
                     </div>
-                    <span class="manager-kicker">Funding</span>
                 </div>
 
                 <div class="slush-summary">
@@ -117,7 +103,6 @@
                     <label class="field">
                         <span>Chip into the link</span>
                         <input id="private-link-contribution-amount" type="number" min="0.01" step="0.01" placeholder="5">
-                        <small>Credits are taken from your account balance and added to the slush pool for paid links.</small>
                     </label>
                     <div class="button-row">
                         <button type="submit" class="button">Contribute Credits</button>
