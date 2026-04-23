@@ -376,7 +376,11 @@
     };
 
     if (privateLinkForm) {
-        clearPrivateLinkForm();
+        if (privateLinkState && canManagePrivateLink) {
+            loadPrivateLinkIntoForm(privateLinkState);
+        } else {
+            clearPrivateLinkForm();
+        }
         renderPrivateLinkState();
 
         privateLinkList.addEventListener('click', (event) => {

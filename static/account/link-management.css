@@ -5,9 +5,7 @@
 }
 
 .manager-section-editor {
-    position: sticky;
-    top: 104px;
-    z-index: 2;
+    position: static;
 }
 
 .manager-section {
@@ -207,11 +205,4 @@
 .button-tiny {
     padding: 10px 14px;
     border-radius: 12px;
-}
-
-@media (max-width: 980px) {
-    .manager-section-editor {
-        position: static;
-        top: auto;
-    }
 }
