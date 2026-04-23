@@ -229,7 +229,7 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
             padding: 14px 18px;
             border-radius: 8px;
             font-family: Arial, sans-serif;
-            font-size: 14px;
+            font-size: 25px;
             max-width: 300px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.4);
             z-index: 999999;
