@@ -21,7 +21,7 @@ import cors from "cors";
 import axios from "axios";
 import { getCreditBalance, roundCredits } from "./store.js";
 import redisClient from "./redis.js";
-import { getAccountPrivateLink } from "./privateLinks.js";
+import { getAccountPrivateLink, getOwnedPrivateLinks } from "./privateLinks.js";
 import { canAccessPrivateLinkUpgrade, createPrivateLinkRequestGate } from "./privateLinkGate.js";
 import { getSessionUser } from "./sessionUser.js";
 
@@ -249,10 +249,13 @@ app.get("/account", async (req, res) => {
       return res.status(400).json(false); // Account does not exist
     } else {
       const adfree = await getAdfreeSummary(user.id);
-      const privateLink = await getAccountPrivateLink({
-        userId: user.id,
-        hostname: req.hostname,
-      });
+      const [privateLink, privateLinks] = await Promise.all([
+        getAccountPrivateLink({
+          userId: user.id,
+          hostname: req.hostname,
+        }),
+        getOwnedPrivateLinks(user.id),
+      ]);
 
       res.render("account-shell", {
         initialPanel: "account",
@@ -260,6 +263,7 @@ app.get("/account", async (req, res) => {
         email: user.email,
         adfree,
         privateLink,
+        privateLinks,
       });
     }
   } else {
@@ -275,10 +279,13 @@ app.get("/link-management", async (req, res) => {
     }
 
     const adfree = await getAdfreeSummary(user.id);
-    const privateLink = await getAccountPrivateLink({
-      userId: user.id,
-      hostname: req.hostname,
-    });
+    const [privateLink, privateLinks] = await Promise.all([
+      getAccountPrivateLink({
+        userId: user.id,
+        hostname: req.hostname,
+      }),
+      getOwnedPrivateLinks(user.id),
+    ]);
 
     return res.render("account-shell", {
       initialPanel: "link-management",
@@ -286,6 +293,7 @@ app.get("/link-management", async (req, res) => {
       email: user.email,
       adfree,
       privateLink,
+      privateLinks,
     });
   }
 

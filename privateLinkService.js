@@ -1,6 +1,7 @@
 import pool from "./db.js";
 import { getCreditBalance, roundCredits, setCreditBalance } from "./store.js";
 import {
+    MAX_PRIVATE_LINKS,
     PRIVATE_LINK_SOURCE,
     MAX_PRIVATE_LINK_MEMBERS,
     getOwnedPrivateLink,
@@ -84,14 +85,15 @@ export const saveOwnedPrivateLink = async (userId, input) => {
         return validation;
     }
 
+    const normalizedLinkId = Number(input?.id) || null;
     const { domain, coverUrl, loginPath, linkSource, planDefaults } = validation.value;
     const client = await pool.connect();
 
     try {
         await client.query("BEGIN");
 
-        const existingLink = await client.query(
-            "SELECT id FROM private_links WHERE owner_user_id = $1 FOR UPDATE",
+        const ownedLinks = await client.query(
+            "SELECT id FROM private_links WHERE owner_user_id = $1 ORDER BY created_at DESC, id DESC FOR UPDATE",
             [userId]
         );
 
@@ -100,14 +102,23 @@ export const saveOwnedPrivateLink = async (userId, input) => {
             [domain]
         );
 
-        if (conflictingDomain.rowCount > 0 && Number(conflictingDomain.rows[0].owner_user_id) !== Number(userId)) {
+        if (conflictingDomain.rowCount > 0 && Number(conflictingDomain.rows[0].id) !== normalizedLinkId) {
             await client.query("ROLLBACK");
             return { error: "That domain is already in use", status: 400 };
         }
 
+        const existingLink = normalizedLinkId
+            ? ownedLinks.rows.find((link) => Number(link.id) === normalizedLinkId)
+            : null;
+
         let linkId;
-        if (existingLink.rowCount > 0) {
-            linkId = existingLink.rows[0].id;
+        if (normalizedLinkId && !existingLink) {
+            await client.query("ROLLBACK");
+            return { error: "Private link not found", status: 404 };
+        }
+
+        if (existingLink) {
+            linkId = existingLink.id;
             await client.query(
                 `UPDATE private_links
                  SET domain = $1,
@@ -121,6 +132,11 @@ export const saveOwnedPrivateLink = async (userId, input) => {
                 [domain, coverUrl, loginPath, linkSource, planDefaults.monthlyCostCredits, planDefaults.providerEnabled, linkId]
             );
         } else {
+            if (ownedLinks.rowCount >= MAX_PRIVATE_LINKS) {
+                await client.query("ROLLBACK");
+                return { error: `You can only create up to ${MAX_PRIVATE_LINKS} private links`, status: 400 };
+            }
+
             const insertResult = await client.query(
                 `INSERT INTO private_links (
                     owner_user_id,
@@ -150,19 +166,24 @@ export const saveOwnedPrivateLink = async (userId, input) => {
     }
 };
 
-export const addPrivateLinkMemberForOwner = async (owner, email) => {
+export const addPrivateLinkMemberForOwner = async (owner, linkId, email) => {
+    const normalizedLinkId = Number(linkId);
     const normalizedEmail = String(email || "").trim().toLowerCase();
+    if (!normalizedLinkId) {
+        return { error: "Invalid private link", status: 400 };
+    }
+
     if (!normalizedEmail) {
         return { error: "Enter an email", status: 400 };
     }
 
-    const privateLink = await getOwnedPrivateLink(owner.id);
+    const privateLink = await getOwnedPrivateLink(owner.id, normalizedLinkId);
     if (!privateLink) {
         return { error: "Create your private link first", status: 404 };
     }
 
-    if (privateLink.members.length >= MAX_PRIVATE_LINK_MEMBERS) {
-        return { error: `You can only add up to ${MAX_PRIVATE_LINK_MEMBERS} people`, status: 400 };
+    if (privateLink.members.length >= MAX_PRIVATE_LINK_MEMBERS - 1) {
+        return { error: `You can only have ${MAX_PRIVATE_LINK_MEMBERS} total people on a private link, including the owner`, status: 400 };
     }
 
     if (normalizedEmail === String(owner.email || "").toLowerCase()) {
@@ -196,13 +217,18 @@ export const addPrivateLinkMemberForOwner = async (owner, email) => {
     };
 };
 
-export const removePrivateLinkMemberForOwner = async (ownerId, memberUserId) => {
+export const removePrivateLinkMemberForOwner = async (ownerId, linkId, memberUserId) => {
+    const normalizedLinkId = Number(linkId);
     const normalizedMemberUserId = Number(memberUserId);
+    if (!normalizedLinkId) {
+        return { error: "Invalid private link", status: 400 };
+    }
+
     if (!normalizedMemberUserId) {
         return { error: "Invalid member", status: 400 };
     }
 
-    const privateLink = await getOwnedPrivateLink(ownerId);
+    const privateLink = await getOwnedPrivateLink(ownerId, normalizedLinkId);
     if (!privateLink) {
         return { error: "Private link not found", status: 404 };
     }
@@ -217,8 +243,13 @@ export const removePrivateLinkMemberForOwner = async (ownerId, memberUserId) => 
     };
 };
 
-export const contributeToPrivateLink = async ({ user, hostname, amount }) => {
+export const contributeToPrivateLink = async ({ user, hostname, linkId, amount }) => {
+    const normalizedLinkId = Number(linkId);
     const normalizedAmount = roundCredits(amount);
+    if (!normalizedLinkId) {
+        return { error: "Invalid private link", status: 400 };
+    }
+
     if (normalizedAmount <= 0) {
         return { error: "Enter a contribution above 0 credits", status: 400 };
     }
@@ -236,6 +267,11 @@ export const contributeToPrivateLink = async ({ user, hostname, amount }) => {
         if (!privateLink) {
             await client.query("ROLLBACK");
             return { error: "No private link found for this account or host", status: 404 };
+        }
+
+        if (Number(privateLink.id) !== normalizedLinkId) {
+            await client.query("ROLLBACK");
+            return { error: "The slush pool is only available on that private link", status: 403 };
         }
 
         const canAccess = await userCanAccessPrivateLink(privateLink, user.id);

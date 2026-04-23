@@ -116,17 +116,17 @@
                             <div class="manager-section-head">
                                 <div>
                                     <h3>People With Access</h3>
-                                    <p>Add or remove up to 20 allowed account emails for this private link.</p>
+                                    <p id="private-link-member-summary">Add or remove up to 20 allowed account emails for this private link.</p>
                                 </div>
                                 <span class="manager-kicker">Access</span>
                             </div>
                             <form id="private-link-member-form" class="inline-form">
                                 <label class="field">
-                                    <span>Add account email</span>
+                                    <span id="private-link-member-label">Add account email to this private link</span>
                                     <input id="private-link-member-email" type="email" placeholder="friend@example.com">
                                     <small>Only the owner can grant or revoke access.</small>
                                 </label>
-                                <button type="submit" class="button">Add Person</button>
+                                <button id="private-link-member-submit" type="submit" class="button">Add User To Link</button>
                             </form>
                             <div id="private-link-members" class="member-list"></div>
                         </section>
@@ -193,10 +193,15 @@
     const privateLinkMembers = document.getElementById('private-link-members');
     const privateLinkContributions = document.getElementById('private-link-contributions');
     const privateLinkSlushPool = document.getElementById('private-link-slush-pool');
+    const privateLinkMemberLabel = document.getElementById('private-link-member-label');
+    const privateLinkMemberSummary = document.getElementById('private-link-member-summary');
+    const privateLinkMemberSubmit = document.getElementById('private-link-member-submit');
     const privateLinkSourceInput = document.getElementById('private-link-source');
     const privateLinkDomainInput = document.getElementById('private-link-domain');
     const privateLinkCoverUrlInput = document.getElementById('private-link-cover-url');
     const privateLinkLoginPathInput = document.getElementById('private-link-login-path');
+
+    const getCurrentPrivateLinkDomain = () => privateLinkState?.domain || 'this private link';
 
     const clearPrivateLinkForm = () => {
         privateLinkSourceInput.value = 'byo';
@@ -234,9 +239,28 @@
         const members = privateLinkState?.members || [];
         const contributions = privateLinkState?.contributionSummary || [];
         const isOwner = privateLinkState?.role === 'owner' && isPrivateLinkHost;
+        const currentDomain = getCurrentPrivateLinkDomain();
 
         if (privateLinkOwnerTools) {
             privateLinkOwnerTools.hidden = !isOwner;
+        }
+
+        if (privateLinkMemberLabel) {
+            privateLinkMemberLabel.textContent = privateLinkState?.domain
+                ? `Add account email to ${currentDomain}`
+                : 'Add account email to this private link';
+        }
+
+        if (privateLinkMemberSummary) {
+            privateLinkMemberSummary.textContent = privateLinkState?.domain
+                ? `Add or remove up to 20 allowed account emails for ${currentDomain}.`
+                : 'Add or remove up to 20 allowed account emails for this private link.';
+        }
+
+        if (privateLinkMemberSubmit) {
+            privateLinkMemberSubmit.textContent = privateLinkState?.domain
+                ? `Add User To ${currentDomain}`
+                : 'Add User To Link';
         }
 
         privateLinkList.innerHTML = privateLinkState
@@ -269,7 +293,7 @@
                             <strong>${privateLinkState.monthlyCostCredits} credits</strong>
                         </div>
                         <div class="private-link-stat">
-                            <span>Members</span>
+                            <span>People with access</span>
                             <strong>${members.length + 1}</strong>
                         </div>
                     </div>
@@ -289,7 +313,7 @@
                     <div class="member-row">
                         <div>
                             <strong>${escapeHtml(member.email)}</strong>
-                            <span>Access granted</span>
+                            <span>Access granted on ${escapeHtml(currentDomain)}</span>
                         </div>
                         ${isOwner ? `<button class="button-ghost button-tiny" type="button" data-remove-member="${member.userId}">Remove</button>` : ''}
                     </div>
@@ -381,11 +405,11 @@
 
             const email = document.getElementById('private-link-member-email').value.trim();
             if (!email) {
-                setPrivateLinkFeedback('Enter an email to add.', true);
+                setPrivateLinkFeedback(`Enter an email to add to ${getCurrentPrivateLinkDomain()}.`, true);
                 return;
             }
 
-            setPrivateLinkFeedback('Adding member...');
+            setPrivateLinkFeedback(`Adding user to ${getCurrentPrivateLinkDomain()}...`);
 
             try {
                 const response = await fetch('/api/private-links/members', {
@@ -402,7 +426,7 @@
                 privateLinkState = data.privateLink;
                 document.getElementById('private-link-member-email').value = '';
                 renderPrivateLinkState();
-                setPrivateLinkFeedback('Member added.');
+                setPrivateLinkFeedback(`User added to ${getCurrentPrivateLinkDomain()}.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to add member', true);
             }
@@ -416,7 +440,7 @@
                 return;
             }
 
-            setPrivateLinkFeedback('Removing member...');
+            setPrivateLinkFeedback(`Removing user from ${getCurrentPrivateLinkDomain()}...`);
 
             try {
                 const response = await fetch(`/api/private-links/members/${button.dataset.removeMember}`, {
@@ -430,7 +454,7 @@
 
                 privateLinkState = data.privateLink;
                 renderPrivateLinkState();
-                setPrivateLinkFeedback('Member removed.');
+                setPrivateLinkFeedback(`User removed from ${getCurrentPrivateLinkDomain()}.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to remove member', true);
             }

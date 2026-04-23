@@ -1,5 +1,5 @@
 import express from "express";
-import { getAccountPrivateLink, getPrivateLinkByDomain } from "../privateLinks.js";
+import { getAccountPrivateLink, getOwnedPrivateLinks, getPrivateLinkByDomain } from "../privateLinks.js";
 import { getSessionUserSnapshot } from "../sessionUser.js";
 import {
     addPrivateLinkMemberForOwner,
@@ -31,14 +31,18 @@ const requirePrivateLinkHost = async (req, res) => {
 };
 
 const sendCurrentPrivateLink = async (req, res, user, payload = {}) => {
-    const privateLink = await getAccountPrivateLink({
-        userId: user.id,
-        hostname: req.hostname,
-    });
+    const [privateLink, privateLinks] = await Promise.all([
+        getAccountPrivateLink({
+            userId: user.id,
+            hostname: req.hostname,
+        }),
+        getOwnedPrivateLinks(user.id),
+    ]);
 
     return res.json({
         ...payload,
         privateLink,
+        privateLinks,
     });
 };
 
@@ -49,12 +53,15 @@ router.get("/account", async (req, res) => {
     }
 
     try {
-        const privateLink = await getAccountPrivateLink({
-            userId: user.id,
-            hostname: req.hostname,
-        });
+        const [privateLink, privateLinks] = await Promise.all([
+            getAccountPrivateLink({
+                userId: user.id,
+                hostname: req.hostname,
+            }),
+            getOwnedPrivateLinks(user.id),
+        ]);
 
-        res.json({ privateLink });
+        res.json({ privateLink, privateLinks });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to load private link" });
@@ -73,7 +80,10 @@ router.post("/", async (req, res) => {
             return res.status(result.status || 400).json({ error: result.error });
         }
 
-        return sendCurrentPrivateLink(req, res, user, { success: true });
+        return sendCurrentPrivateLink(req, res, user, {
+            success: true,
+            selectedLinkId: result.privateLink.id,
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to save private link" });
@@ -92,16 +102,15 @@ router.post("/members", async (req, res) => {
     }
 
     try {
-        const result = await addPrivateLinkMemberForOwner(user, req.body.email);
+        const result = await addPrivateLinkMemberForOwner(user, hostLink.id, req.body.email);
         if (result.error) {
             return res.status(result.status || 400).json({ error: result.error });
         }
 
-        if (Number(result.privateLink.id) !== Number(hostLink.id)) {
-            return res.status(403).json({ error: "Member management is only available on that private link" });
-        }
-
-        return sendCurrentPrivateLink(req, res, user, { success: true });
+        return sendCurrentPrivateLink(req, res, user, {
+            success: true,
+            selectedLinkId: hostLink.id,
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to add member" });
@@ -120,16 +129,15 @@ router.delete("/members/:userId", async (req, res) => {
     }
 
     try {
-        const result = await removePrivateLinkMemberForOwner(user.id, req.params.userId);
+        const result = await removePrivateLinkMemberForOwner(user.id, hostLink.id, req.params.userId);
         if (result.error) {
             return res.status(result.status || 400).json({ error: result.error });
         }
 
-        if (Number(result.privateLink.id) !== Number(hostLink.id)) {
-            return res.status(403).json({ error: "Member management is only available on that private link" });
-        }
-
-        return sendCurrentPrivateLink(req, res, user, { success: true });
+        return sendCurrentPrivateLink(req, res, user, {
+            success: true,
+            selectedLinkId: hostLink.id,
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to remove member" });
@@ -151,6 +159,7 @@ router.post("/contribute", async (req, res) => {
         const result = await contributeToPrivateLink({
             user,
             hostname: req.hostname,
+            linkId: hostLink.id,
             amount: req.body.amount,
         });
 
@@ -158,13 +167,10 @@ router.post("/contribute", async (req, res) => {
             return res.status(result.status || 400).json({ error: result.error });
         }
 
-        if (Number(result.privateLink.id) !== Number(hostLink.id)) {
-            return res.status(403).json({ error: "The slush pool is only available on that private link" });
-        }
-
         return sendCurrentPrivateLink(req, res, user, {
             success: true,
             credits: result.credits,
+            selectedLinkId: hostLink.id,
         });
     } catch (error) {
         console.error(error);

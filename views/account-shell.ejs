@@ -38,7 +38,7 @@
                 <div class="account-main">
                     <div class="account-panels" data-initial-account-panel="<%= initialPanel %>">
                         <%- include("partials/account-store-panel", { initialPanel, credits, email, adfree }) %>
-                        <%- include("partials/link-management-panel", { initialPanel, privateLink }) %>
+                        <%- include("partials/link-management-panel", { initialPanel, privateLink, privateLinks }) %>
                     </div>
                 </div>
             </div>
@@ -127,10 +127,11 @@
         window.location.href = '/';
     });
 
-    let privateLinkState = <%- JSON.stringify(privateLink || null) %>;
-    const canManagePrivateLink = <%- JSON.stringify(!privateLink || privateLink.role === 'owner') %>;
-    const isPrivateLinkHost = <%- JSON.stringify(Boolean(privateLink && privateLink.activeHost)) %>;
-    const hasPaidPrivateLink = <%- JSON.stringify(Boolean(privateLink && Number(privateLink.monthlyCostCredits) > 0)) %>;
+    let activePrivateLinkState = <%- JSON.stringify(privateLink || null) %>;
+    let privateLinksState = <%- JSON.stringify(privateLinks || []) %>;
+    let privateLinkState = null;
+    let editingPrivateLinkId = null;
+    const canManagePrivateLink = <%- JSON.stringify((!privateLink || privateLink.role === 'owner') || Boolean(privateLinks && privateLinks.length)) %>;
     const privateLinkFeedback = document.getElementById('private-link-feedback');
     const privateLinkForm = document.getElementById('private-link-form');
     const privateLinkOwnerTools = document.getElementById('private-link-owner-tools');
@@ -138,12 +139,63 @@
     const privateLinkMembers = document.getElementById('private-link-members');
     const privateLinkContributions = document.getElementById('private-link-contributions');
     const privateLinkSlushPool = document.getElementById('private-link-slush-pool');
+    const privateLinkContributionSection = document.getElementById('private-link-contribution-form')?.closest('.manager-section') || null;
+    const privateLinkMemberLabel = document.getElementById('private-link-member-label');
+    const privateLinkMemberSummary = document.getElementById('private-link-member-summary');
+    const privateLinkMemberSubmit = document.getElementById('private-link-member-submit');
     const privateLinkSourceInput = document.getElementById('private-link-source');
     const privateLinkDomainInput = document.getElementById('private-link-domain');
     const privateLinkCoverUrlInput = document.getElementById('private-link-cover-url');
     const privateLinkLoginPathInput = document.getElementById('private-link-login-path');
 
+    const normalizeOwnedPrivateLinks = (links, activeLink) =>
+        (Array.isArray(links) ? links : []).map((link) => ({
+            ...link,
+            role: 'owner',
+            activeHost: Boolean(activeLink && Number(activeLink.id) === Number(link.id) && activeLink.activeHost),
+        }));
+
+    const findOwnedPrivateLinkById = (linkId) =>
+        privateLinksState.find((link) => Number(link.id) === Number(linkId)) || null;
+
+    const syncSelectedPrivateLink = (selectedLinkId = null) => {
+        if (selectedLinkId) {
+            privateLinkState =
+                findOwnedPrivateLinkById(selectedLinkId) ||
+                (activePrivateLinkState && Number(activePrivateLinkState.id) === Number(selectedLinkId) ? activePrivateLinkState : null);
+        } else if (privateLinkState?.id) {
+            privateLinkState =
+                findOwnedPrivateLinkById(privateLinkState.id) ||
+                (activePrivateLinkState && Number(activePrivateLinkState.id) === Number(privateLinkState.id) ? activePrivateLinkState : null);
+        }
+
+        if (!privateLinkState) {
+            privateLinkState =
+                (activePrivateLinkState && activePrivateLinkState.role === 'member' ? activePrivateLinkState : null) ||
+                privateLinksState[0] ||
+                activePrivateLinkState ||
+                null;
+        }
+    };
+
+    const applyPrivateLinkResponse = (data) => {
+        activePrivateLinkState = data?.privateLink || activePrivateLinkState;
+        privateLinksState = normalizeOwnedPrivateLinks(data?.privateLinks || privateLinksState, activePrivateLinkState);
+        syncSelectedPrivateLink(data?.selectedLinkId || editingPrivateLinkId);
+    };
+
+    privateLinksState = normalizeOwnedPrivateLinks(privateLinksState, activePrivateLinkState);
+    syncSelectedPrivateLink(activePrivateLinkState?.role === 'owner' ? activePrivateLinkState?.id : null);
+
+    const getCurrentPrivateLinkDomain = () => privateLinkState?.domain || 'this private link';
+    const getRenderedPrivateLinks = () => (
+        privateLinksState.length
+            ? privateLinksState
+            : (privateLinkState ? [privateLinkState] : [])
+    );
+
     const clearPrivateLinkForm = () => {
+        editingPrivateLinkId = null;
         privateLinkSourceInput.value = 'byo';
         privateLinkDomainInput.value = '';
         privateLinkCoverUrlInput.value = '';
@@ -156,6 +208,7 @@
             return;
         }
 
+        editingPrivateLinkId = link.id;
         privateLinkSourceInput.value = link.linkSource || 'byo';
         privateLinkDomainInput.value = link.domain || '';
         privateLinkCoverUrlInput.value = link.coverUrl || '';
@@ -184,56 +237,86 @@
             return;
         }
 
+        const renderedLinks = getRenderedPrivateLinks();
         const members = privateLinkState?.members || [];
         const contributions = privateLinkState?.contributionSummary || [];
-        const isOwner = privateLinkState?.role === 'owner' && isPrivateLinkHost;
+        const isOwner = privateLinkState?.role === 'owner' && Boolean(privateLinkState?.activeHost);
+        const hasPaidSelectedPrivateLink = Boolean(privateLinkState && Number(privateLinkState.monthlyCostCredits) > 0 && privateLinkState.activeHost);
+        const currentDomain = getCurrentPrivateLinkDomain();
 
         if (privateLinkOwnerTools) {
             privateLinkOwnerTools.hidden = !isOwner;
         }
 
-        privateLinkList.innerHTML = privateLinkState
-            ? `
-                <article class="private-link-card">
+        if (privateLinkContributionSection) {
+            privateLinkContributionSection.hidden = !hasPaidSelectedPrivateLink;
+        }
+
+        if (privateLinkMemberLabel) {
+            privateLinkMemberLabel.textContent = privateLinkState?.domain
+                ? `Add account email to ${currentDomain}`
+                : 'Add account email to this private link';
+        }
+
+        if (privateLinkMemberSummary) {
+            privateLinkMemberSummary.textContent = privateLinkState?.domain
+                ? `Add or remove up to 19 invited accounts on ${currentDomain}. Each private link allows 20 total people including the owner.`
+                : 'Add or remove up to 19 invited accounts on this private link. Each private link allows 20 total people including the owner.';
+        }
+
+        if (privateLinkMemberSubmit) {
+            privateLinkMemberSubmit.textContent = privateLinkState?.domain
+                ? `Add User To ${currentDomain}`
+                : 'Add User To Link';
+        }
+
+        privateLinkList.innerHTML = renderedLinks.length
+            ? renderedLinks.map((link) => {
+                const isSelected = Number(link.id) === Number(privateLinkState?.id);
+                const memberTotal = (link.members?.length || 0) + 1;
+                return `
+                <article class="private-link-card${isSelected ? ' is-selected' : ''}">
                     <div class="private-link-card-head">
                         <div>
-                            <strong>${escapeHtml(privateLinkState.domain)}</strong>
+                            <strong>${escapeHtml(link.domain)}</strong>
                         </div>
                         <div class="private-link-badge-row">
-                            <span class="private-link-badge">${escapeHtml(privateLinkState.role || 'owner')}</span>
-                            <span class="private-link-badge">${escapeHtml(privateLinkState.linkSource === 'provided' ? 'provided' : 'bring your own')}</span>
+                            <span class="private-link-badge">${escapeHtml(link.role || 'owner')}</span>
+                            <span class="private-link-badge">${escapeHtml(link.linkSource === 'provided' ? 'provided' : 'bring your own')}</span>
+                            ${link.activeHost ? '<span class="private-link-badge">current host</span>' : ''}
                         </div>
                     </div>
                     <div class="private-link-card-grid">
                         <div class="private-link-stat">
                             <span>URL</span>
-                            <input class="private-link-value" type="text" readonly value="${escapeHtml(`https://${privateLinkState.domain}`)}" onclick="this.select()">
+                            <input class="private-link-value" type="text" readonly value="${escapeHtml(`https://${link.domain}`)}" onclick="this.select()">
                         </div>
                         <div class="private-link-stat">
                             <span>Login path</span>
-                            <input class="private-link-value" type="text" readonly value="${escapeHtml(privateLinkState.loginPath)}" onclick="this.select()">
+                            <input class="private-link-value" type="text" readonly value="${escapeHtml(link.loginPath)}" onclick="this.select()">
                         </div>
                         <div class="private-link-stat">
                             <span>Cover URL</span>
-                            <input class="private-link-value" type="text" readonly value="${escapeHtml(privateLinkState.coverUrl)}" onclick="this.select()">
+                            <input class="private-link-value" type="text" readonly value="${escapeHtml(link.coverUrl)}" onclick="this.select()">
                         </div>
                         <div class="private-link-stat">
                             <span>Monthly cost</span>
-                            <strong>${privateLinkState.monthlyCostCredits} credits</strong>
+                            <strong>${link.monthlyCostCredits} credits</strong>
                         </div>
                         <div class="private-link-stat">
-                            <span>Members</span>
-                            <strong>${members.length + 1}</strong>
+                            <span>People with access</span>
+                            <strong>${memberTotal} / 20</strong>
                         </div>
                     </div>
                     ${canManagePrivateLink ? `
                         <div class="private-link-card-meta">
-                            <button type="button" class="button-ghost button-tiny" data-edit-private-link="current">Edit Link</button>
+                            <button type="button" class="button-ghost button-tiny" data-edit-private-link="${link.id}">${isSelected ? 'Editing' : 'Edit Link'}</button>
                         </div>
                     ` : ''}
                 </article>
-            `
-            : '<div class="private-link-empty">No private links yet. Create one above.</div>';
+            `;
+            }).join('')
+            : '<div class="private-link-empty">No private links yet. Create one above. You can create up to 5 private links.</div>';
 
         if (privateLinkMembers) {
             privateLinkMembers.innerHTML = members.length
@@ -241,7 +324,7 @@
                     <div class="member-row">
                         <div>
                             <strong>${escapeHtml(member.email)}</strong>
-                            <span>Access granted</span>
+                            <span>Access granted on ${escapeHtml(currentDomain)}</span>
                         </div>
                         ${isOwner ? `<button class="button-ghost button-tiny" type="button" data-remove-member="${member.userId}">Remove</button>` : ''}
                     </div>
@@ -262,7 +345,7 @@
                 : '<div class="private-link-empty">No credits have been chipped in yet.</div>';
         }
 
-        if (privateLinkSlushPool && hasPaidPrivateLink) {
+        if (privateLinkSlushPool && hasPaidSelectedPrivateLink) {
             privateLinkSlushPool.textContent = `${privateLinkState?.slushPoolCredits ?? 0} credits`;
         }
     };
@@ -277,15 +360,22 @@
                 return;
             }
 
-            loadPrivateLinkIntoForm(privateLinkState);
-            setPrivateLinkFeedback('Loaded saved link into the editor.');
+            const link = findOwnedPrivateLinkById(editButton.dataset.editPrivateLink);
+            if (!link) {
+                return;
+            }
+
+            privateLinkState = link;
+            loadPrivateLinkIntoForm(link);
+            renderPrivateLinkState();
+            setPrivateLinkFeedback(`Loaded ${link.domain} into the editor.`);
         });
 
         const privateLinkClearButton = document.getElementById('private-link-clear');
         if (privateLinkClearButton) {
             privateLinkClearButton.addEventListener('click', () => {
                 clearPrivateLinkForm();
-                setPrivateLinkFeedback('');
+                setPrivateLinkFeedback('Creating a new private link.');
             });
         }
 
@@ -298,6 +388,7 @@
             }
 
             const payload = {
+                id: editingPrivateLinkId,
                 linkSource: privateLinkSourceInput.value,
                 domain: privateLinkDomainInput.value,
                 coverUrl: privateLinkCoverUrlInput.value,
@@ -318,8 +409,12 @@
                     throw new Error(data.error || 'Failed to save private link');
                 }
 
-                privateLinkState = data.privateLink;
-                clearPrivateLinkForm();
+                applyPrivateLinkResponse(data);
+                if (data.selectedLinkId) {
+                    loadPrivateLinkIntoForm(privateLinkState);
+                } else {
+                    clearPrivateLinkForm();
+                }
                 renderPrivateLinkState();
                 setPrivateLinkFeedback('Private link saved.');
             } catch (error) {
@@ -335,11 +430,11 @@
 
             const email = document.getElementById('private-link-member-email').value.trim();
             if (!email) {
-                setPrivateLinkFeedback('Enter an email to add.', true);
+                setPrivateLinkFeedback(`Enter an email to add to ${getCurrentPrivateLinkDomain()}.`, true);
                 return;
             }
 
-            setPrivateLinkFeedback('Adding member...');
+            setPrivateLinkFeedback(`Adding user to ${getCurrentPrivateLinkDomain()}...`);
 
             try {
                 const response = await fetch('/api/private-links/members', {
@@ -353,10 +448,10 @@
                     throw new Error(data.error || 'Failed to add member');
                 }
 
-                privateLinkState = data.privateLink;
+                applyPrivateLinkResponse(data);
                 document.getElementById('private-link-member-email').value = '';
                 renderPrivateLinkState();
-                setPrivateLinkFeedback('Member added.');
+                setPrivateLinkFeedback(`User added to ${getCurrentPrivateLinkDomain()}.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to add member', true);
             }
@@ -370,7 +465,7 @@
                 return;
             }
 
-            setPrivateLinkFeedback('Removing member...');
+            setPrivateLinkFeedback(`Removing user from ${getCurrentPrivateLinkDomain()}...`);
 
             try {
                 const response = await fetch(`/api/private-links/members/${button.dataset.removeMember}`, {
@@ -382,9 +477,9 @@
                     throw new Error(data.error || 'Failed to remove member');
                 }
 
-                privateLinkState = data.privateLink;
+                applyPrivateLinkResponse(data);
                 renderPrivateLinkState();
-                setPrivateLinkFeedback('Member removed.');
+                setPrivateLinkFeedback(`User removed from ${getCurrentPrivateLinkDomain()}.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to remove member', true);
             }
@@ -417,7 +512,7 @@
                 }
 
                 balanceEl.textContent = `${data.credits} credits`;
-                privateLinkState = data.privateLink;
+                applyPrivateLinkResponse(data);
                 document.getElementById('private-link-contribution-amount').value = '';
                 renderPrivateLinkState();
                 setPrivateLinkFeedback('Credits added to the slush pool.');

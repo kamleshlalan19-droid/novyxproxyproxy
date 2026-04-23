@@ -1,4 +1,4 @@
-<% const isPrivateLinkOwner = !privateLink || privateLink.role === 'owner'; %>
+<% const isPrivateLinkOwner = !privateLink || privateLink.role === 'owner' || Boolean(privateLinks && privateLinks.length); %>
 <% const isPrivateLinkHost = Boolean(privateLink && privateLink.activeHost); %>
 <% const hasPaidPrivateLink = Boolean(privateLink && Number(privateLink.monthlyCostCredits) > 0); %>
 <section class="account-panel <%= initialPanel === 'link-management' ? 'is-active' : '' %>" data-account-panel="link-management" <%= initialPanel === 'link-management' ? '' : 'hidden' %>>
@@ -59,6 +59,7 @@
             <div class="manager-section-head">
                 <div>
                     <h3>Your Private Links</h3>
+                    <p>Each account can own up to 5 private links.</p>
                 </div>
             </div>
             <div id="private-link-list" class="private-link-list"></div>
@@ -68,14 +69,15 @@
             <div class="manager-section-head">
                 <div>
                     <h3>People With Access</h3>
+                    <p id="private-link-member-summary">Add or remove up to 20 allowed account emails for this private link.</p>
                 </div>
             </div>
             <form id="private-link-member-form" class="inline-form">
                 <label class="field">
-                    <span>Add account email</span>
+                    <span id="private-link-member-label">Add account email to this private link</span>
                     <input id="private-link-member-email" type="email" placeholder="friend@example.com">
                 </label>
-                <button type="submit" class="button">Add Person</button>
+                <button id="private-link-member-submit" type="submit" class="button">Add User To Link</button>
             </form>
             <div id="private-link-members" class="member-list"></div>
         </section>

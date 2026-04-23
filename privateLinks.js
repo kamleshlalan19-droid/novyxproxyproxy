@@ -2,6 +2,7 @@ import pool from "./db.js";
 import redisClient, { ensureRedis } from "./redis.js";
 
 export const PRIVATE_LINK_CACHE_TTL_SECONDS = 60 * 60 * 24;
+export const MAX_PRIVATE_LINKS = 5;
 export const MAX_PRIVATE_LINK_MEMBERS = 20;
 export const PRIVATE_LINK_SOURCE = {
     BRING_YOUR_OWN: "byo",
@@ -44,7 +45,7 @@ export const isValidHttpUrl = (value) => {
 const parseCredits = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
 const linkCacheKey = (domain) => `myapp:private-link:domain:${normalizeDomain(domain)}`;
-const ownerCacheKey = (userId) => `myapp:private-link:owner:${userId}`;
+const ownerLinksCacheKey = (userId) => `myapp:private-link:owner:${userId}`;
 const accessCacheKey = (linkId, userId) => `myapp:private-link:access:${linkId}:${userId}`;
 const contributionsCacheKey = (linkId) => `myapp:private-link:contributions:${linkId}`;
 
@@ -143,21 +144,22 @@ const fetchContributionSummary = async (linkId) => {
     return summary;
 };
 
-const fetchPrivateLinkRecord = async (whereClause, params) => {
+const fetchPrivateLinkRecords = async (whereClause, params) => {
     const result = await pool.query(
         `SELECT id, owner_user_id, domain, cover_url, login_path, link_source, monthly_cost_credits,
                 slush_pool_credits, provider_enabled, created_at, updated_at
          FROM private_links
          WHERE ${whereClause}
-         LIMIT 1`,
+         ORDER BY created_at DESC, id DESC`,
         params
     );
 
-    if (result.rowCount === 0) {
-        return null;
-    }
+    return result.rows.map(mapLinkRow);
+};
 
-    return mapLinkRow(result.rows[0]);
+const fetchPrivateLinkRecord = async (whereClause, params) => {
+    const records = await fetchPrivateLinkRecords(whereClause, params);
+    return records[0] || null;
 };
 
 const cachePrivateLink = async (cacheKey, value) => {
@@ -187,24 +189,37 @@ export const getPrivateLinkByDomain = async (domain) => {
     return link;
 };
 
-export const getOwnedPrivateLink = async (ownerUserId) => {
+export const getOwnedPrivateLinks = async (ownerUserId) => {
     if (!ownerUserId) {
-        return null;
+        return [];
     }
 
     const cache = await ensureRedis();
-    const cached = deserializeCacheValue(await cache.get(ownerCacheKey(ownerUserId)));
+    const cached = deserializeCacheValue(await cache.get(ownerLinksCacheKey(ownerUserId)));
     if (cached === MISSING_SENTINEL) {
-        return null;
+        return [];
     }
     if (cached) {
         return cached;
     }
 
-    const linkRecord = await fetchPrivateLinkRecord("owner_user_id = $1", [ownerUserId]);
-    const link = await enrichPrivateLink(linkRecord);
-    await cachePrivateLink(ownerCacheKey(ownerUserId), link);
-    return link;
+    const linkRecords = await fetchPrivateLinkRecords("owner_user_id = $1", [ownerUserId]);
+    const links = await Promise.all(linkRecords.map(enrichPrivateLink));
+    await cachePrivateLink(ownerLinksCacheKey(ownerUserId), links);
+    return links;
+};
+
+export const getOwnedPrivateLink = async (ownerUserId, linkId = null) => {
+    const links = await getOwnedPrivateLinks(ownerUserId);
+    if (!links.length) {
+        return null;
+    }
+
+    if (!linkId) {
+        return links[0];
+    }
+
+    return links.find((link) => Number(link.id) === Number(linkId)) || null;
 };
 
 export const userCanAccessPrivateLink = async (link, userId) => {
@@ -243,7 +258,7 @@ export const invalidatePrivateLinkCaches = async (link) => {
     const cache = await ensureRedis();
     const deletions = [
         linkCacheKey(link.domain),
-        ownerCacheKey(link.ownerUserId),
+        ownerLinksCacheKey(link.ownerUserId),
         contributionsCacheKey(link.id),
     ];
 
@@ -255,16 +270,15 @@ export const invalidatePrivateLinkCaches = async (link) => {
 };
 
 export const getAccountPrivateLink = async ({ userId, hostname }) => {
-    const [ownedLink, hostLink] = await Promise.all([
-        getOwnedPrivateLink(userId),
+    const [ownedLinks, hostLink] = await Promise.all([
+        getOwnedPrivateLinks(userId),
         getPrivateLinkByDomain(hostname),
     ]);
+    const ownedLink = ownedLinks[0] || null;
 
     if (hostLink && (await userCanAccessPrivateLink(hostLink, userId))) {
-        const fullHostLink =
-            ownedLink && Number(ownedLink.id) === Number(hostLink.id)
-                ? ownedLink
-                : await enrichPrivateLink(hostLink);
+        const ownedHostLink = ownedLinks.find((link) => Number(link.id) === Number(hostLink.id));
+        const fullHostLink = ownedHostLink || (await enrichPrivateLink(hostLink));
 
         return {
             ...fullHostLink,
@@ -297,6 +311,5 @@ export const refreshPrivateLink = async (linkId) => {
     const existing = await enrichPrivateLink(await fetchPrivateLinkRecord("id = $1", [linkId]));
     await invalidatePrivateLinkCaches(existing);
     await cachePrivateLink(linkCacheKey(existing.domain), existing);
-    await cachePrivateLink(ownerCacheKey(existing.ownerUserId), existing);
     return existing;
 };

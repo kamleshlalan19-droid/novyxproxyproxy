@@ -10,10 +10,12 @@ CREATE TABLE IF NOT EXISTS private_links (
     provider_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT private_links_owner_unique UNIQUE (owner_user_id),
     CONSTRAINT private_links_cost_nonnegative CHECK (monthly_cost_credits >= 0),
     CONSTRAINT private_links_slush_nonnegative CHECK (slush_pool_credits >= 0)
 );
+
+ALTER TABLE private_links
+    DROP CONSTRAINT IF EXISTS private_links_owner_unique;
 
 CREATE TABLE IF NOT EXISTS private_link_members (
     link_id BIGINT NOT NULL REFERENCES private_links(id) ON DELETE CASCADE,
