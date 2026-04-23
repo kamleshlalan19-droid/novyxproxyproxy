@@ -139,6 +139,9 @@
     const canManagePrivateLink = <%- JSON.stringify((!privateLink || privateLink.role === 'owner') || Boolean(privateLinks && privateLinks.length)) %>;
     const privateLinkFeedback = document.getElementById('private-link-feedback');
     const privateLinkForm = document.getElementById('private-link-form');
+    const privateLinkSaveButton = document.getElementById('private-link-save');
+    const privateLinkEditorTitle = document.getElementById('private-link-editor-title');
+    const privateLinkEditorSummary = document.getElementById('private-link-editor-summary');
     const privateLinkOwnerTools = document.getElementById('private-link-owner-tools');
     const privateLinkList = document.getElementById('private-link-list');
     const privateLinkMembers = document.getElementById('private-link-members');
@@ -289,9 +292,23 @@
                 : 'Add User To Link';
         }
 
+        if (privateLinkEditorTitle) {
+            privateLinkEditorTitle.textContent = editingPrivateLinkId ? 'Edit Private Link' : 'Create Private Link';
+        }
+
+        if (privateLinkEditorSummary) {
+            privateLinkEditorSummary.textContent = editingPrivateLinkId && privateLinkState?.domain
+                ? `Editing ${privateLinkState.domain}. Clear the form to start a new private link.`
+                : 'You are creating a new private link. Select a saved link if you want to edit it instead.';
+        }
+
+        if (privateLinkSaveButton) {
+            privateLinkSaveButton.textContent = editingPrivateLinkId ? 'Save Changes' : 'Create Private Link';
+        }
+
         privateLinkList.innerHTML = renderedLinks.length
             ? renderedLinks.map((link) => {
-                const isSelected = Number(link.id) === Number(privateLinkState?.id);
+                const isSelected = editingPrivateLinkId && Number(link.id) === Number(editingPrivateLinkId);
                 const memberTotal = (link.members?.length || 0) + 1;
                 return `
                 <article class="private-link-card${isSelected ? ' is-selected' : ''}">
@@ -404,7 +421,8 @@
         if (privateLinkClearButton) {
             privateLinkClearButton.addEventListener('click', () => {
                 clearPrivateLinkForm();
-                setPrivateLinkFeedback('Creating a new private link.');
+                renderPrivateLinkState();
+                setPrivateLinkFeedback('Cleared');
             });
         }
 
