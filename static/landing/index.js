@@ -3,10 +3,10 @@ var panicWebsite =
     localStorage.getItem('settings_panicUrl') || 'https://drive.google.com';
 
 const splashLines = [
-    'Fast access, clean layout, no wasted space.',
-    'Open the route you need and move.',
-    'Proxy, games, and current links.',
-    'Use Discord when the domain changes.',
+    'Fast access, clean layout, no wasted space',
+    'So much better than PeteZah',
+    'We have private links now',
+    'Join the discord',
 ];
 
 $(document).keydown(function (e) {
