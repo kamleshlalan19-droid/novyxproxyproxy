@@ -8,7 +8,6 @@ import { createBareServer } from "@tomphttp/bare-server-node";
 import { fileURLToPath } from "url";
 import * as http from "node:http";
 import * as https from "node:https";
-import { createClient } from "redis";
 import apiRoutes from "./api.js";
 import requestIp from'request-ip';
 import geoip from 'geoip-lite';
@@ -21,6 +20,10 @@ import pool from "./db.js";
 import cors from "cors";
 import axios from "axios";
 import { getCreditBalance, roundCredits } from "./store.js";
+import redisClient from "./redis.js";
+import { getAccountPrivateLink } from "./privateLinks.js";
+import { canAccessPrivateLinkUpgrade, createPrivateLinkRequestGate } from "./privateLinkGate.js";
+import { getSessionUser } from "./sessionUser.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -101,9 +104,6 @@ app.use((req, res, next) => {
 app.use(cors({
   origin: "*"
 }));
-
-let redisClient = createClient();
-redisClient.connect().catch(console.error);
 
 let redisStore = new RedisStore({
   client: redisClient,
@@ -197,6 +197,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(createPrivateLinkRequestGate({ proxy }));
+
 app.get("/uv/sw.js", (req, res) => {
   res.set("Service-Worker-Allowed", "/~/uv/");
   res.sendFile(__dirname + "/static/uv/sw.js");
@@ -242,17 +244,21 @@ app.get("/validate-domain", async (req, res) => {
 
 app.get("/account", async (req, res) => {
   if (req.session.token) {
-    const tokenResult = await pool.query('SELECT id, token, admin, data, email FROM users WHERE token = $1', [req.session.token]);
-    if (tokenResult.rowCount === 0) {
+    const user = await getSessionUser(req);
+    if (!user) {
       return res.status(400).json(false); // Account does not exist
     } else {
-      const user = tokenResult.rows[0];
       const adfree = await getAdfreeSummary(user.id);
+      const privateLink = await getAccountPrivateLink({
+        userId: user.id,
+        hostname: req.hostname,
+      });
 
       res.render("account", {
         credits: getCreditBalance(user.data),
         email: user.email,
         adfree,
+        privateLink,
       });
     }
   } else {
@@ -262,16 +268,15 @@ app.get("/account", async (req, res) => {
 
 app.get("/offerwall", async (req, res) => {
   if (req.session.token) {
-    const tokenResult = await pool.query('SELECT token, admin FROM users WHERE token = $1', [req.session.token]);
-    if (tokenResult.rowCount === 0) {
+    const user = await getSessionUser(req);
+    if (!user) {
       return res.status(400).json(false); // Account does not exist
     } else {
-      const result = await pool.query('SELECT id, email, data FROM users WHERE token = $1', [req.session.token]);
-      const adfree = await getAdfreeSummary(result.rows[0].id);
+      const adfree = await getAdfreeSummary(user.id);
       res.render("offerwall", {
-        id: result.rows[0].id,
-        email: result.rows[0].email,
-        credits: getCreditBalance(result.rows[0].data),
+        id: user.id,
+        email: user.email,
+        credits: getCreditBalance(user.data),
         adfree,
       });
     }
@@ -472,6 +477,26 @@ server.on("upgrade", async (req, socket, head) => {
       const override = req.session?.siteOveride || req.session?.siteOverride;
       if (override) {
         proxy.ws(req, socket, head, { target: override, changeOrigin: true });
+      } else if (req.headers.host) {
+        canAccessPrivateLinkUpgrade(req)
+            .then((canAccess) => {
+              if (canAccess === null) {
+                if (bareServer.shouldRoute(req)) {
+                  bareServer.routeUpgrade(req, socket, head);
+                } else {
+                  socket.end();
+                }
+                return;
+              }
+
+              if (canAccess && bareServer.shouldRoute(req)) {
+                bareServer.routeUpgrade(req, socket, head);
+                return;
+              }
+
+              socket.end();
+            })
+            .catch(() => socket.end());
       } else if (bareServer.shouldRoute(req)) {
         bareServer.routeUpgrade(req, socket, head);
       } else {

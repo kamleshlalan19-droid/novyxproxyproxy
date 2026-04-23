@@ -139,10 +139,124 @@
             color: var(--text);
             background: var(--surface-strong);
         }
+
+        .private-link-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .private-link-shell {
+            display: grid;
+            gap: 24px;
+            grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.85fr);
+        }
+
+        .private-link-stack,
+        .private-link-sidebar,
+        .member-list,
+        .contribution-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .private-link-form {
+            display: grid;
+            gap: 16px;
+        }
+
+        .field-grid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .field {
+            display: grid;
+            gap: 8px;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 13px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+        }
+
+        .field small {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .inline-form {
+            display: flex;
+            gap: 12px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .inline-form .field {
+            flex: 1 1 260px;
+        }
+
+        .private-link-meta,
+        .member-row,
+        .contribution-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .private-link-meta strong,
+        .member-row strong,
+        .contribution-row strong {
+            display: block;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .private-link-meta span,
+        .member-row span,
+        .contribution-row span {
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 0.92rem;
+        }
+
+        .private-link-feedback {
+            min-height: 24px;
+            color: #9ff0ca;
+        }
+
+        .private-link-feedback.error {
+            color: #ffb6b6;
+        }
+
+        .private-link-empty {
+            padding: 18px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .button-tiny {
+            padding: 10px 14px;
+            border-radius: 12px;
+        }
+
+        @media (max-width: 980px) {
+            .private-link-shell {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
 <body>
+<% const isPrivateLinkOwner = !privateLink || privateLink.role === 'owner'; %>
 <div class="noise"></div>
 <div class="site-shell">
     <header class="site-header">
@@ -255,13 +369,22 @@
 
                     <div class="perk-grid" style="margin-top: 10px;">
                         <article class="perk-card">
-                            <h3>Private Links</h3>
-                            <p>Reserved for fully private link access once the feature launches.</p>
+                            <h3>Bring Your Own Private Link</h3>
+                            <p>Attach your own domain, choose a cover URL and login path, and keep it running at 0 credits per month.</p>
+                            <div class="price-row">
+                                <div class="store-price">0 credits / month</div>
+                                <span>Available now</span>
+                            </div>
+                            <button class="button-ghost store-button" type="button" disabled>Manage Below</button>
+                        </article>
+                        <article class="perk-card">
+                            <h3>Provided Private Links</h3>
+                            <p>Future hosted option. The pricing path is wired in, but issuing provided links is still disabled.</p>
                             <div class="price-row">
                                 <div class="store-price">10 credits / month</div>
-                                <span class="coming-soon">Coming soon</span>
+                                <span class="coming-soon">Still disabled</span>
                             </div>
-                            <button class="button-ghost store-button" type="button" disabled>Private Links Locked</button>
+                            <button class="button-ghost store-button" type="button" disabled>Provided Links Locked</button>
                         </article>
                         <article class="perk-card">
                             <h3>Semi-Private Links</h3>
@@ -272,6 +395,110 @@
                             </div>
                             <button class="button-ghost store-button" type="button" disabled>Semi-Private Locked</button>
                         </article>
+                    </div>
+                </article>
+
+                <article class="info-card private-link-grid">
+                    <div class="section-heading" style="margin-bottom: 0;">
+                        <div>
+                            <h2>Private Link Manager</h2>
+                            <p>Bring your own domain for free, choose the cover URL that unauthenticated visitors get proxied to, and set the exact login path for this link.</p>
+                        </div>
+                    </div>
+
+                    <div class="private-link-shell">
+                        <div class="private-link-stack">
+                            <form id="private-link-form" class="private-link-form">
+                                <div class="field-grid">
+                                    <label class="field">
+                                        <span>Link type</span>
+                                        <select id="private-link-source" class="styled-select" <%= isPrivateLinkOwner ? '' : 'disabled' %>>
+                                            <option value="byo" selected>Bring your own link</option>
+                                            <option value="provided" disabled>Use a provided link (disabled)</option>
+                                        </select>
+                                        <small>Provided links stay disabled for now, but the billing field already exists.</small>
+                                    </label>
+                                    <label class="field">
+                                        <span>Login path</span>
+                                        <input id="private-link-login-path" type="text" placeholder="/secret-login" value="<%= privateLink ? privateLink.loginPath : '/login' %>" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
+                                        <small>Anyone who opens this path on your private domain gets the login page.</small>
+                                    </label>
+                                </div>
+                                <div class="field-grid">
+                                    <label class="field">
+                                        <span>Private domain</span>
+                                        <input id="private-link-domain" type="text" placeholder="study.example.com" value="<%= privateLink ? privateLink.domain : '' %>" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
+                                        <small>This should be the domain you point at this CanLite deployment.</small>
+                                    </label>
+                                    <label class="field">
+                                        <span>Cover URL</span>
+                                        <input id="private-link-cover-url" type="url" placeholder="https://example.org" value="<%= privateLink ? privateLink.coverUrl : '' %>" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
+                                        <small>Unauthenticated traffic on this private domain gets proxied here unless it hits the login path.</small>
+                                    </label>
+                                </div>
+                                <% if (isPrivateLinkOwner) { %>
+                                    <div class="button-row">
+                                        <button id="private-link-save" type="submit" class="button">Save Private Link</button>
+                                    </div>
+                                <% } else { %>
+                                    <div class="private-link-empty">Only the link owner can change this domain, cover URL, login path, or member access.</div>
+                                <% } %>
+                            </form>
+
+                            <p id="private-link-feedback" class="private-link-feedback"></p>
+
+                            <div id="private-link-owner-tools" <%= privateLink && privateLink.role === 'owner' ? '' : 'hidden' %>>
+                                <h3 style="margin-bottom: 10px;">People With Access</h3>
+                                <form id="private-link-member-form" class="inline-form">
+                                    <label class="field">
+                                        <span>Add account email</span>
+                                        <input id="private-link-member-email" type="email" placeholder="friend@example.com">
+                                        <small>Up to 20 extra people can be added to your link.</small>
+                                    </label>
+                                    <button type="submit" class="button">Add Person</button>
+                                </form>
+                                <div id="private-link-members" class="member-list"></div>
+                            </div>
+                        </div>
+
+                        <aside class="private-link-sidebar">
+                            <div class="private-link-meta">
+                                <div>
+                                    <strong>Monthly cost</strong>
+                                    <span id="private-link-monthly-cost"><%= privateLink ? privateLink.monthlyCostCredits : 0 %> credits</span>
+                                </div>
+                                <div>
+                                    <strong>Slush pool</strong>
+                                    <span id="private-link-slush-pool"><%= privateLink ? privateLink.slushPoolCredits : 0 %> credits</span>
+                                </div>
+                            </div>
+                            <div class="private-link-meta">
+                                <div>
+                                    <strong>Current role</strong>
+                                    <span id="private-link-role"><%= privateLink ? privateLink.role : 'No private link yet' %></span>
+                                </div>
+                                <div>
+                                    <strong>Current host</strong>
+                                    <span><%= privateLink && privateLink.activeHost ? 'This private link' : 'Main site' %></span>
+                                </div>
+                            </div>
+
+                            <form id="private-link-contribution-form" class="private-link-form">
+                                <label class="field">
+                                    <span>Chip into the link</span>
+                                    <input id="private-link-contribution-amount" type="number" min="0.01" step="0.01" placeholder="5">
+                                    <small>Credits are taken from your account balance and added to the link’s slush pool for future paid plans.</small>
+                                </label>
+                                <div class="button-row">
+                                    <button type="submit" class="button">Contribute Credits</button>
+                                </div>
+                            </form>
+
+                            <div>
+                                <h3 style="margin-bottom: 10px;">Contribution Totals</h3>
+                                <div id="private-link-contributions" class="contribution-list"></div>
+                            </div>
+                        </aside>
                     </div>
                 </article>
 
@@ -324,6 +551,65 @@
 
     const feedback = document.getElementById('store-feedback');
     const balanceEl = document.getElementById('credit-balance');
+    let privateLinkState = <%- JSON.stringify(privateLink || null) %>;
+    const canManagePrivateLink = <%- JSON.stringify(isPrivateLinkOwner) %>;
+    const privateLinkFeedback = document.getElementById('private-link-feedback');
+    const privateLinkForm = document.getElementById('private-link-form');
+    const privateLinkOwnerTools = document.getElementById('private-link-owner-tools');
+    const privateLinkMembers = document.getElementById('private-link-members');
+    const privateLinkContributions = document.getElementById('private-link-contributions');
+    const privateLinkMonthlyCost = document.getElementById('private-link-monthly-cost');
+    const privateLinkSlushPool = document.getElementById('private-link-slush-pool');
+    const privateLinkRole = document.getElementById('private-link-role');
+
+    const setPrivateLinkFeedback = (message, isError = false) => {
+        privateLinkFeedback.textContent = message || '';
+        privateLinkFeedback.classList.toggle('error', Boolean(isError));
+    };
+
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[char]));
+
+    const renderPrivateLinkState = () => {
+        const members = privateLinkState?.members || [];
+        const contributions = privateLinkState?.contributionSummary || [];
+        const isOwner = privateLinkState?.role === 'owner';
+
+        privateLinkOwnerTools.hidden = !isOwner;
+        privateLinkMonthlyCost.textContent = `${privateLinkState?.monthlyCostCredits ?? 0} credits`;
+        privateLinkSlushPool.textContent = `${privateLinkState?.slushPoolCredits ?? 0} credits`;
+        privateLinkRole.textContent = privateLinkState?.role || 'No private link yet';
+
+        privateLinkMembers.innerHTML = members.length
+            ? members.map((member) => `
+                <div class="member-row">
+                    <div>
+                        <strong>${escapeHtml(member.email)}</strong>
+                        <span>Access granted</span>
+                    </div>
+                    ${isOwner ? `<button class="button-ghost button-tiny" type="button" data-remove-member="${member.userId}">Remove</button>` : ''}
+                </div>
+            `).join('')
+            : '<div class="private-link-empty">No extra members yet.</div>';
+
+        privateLinkContributions.innerHTML = contributions.length
+            ? contributions.map((contribution) => `
+                <div class="contribution-row">
+                    <div>
+                        <strong>${escapeHtml(contribution.email)}</strong>
+                        <span>${contribution.totalCredits} credits contributed</span>
+                    </div>
+                </div>
+            `).join('')
+            : '<div class="private-link-empty">No credits have been chipped in yet.</div>';
+    };
+
+    renderPrivateLinkState();
 
     for (const button of document.querySelectorAll('[data-plan]')) {
         button.addEventListener('click', async () => {
@@ -357,6 +643,140 @@
             }
         });
     }
+
+    privateLinkForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        if (!canManagePrivateLink) {
+            setPrivateLinkFeedback('Only the link owner can change this private link.', true);
+            return;
+        }
+
+        const payload = {
+            linkSource: document.getElementById('private-link-source').value,
+            domain: document.getElementById('private-link-domain').value,
+            coverUrl: document.getElementById('private-link-cover-url').value,
+            loginPath: document.getElementById('private-link-login-path').value
+        };
+
+        setPrivateLinkFeedback('Saving private link...');
+
+        try {
+            const response = await fetch('/api/private-links', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to save private link');
+            }
+
+            privateLinkState = data.privateLink;
+            renderPrivateLinkState();
+            setPrivateLinkFeedback('Private link saved.');
+        } catch (error) {
+            setPrivateLinkFeedback(error.message || 'Failed to save private link', true);
+        }
+    });
+
+    document.getElementById('private-link-member-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const email = document.getElementById('private-link-member-email').value.trim();
+        if (!email) {
+            setPrivateLinkFeedback('Enter an email to add.', true);
+            return;
+        }
+
+        setPrivateLinkFeedback('Adding member...');
+
+        try {
+            const response = await fetch('/api/private-links/members', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to add member');
+            }
+
+            privateLinkState = data.privateLink;
+            document.getElementById('private-link-member-email').value = '';
+            renderPrivateLinkState();
+            setPrivateLinkFeedback('Member added.');
+        } catch (error) {
+            setPrivateLinkFeedback(error.message || 'Failed to add member', true);
+        }
+    });
+
+    privateLinkMembers.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-remove-member]');
+        if (!button) {
+            return;
+        }
+
+        setPrivateLinkFeedback('Removing member...');
+
+        try {
+            const response = await fetch(`/api/private-links/members/${button.dataset.removeMember}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to remove member');
+            }
+
+            privateLinkState = data.privateLink;
+            renderPrivateLinkState();
+            setPrivateLinkFeedback('Member removed.');
+        } catch (error) {
+            setPrivateLinkFeedback(error.message || 'Failed to remove member', true);
+        }
+    });
+
+    document.getElementById('private-link-contribution-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const amount = Number(document.getElementById('private-link-contribution-amount').value);
+        if (!amount) {
+            setPrivateLinkFeedback('Enter a contribution amount.', true);
+            return;
+        }
+
+        setPrivateLinkFeedback('Contributing credits...');
+
+        try {
+            const response = await fetch('/api/private-links/contribute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ amount })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to contribute credits');
+            }
+
+            balanceEl.textContent = `${data.credits} credits`;
+            privateLinkState = data.privateLink;
+            document.getElementById('private-link-contribution-amount').value = '';
+            renderPrivateLinkState();
+            setPrivateLinkFeedback('Credits added to the slush pool.');
+        } catch (error) {
+            setPrivateLinkFeedback(error.message || 'Failed to contribute credits', true);
+        }
+    });
 
     document.getElementById('logout-button').addEventListener('click', async () => {
         await fetch('/api/logout', { method: 'POST' });

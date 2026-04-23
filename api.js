@@ -6,23 +6,17 @@ import moment from "moment";
 import path, { dirname } from "path";
 import fs from 'node:fs/promises';
 import { fileURLToPath } from "url";
-import { RedisStore } from "connect-redis";
-import { createClient } from "redis";
 import requestIp from'request-ip';
 import { getCreditBalance, roundCredits, setCreditBalance } from "./store.js";
+import redisClient from "./redis.js";
+import { authenticateUserCredentials } from "./auth.js";
+import { setSessionUser } from "./sessionUser.js";
+import privateLinkRoutes from "./routes/privateLinks.js";
 
 const router = express.Router();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-let redisClient = createClient();
-redisClient.connect().catch(console.error);
-
-let redisStore = new RedisStore({
-    client: redisClient,
-    prefix: "myapp:",
-});
 
 let games = [];
 const gamesFilePath = path.join(__dirname, "end.json");
@@ -117,9 +111,7 @@ router.post('/check', async (req, res) => {
 
         const user = tokenResult.rows[0];
 
-        req.session.token = user.token;
-        req.session.admin = user.admin;
-        req.session.user_id = user.id;
+        setSessionUser(req, user);
 
         // check adfree
         const adfreeResult = await pool.query(
@@ -172,32 +164,14 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Fetch salt for the given email
-        const saltResult = await pool.query('SELECT salt, token FROM users WHERE email = $1', [email]);
+        const result = await authenticateUserCredentials(email, password);
 
-        if (saltResult.rowCount === 0) {
-            return res.send('acc'); // Account does not exist
+        if (!result.ok) {
+            return res.send(result.reason);
         }
 
-        const salt = saltResult.rows[0].salt;
-
-        // Hash the provided password with the stored salt
-        const hashedPass = crypto.createHash('sha256').update(password + salt).digest('hex');
-
-        // Fetch stored password
-        const passResult = await pool.query('SELECT password, admin FROM users WHERE email = $1', [email]);
-
-        if (passResult.rows[0].password === hashedPass) {
-            // Generate a new token
-            req.session.token = saltResult.rows[0].token;
-            req.session.admin = false;
-            if(passResult.rows[0].admin) {
-                req.session.admin = true;
-            }
-            return res.send(saltResult.rows[0].token);
-        } else {
-            return res.send('pass'); // Incorrect password
-        }
+        setSessionUser(req, result.user);
+        return res.send(result.user.token);
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
@@ -219,6 +193,7 @@ router.post('/register', async (req, res) => {
         // Generate salt and token
         const salt = generateRandomString(64);
         const token = generateRandomString(32);
+        const userId = Math.floor(Math.random() * (9000000000)) + 1000000000;
 
         // Hash the password with the salt
         const hashedPass = crypto.createHash('sha256').update(password + salt).digest('hex');
@@ -226,10 +201,9 @@ router.post('/register', async (req, res) => {
         // Insert new user into database
         await pool.query(
             'INSERT INTO users (email, token, salt, password, verified, data, id, admin) VALUES ($1, $2, $3, $4, false, $5, $6, false)',
-            [email, token, salt, hashedPass, "{}", Math.floor(Math.random() * (9000000000)) + 1000000000]
+            [email, token, salt, hashedPass, "{}", userId]
         );
-        req.session.token = token;
-        req.session.admin = false;
+        setSessionUser(req, { id: userId, token, admin: false });
         return res.send(token);
     } catch (err) {
         console.error(err);
@@ -459,6 +433,7 @@ router.post('/store/adfree', async (req, res) => {
         client.release();
     }
 });
+router.use("/private-links", privateLinkRoutes);
 
 // Save Game Data
 router.post('/saveGameData', async (req, res) => {

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Link Login</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #071019;
+            --panel: rgba(12, 22, 36, 0.88);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #eef4ff;
+            --muted: rgba(238, 244, 255, 0.7);
+            --accent: #8ff0be;
+            --danger: #ff9f9f;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            font-family: "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(69, 143, 255, 0.18), transparent 34%),
+                linear-gradient(180deg, #08111a 0%, #050a10 100%);
+            color: var(--text);
+        }
+
+        .card {
+            width: min(100%, 420px);
+            padding: 28px;
+            border-radius: 24px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.34);
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 1.9rem;
+        }
+
+        p {
+            margin: 0 0 18px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        form {
+            display: grid;
+            gap: 14px;
+        }
+
+        label {
+            display: grid;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        input {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 13px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+        }
+
+        button {
+            margin-top: 6px;
+            border: 0;
+            border-radius: 14px;
+            padding: 14px 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: #04110a;
+            background: var(--accent);
+        }
+
+        .error {
+            min-height: 20px;
+            margin-bottom: 10px;
+            color: var(--danger);
+        }
+
+        .meta {
+            margin-top: 16px;
+            font-size: 0.86rem;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Private link</h1>
+    <p>Sign in with an allowed account to access <strong><%= domain %></strong>.</p>
+    <div class="error"><%= error || "" %></div>
+    <form action="<%= loginPath %>" method="post">
+        <label>
+            Email
+            <input type="email" name="email" autocomplete="email" required>
+        </label>
+        <label>
+            Password
+            <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">Open Private Link</button>
+    </form>
+    <div class="meta">If you do not have access yet, ask the link owner to add your account email.</div>
+</div>
+</body>
+</html>
