@@ -1,18 +1,18 @@
 <% const isPrivateLinkOwner = !privateLink || privateLink.role === 'owner' || Boolean(privateLinks && privateLinks.length); %>
-<% const isPrivateLinkHost = Boolean(privateLink && privateLink.activeHost); %>
-<% const hasPaidPrivateLink = Boolean(privateLink && Number(privateLink.monthlyCostCredits) > 0); %>
 <section class="account-panel <%= initialPanel === 'link-management' ? 'is-active' : '' %>" data-account-panel="link-management" <%= initialPanel === 'link-management' ? '' : 'hidden' %>>
     <div class="section-heading">
         <div>
             <h1>Link Management</h1>
+            <p>Create and edit your private links from anywhere on your account.</p>
         </div>
     </div>
 
     <div class="manager-grid">
-        <section class="manager-section">
+        <section class="manager-section manager-section-editor">
             <div class="manager-section-head">
                 <div>
                     <h2>Create Or Edit</h2>
+                    <p>Keep this editor visible while you move through your saved links.</p>
                 </div>
             </div>
 
@@ -64,58 +64,5 @@
             </div>
             <div id="private-link-list" class="private-link-list"></div>
         </section>
-
-        <section id="private-link-owner-tools" class="manager-section" <%= privateLink && privateLink.role === 'owner' && isPrivateLinkHost ? '' : 'hidden' %>>
-            <div class="manager-section-head">
-                <div>
-                    <h3>People With Access</h3>
-                    <p id="private-link-member-summary">Add or remove up to 20 allowed account emails for this private link.</p>
-                </div>
-            </div>
-            <form id="private-link-member-form" class="inline-form">
-                <label class="field">
-                    <span id="private-link-member-label">Add account email to this private link</span>
-                    <input id="private-link-member-email" type="email" placeholder="friend@example.com">
-                </label>
-                <button id="private-link-member-submit" type="submit" class="button">Add User To Link</button>
-            </form>
-            <div id="private-link-members" class="member-list"></div>
-        </section>
-
-        <% if (isPrivateLinkHost && hasPaidPrivateLink) { %>
-            <section class="manager-section">
-                <div class="manager-section-head">
-                    <div>
-                        <h3>Slush Pool</h3>
-                    </div>
-                </div>
-
-                <div class="slush-summary">
-                    <div class="private-link-stat">
-                        <span>Link cost</span>
-                        <strong id="link-cost-credits"><%= privateLink ? privateLink.monthlyCostCredits : 0 %> credits / month</strong>
-                    </div>
-                    <div class="private-link-stat">
-                        <span>Current pool</span>
-                        <strong id="private-link-slush-pool"><%= privateLink ? privateLink.slushPoolCredits : 0 %> credits</strong>
-                    </div>
-                </div>
-
-                <form id="private-link-contribution-form" class="private-link-form">
-                    <label class="field">
-                        <span>Chip into the link</span>
-                        <input id="private-link-contribution-amount" type="number" min="0.01" step="0.01" placeholder="5">
-                    </label>
-                    <div class="button-row">
-                        <button type="submit" class="button">Contribute Credits</button>
-                    </div>
-                </form>
-
-                <div>
-                    <h3 style="margin-bottom: 10px;">Contribution Totals</h3>
-                    <div id="private-link-contributions" class="contribution-list"></div>
-                </div>
-            </section>
-        <% } %>
     </div>
 </section>

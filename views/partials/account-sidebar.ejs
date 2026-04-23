@@ -5,10 +5,14 @@
                 <span class="material-symbols-outlined">person</span>
                 <span>Account</span>
             </button>
-            <% if (showLinkManagement || currentPage === 'link-management') { %>
-                <button class="account-nav-link <%= currentPage === 'link-management' ? 'active' : '' %>" type="button" data-account-panel-target="link-management">
-                    <span class="material-symbols-outlined">link</span>
-                    <span>Link Management</span>
+            <button class="account-nav-link <%= currentPage === 'link-management' ? 'active' : '' %>" type="button" data-account-panel-target="link-management">
+                <span class="material-symbols-outlined">link</span>
+                <span>Link Management</span>
+            </button>
+            <% if (showPrivateLinkAdmin || currentPage === 'private-link-admin') { %>
+                <button class="account-nav-link <%= currentPage === 'private-link-admin' ? 'active' : '' %>" type="button" data-account-panel-target="private-link-admin">
+                    <span class="material-symbols-outlined">shield_lock</span>
+                    <span>Link Admin</span>
                 </button>
             <% } %>
         </nav>

@@ -9,7 +9,8 @@
     display: grid;
     gap: 16px;
     position: sticky;
-    top: 24px;
+    top: 104px;
+    max-height: calc(100vh - 128px);
 }
 
 .account-sidebar-card {
@@ -96,6 +97,7 @@
 .account-panels {
     display: grid;
     min-width: 0;
+    overflow: visible;
 }
 
 .account-panel {
@@ -129,5 +131,6 @@
 
     .account-sidebar {
         position: static;
+        max-height: none;
     }
 }

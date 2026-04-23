@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="/account/link-management.css">
 </head>
 <body>
-<% const showLinkManagement = Boolean(privateLink && privateLink.activeHost); %>
+<% const showPrivateLinkAdmin = Boolean(privateLink && privateLink.activeHost); %>
 <div class="noise"></div>
 <div class="site-shell">
     <%- include("partials/app-header", { brandKicker: "Account", activeSection: null }) %>
@@ -30,7 +30,7 @@
             <div class="account-layout">
                 <%- include("partials/account-sidebar", {
                     currentPage: initialPanel,
-                    showLinkManagement,
+                    showPrivateLinkAdmin,
                     credits,
                     email
                 }) %>
@@ -39,6 +39,7 @@
                     <div class="account-panels" data-initial-account-panel="<%= initialPanel %>">
                         <%- include("partials/account-store-panel", { initialPanel, credits, email, adfree }) %>
                         <%- include("partials/link-management-panel", { initialPanel, privateLink, privateLinks }) %>
+                        <%- include("partials/private-link-admin-panel", { initialPanel, privateLink }) %>
                     </div>
                 </div>
             </div>
@@ -78,7 +79,11 @@
         }
 
         syncAccountPanelState(panelName);
-        document.title = panelName === 'link-management' ? 'Link Management' : 'Your Account';
+        document.title = panelName === 'link-management'
+            ? 'Link Management'
+            : panelName === 'private-link-admin'
+                ? 'Private Link Admin'
+                : 'Your Account';
     };
 
     for (const trigger of accountPanelTriggers) {
@@ -139,10 +144,12 @@
     const privateLinkMembers = document.getElementById('private-link-members');
     const privateLinkContributions = document.getElementById('private-link-contributions');
     const privateLinkSlushPool = document.getElementById('private-link-slush-pool');
-    const privateLinkContributionSection = document.getElementById('private-link-contribution-form')?.closest('.manager-section') || null;
+    const privateLinkContributionSection = document.getElementById('private-link-contribution-section');
     const privateLinkMemberLabel = document.getElementById('private-link-member-label');
     const privateLinkMemberSummary = document.getElementById('private-link-member-summary');
     const privateLinkMemberSubmit = document.getElementById('private-link-member-submit');
+    const privateLinkAdminSummary = document.getElementById('private-link-admin-summary');
+    const privateLinkAdminEmpty = document.getElementById('private-link-admin-empty');
     const privateLinkSourceInput = document.getElementById('private-link-source');
     const privateLinkDomainInput = document.getElementById('private-link-domain');
     const privateLinkCoverUrlInput = document.getElementById('private-link-cover-url');
@@ -238,35 +245,47 @@
         }
 
         const renderedLinks = getRenderedPrivateLinks();
-        const members = privateLinkState?.members || [];
-        const contributions = privateLinkState?.contributionSummary || [];
-        const isOwner = privateLinkState?.role === 'owner' && Boolean(privateLinkState?.activeHost);
-        const hasPaidSelectedPrivateLink = Boolean(privateLinkState && Number(privateLinkState.monthlyCostCredits) > 0 && privateLinkState.activeHost);
+        const adminPrivateLinkState = activePrivateLinkState?.activeHost ? activePrivateLinkState : null;
+        const members = adminPrivateLinkState?.members || [];
+        const contributions = adminPrivateLinkState?.contributionSummary || [];
+        const isOwner = adminPrivateLinkState?.role === 'owner';
+        const hasPaidAdminPrivateLink = Boolean(adminPrivateLinkState && Number(adminPrivateLinkState.monthlyCostCredits) > 0);
         const currentDomain = getCurrentPrivateLinkDomain();
+        const adminDomain = adminPrivateLinkState?.domain || 'this private link';
 
         if (privateLinkOwnerTools) {
             privateLinkOwnerTools.hidden = !isOwner;
         }
 
         if (privateLinkContributionSection) {
-            privateLinkContributionSection.hidden = !hasPaidSelectedPrivateLink;
+            privateLinkContributionSection.hidden = !hasPaidAdminPrivateLink;
+        }
+
+        if (privateLinkAdminEmpty) {
+            privateLinkAdminEmpty.hidden = Boolean(adminPrivateLinkState);
+        }
+
+        if (privateLinkAdminSummary) {
+            privateLinkAdminSummary.textContent = adminPrivateLinkState?.domain
+                ? `Managing ${adminDomain}. Link-specific tools only work on this host.`
+                : 'Open this page on the private link you want to administer.';
         }
 
         if (privateLinkMemberLabel) {
-            privateLinkMemberLabel.textContent = privateLinkState?.domain
-                ? `Add account email to ${currentDomain}`
+            privateLinkMemberLabel.textContent = adminPrivateLinkState?.domain
+                ? `Add account email to ${adminDomain}`
                 : 'Add account email to this private link';
         }
 
         if (privateLinkMemberSummary) {
-            privateLinkMemberSummary.textContent = privateLinkState?.domain
-                ? `Add or remove up to 19 invited accounts on ${currentDomain}. Each private link allows 20 total people including the owner.`
+            privateLinkMemberSummary.textContent = adminPrivateLinkState?.domain
+                ? `Add or remove up to 19 invited accounts on ${adminDomain}. Each private link allows 20 total people including the owner.`
                 : 'Add or remove up to 19 invited accounts on this private link. Each private link allows 20 total people including the owner.';
         }
 
         if (privateLinkMemberSubmit) {
-            privateLinkMemberSubmit.textContent = privateLinkState?.domain
-                ? `Add User To ${currentDomain}`
+            privateLinkMemberSubmit.textContent = adminPrivateLinkState?.domain
+                ? `Add User To ${adminDomain}`
                 : 'Add User To Link';
         }
 
@@ -324,7 +343,7 @@
                     <div class="member-row">
                         <div>
                             <strong>${escapeHtml(member.email)}</strong>
-                            <span>Access granted on ${escapeHtml(currentDomain)}</span>
+                            <span>Access granted on ${escapeHtml(adminDomain)}</span>
                         </div>
                         ${isOwner ? `<button class="button-ghost button-tiny" type="button" data-remove-member="${member.userId}">Remove</button>` : ''}
                     </div>
@@ -345,8 +364,14 @@
                 : '<div class="private-link-empty">No credits have been chipped in yet.</div>';
         }
 
-        if (privateLinkSlushPool && hasPaidSelectedPrivateLink) {
-            privateLinkSlushPool.textContent = `${privateLinkState?.slushPoolCredits ?? 0} credits`;
+        if (privateLinkSlushPool && hasPaidAdminPrivateLink) {
+            privateLinkSlushPool.textContent = `${adminPrivateLinkState?.slushPoolCredits ?? 0} credits`;
+        } else if (privateLinkSlushPool) {
+            privateLinkSlushPool.textContent = '0 credits';
+        }
+
+        if (privateLinkContributions && !hasPaidAdminPrivateLink) {
+            privateLinkContributions.innerHTML = '';
         }
     };
 
@@ -430,11 +455,11 @@
 
             const email = document.getElementById('private-link-member-email').value.trim();
             if (!email) {
-                setPrivateLinkFeedback(`Enter an email to add to ${getCurrentPrivateLinkDomain()}.`, true);
+                setPrivateLinkFeedback(`Enter an email to add to ${activePrivateLinkState?.domain || 'this private link'}.`, true);
                 return;
             }
 
-            setPrivateLinkFeedback(`Adding user to ${getCurrentPrivateLinkDomain()}...`);
+            setPrivateLinkFeedback(`Adding user to ${activePrivateLinkState?.domain || 'this private link'}...`);
 
             try {
                 const response = await fetch('/api/private-links/members', {
@@ -451,7 +476,7 @@
                 applyPrivateLinkResponse(data);
                 document.getElementById('private-link-member-email').value = '';
                 renderPrivateLinkState();
-                setPrivateLinkFeedback(`User added to ${getCurrentPrivateLinkDomain()}.`);
+                setPrivateLinkFeedback(`User added to ${activePrivateLinkState?.domain || 'this private link'}.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to add member', true);
             }
@@ -465,7 +490,7 @@
                 return;
             }
 
-            setPrivateLinkFeedback(`Removing user from ${getCurrentPrivateLinkDomain()}...`);
+            setPrivateLinkFeedback(`Removing user from ${activePrivateLinkState?.domain || 'this private link'}...`);
 
             try {
                 const response = await fetch(`/api/private-links/members/${button.dataset.removeMember}`, {
@@ -479,7 +504,7 @@
 
                 applyPrivateLinkResponse(data);
                 renderPrivateLinkState();
-                setPrivateLinkFeedback(`User removed from ${getCurrentPrivateLinkDomain()}.`);
+                setPrivateLinkFeedback(`User removed from ${activePrivateLinkState?.domain || 'this private link'}.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to remove member', true);
             }
