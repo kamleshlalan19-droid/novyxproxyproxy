@@ -1,4 +1,5 @@
 import pool from "./db.js";
+import routePool from "./routeDb.js";
 import { getCreditBalance, roundCredits, setCreditBalance } from "./store.js";
 import {
     MAX_PRIVATE_LINKS,
@@ -36,6 +37,8 @@ export const PRIVATE_LINK_PLAN_DEFAULTS = {
 export const canUsePrivateLinkDomain = (domain) => {
     return !BLOCKED_DOMAIN_PARTS.some((blockedPart) => domain.includes(blockedPart));
 };
+
+const getRouteTableUrlForDomain = (domain) => `https://${String(domain || "").trim().toLowerCase()}`;
 
 export const validatePrivateLinkInput = ({ domain, coverUrl, loginPath, linkSource }) => {
     const normalizedDomain = String(domain || "").trim().toLowerCase();
@@ -102,9 +105,22 @@ export const saveOwnedPrivateLink = async (userId, input) => {
             [domain]
         );
 
+        const existingRoute = await routePool.query(
+            "SELECT 1 FROM routestable WHERE lower(url) = $1 LIMIT 1",
+            [getRouteTableUrlForDomain(domain)]
+        );
+
         if (conflictingDomain.rowCount > 0 && Number(conflictingDomain.rows[0].id) !== normalizedLinkId) {
             await client.query("ROLLBACK");
             return { error: "That domain is already in use", status: 400 };
+        }
+
+        if (existingRoute.rowCount > 0) {
+            await client.query("ROLLBACK");
+            return {
+                error: "That domain has already been used or visited before. Private link domains must be completely unused.",
+                status: 400,
+            };
         }
 
         const existingLink = normalizedLinkId

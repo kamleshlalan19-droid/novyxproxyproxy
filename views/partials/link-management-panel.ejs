@@ -4,6 +4,7 @@
         <div>
             <h1>Link Management</h1>
             <p>Create and edit your private links from anywhere on your account.</p>
+            <p>The domain must have never been visited or used before in the route database. Fill this out first, then click CanLite on the site selection screen afterward.</p>
         </div>
     </div>
 
@@ -35,10 +36,12 @@
                     <label class="field">
                         <span>Private domain</span>
                         <input id="private-link-domain" type="text" placeholder="study.example.com" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
+                        <small>This domain must be brand new to the route database. If it has already been used or visited, private-link creation will be rejected.</small>
                     </label>
                     <label class="field">
                         <span>Cover URL</span>
                         <input id="private-link-cover-url" type="url" placeholder="https://example.org" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
+                        <small>After you finish this form, use the site selection screen and click CanLite on that domain.</small>
                     </label>
                 </div>
 
