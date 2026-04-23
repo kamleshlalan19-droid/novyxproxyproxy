@@ -1,0 +1,35 @@
+<aside class="account-sidebar">
+    <div class="account-sidebar-card">
+        <span class="account-sidebar-kicker">Workspace</span>
+        <h2><%= sidebarTitle || "Account" %></h2>
+        <p><%= sidebarDescription || "Manage your account and private-link tools." %></p>
+    </div>
+
+    <nav class="account-sidebar-card account-nav">
+        <a class="account-nav-link <%= currentPage === 'account' ? 'active' : '' %>" href="/account">
+            <span class="material-symbols-outlined">person</span>
+            <span>Account</span>
+        </a>
+        <% if (showLinkManagement || currentPage === 'link-management') { %>
+            <a class="account-nav-link <%= currentPage === 'link-management' ? 'active' : '' %>" href="/link-management">
+                <span class="material-symbols-outlined">link</span>
+                <span>Link Management</span>
+            </a>
+        <% } %>
+        <a class="account-nav-link" href="#" data-open-settings>
+            <span class="material-symbols-outlined">settings</span>
+            <span>Settings</span>
+        </a>
+    </nav>
+
+    <div class="account-sidebar-card account-sidebar-stats">
+        <div>
+            <span>Balance</span>
+            <strong id="credit-balance"><%= credits %> credits</strong>
+        </div>
+        <div>
+            <span>Account</span>
+            <strong><%= email %></strong>
+        </div>
+    </div>
+</aside>

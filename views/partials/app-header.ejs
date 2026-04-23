@@ -1,0 +1,22 @@
+<header class="site-header">
+    <nav class="site-nav">
+        <a class="brand" href="/">
+            <img src="/logo.png" alt="CanLite">
+            <div class="brand-copy">
+                <span class="brand-kicker"><%= brandKicker || "CanLite" %></span>
+                <span class="brand-name">CanLite</span>
+            </div>
+        </a>
+        <div class="nav-links">
+            <a class="nav-link <%= activeSection === 'home' ? 'active' : '' %>" href="/"><span class="material-symbols-outlined">home</span>Home</a>
+            <a class="nav-link <%= activeSection === 'games' ? 'active' : '' %>" href="/games"><span class="material-symbols-outlined">stadia_controller</span>Games</a>
+            <a class="nav-link <%= activeSection === 'proxy' ? 'active' : '' %>" href="/proxe"><span class="material-symbols-outlined">language</span>Proxy</a>
+            <a class="nav-link <%= activeSection === 'extra' ? 'active' : '' %>" href="/extra"><span class="material-symbols-outlined">add</span>Extra</a>
+            <a class="nav-link <%= activeSection === 'partners' ? 'active' : '' %>" href="/partners"><span class="material-symbols-outlined">group</span>Partners</a>
+        </div>
+        <div class="nav-tools">
+            <a class="utility-chip" href="#" data-open-settings><span class="material-symbols-outlined">settings</span>Settings</a>
+            <div class="utility-chip clock-chip" id="time-clock"></div>
+        </div>
+    </nav>
+</header>

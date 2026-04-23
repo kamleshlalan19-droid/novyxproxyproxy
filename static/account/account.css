@@ -1,0 +1,126 @@
+.store-grid {
+    display: grid;
+    gap: 24px;
+}
+
+.store-summary {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.store-stat,
+.store-card,
+.perk-card,
+.info-card {
+    background: rgba(14, 18, 31, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+}
+
+.store-stat strong,
+.store-card strong,
+.perk-card strong {
+    display: block;
+    font-size: 1.7rem;
+    margin-top: 10px;
+}
+
+.store-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(127, 227, 190, 0.12);
+    color: #9ff0ca;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.store-actions,
+.perk-grid,
+.detail-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.store-card h3,
+.perk-card h3 {
+    margin-bottom: 8px;
+}
+
+.store-card p,
+.perk-card p,
+.store-stat p,
+.info-card p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 18px 0 14px;
+}
+
+.price-row span {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.store-price {
+    font-size: 1.55rem;
+    font-weight: 700;
+}
+
+.store-note {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.76);
+}
+
+.store-note a {
+    color: #9ff0ca;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.store-button[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.coming-soon {
+    color: #ffcf88;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+#store-feedback {
+    min-height: 24px;
+    color: #9ff0ca;
+}
+
+.styled-select {
+    color: var(--text);
+    background: color-mix(in srgb, var(--surface-strong) 92%, black 8%);
+    border-color: var(--border);
+    appearance: none;
+}
+
+.styled-select option {
+    color: var(--text);
+    background: var(--surface-strong);
+}

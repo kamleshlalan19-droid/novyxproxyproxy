@@ -30,6 +30,18 @@ const requirePrivateLinkHost = async (req, res) => {
     return hostLink;
 };
 
+const sendCurrentPrivateLink = async (req, res, user, payload = {}) => {
+    const privateLink = await getAccountPrivateLink({
+        userId: user.id,
+        hostname: req.hostname,
+    });
+
+    return res.json({
+        ...payload,
+        privateLink,
+    });
+};
+
 router.get("/account", async (req, res) => {
     const user = await requireSessionUser(req, res);
     if (!user) {
@@ -61,7 +73,7 @@ router.post("/", async (req, res) => {
             return res.status(result.status || 400).json({ error: result.error });
         }
 
-        res.json({ success: true, privateLink: result.privateLink });
+        return sendCurrentPrivateLink(req, res, user, { success: true });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to save private link" });
@@ -89,7 +101,7 @@ router.post("/members", async (req, res) => {
             return res.status(403).json({ error: "Member management is only available on that private link" });
         }
 
-        res.json({ success: true, privateLink: result.privateLink });
+        return sendCurrentPrivateLink(req, res, user, { success: true });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to add member" });
@@ -117,7 +129,7 @@ router.delete("/members/:userId", async (req, res) => {
             return res.status(403).json({ error: "Member management is only available on that private link" });
         }
 
-        res.json({ success: true, privateLink: result.privateLink });
+        return sendCurrentPrivateLink(req, res, user, { success: true });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to remove member" });
@@ -150,10 +162,9 @@ router.post("/contribute", async (req, res) => {
             return res.status(403).json({ error: "The slush pool is only available on that private link" });
         }
 
-        res.json({
+        return sendCurrentPrivateLink(req, res, user, {
             success: true,
             credits: result.credits,
-            privateLink: result.privateLink,
         });
     } catch (error) {
         console.error(error);

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta description="Unblocked Games on CanLite">
+    <meta description="CanLite account page">
     <meta name="viewport" content="width=device-width">
     <title>Your Account</title>
     <script defer data-domain="trueanalytics.online" src="https://trueanalyticz.online/js/script.js"></script>
@@ -15,749 +15,171 @@
     <script src="/theme.js"></script>
     <link rel="stylesheet" href="/site.css">
     <link rel="stylesheet" href="/settings/style.css">
-    <style>
-        .store-grid {
-            display: grid;
-            gap: 24px;
-        }
-
-        .store-summary {
-            display: grid;
-            gap: 16px;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        }
-
-        .store-stat,
-        .store-card,
-        .perk-card {
-            background: rgba(14, 18, 31, 0.72);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            padding: 22px;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
-        }
-
-        .store-stat strong,
-        .store-card strong,
-        .perk-card strong {
-            display: block;
-            font-size: 1.7rem;
-            margin-top: 10px;
-        }
-
-        .store-kicker {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 12px;
-            border-radius: 999px;
-            background: rgba(127, 227, 190, 0.12);
-            color: #9ff0ca;
-            font-size: 0.86rem;
-            font-weight: 600;
-        }
-
-        .store-actions,
-        .perk-grid {
-            display: grid;
-            gap: 16px;
-            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        }
-
-        .store-card h3,
-        .perk-card h3 {
-            margin-bottom: 8px;
-        }
-
-        .store-card p,
-        .perk-card p,
-        .store-stat p {
-            margin: 0;
-            color: rgba(255, 255, 255, 0.72);
-        }
-
-        .price-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin: 18px 0 14px;
-        }
-
-        .price-row span {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.62);
-        }
-
-        .store-price {
-            font-size: 1.55rem;
-            font-weight: 700;
-        }
-
-        .store-note {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 18px;
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.76);
-        }
-
-        .store-note a {
-            color: #9ff0ca;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .store-button[disabled] {
-            opacity: 0.55;
-            cursor: not-allowed;
-        }
-
-        .coming-soon {
-            color: #ffcf88;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        #store-feedback {
-            min-height: 24px;
-            color: #9ff0ca;
-        }
-
-        .styled-select {
-            color: var(--text);
-            background: color-mix(in srgb, var(--surface-strong) 92%, black 8%);
-            border-color: var(--border);
-            appearance: none;
-        }
-
-        .styled-select option {
-            color: var(--text);
-            background: var(--surface-strong);
-        }
-
-        .private-link-grid {
-            display: grid;
-            gap: 24px;
-        }
-
-        .manager-section {
-            display: grid;
-            gap: 16px;
-            padding: 20px;
-            border-radius: 22px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.03));
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-        }
-
-        .manager-section-muted {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.022));
-        }
-
-        .manager-section-strong {
-            background: linear-gradient(180deg, rgba(143, 240, 190, 0.08), rgba(255, 255, 255, 0.03));
-        }
-
-        .manager-section-head {
-            display: flex;
-            align-items: start;
-            justify-content: space-between;
-            gap: 14px;
-            padding-bottom: 14px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .manager-section-head h3 {
-            margin: 0;
-        }
-
-        .manager-section-head p {
-            margin: 6px 0 0;
-            color: rgba(255, 255, 255, 0.68);
-        }
-
-        .manager-kicker {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.78);
-            font-size: 0.8rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .private-link-list {
-            display: grid;
-            gap: 14px;
-        }
-
-        .private-link-card {
-            display: grid;
-            gap: 14px;
-            padding: 18px 20px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-        }
-
-        .private-link-card-head,
-        .private-link-card-meta {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .private-link-card-head strong {
-            font-size: 1.05rem;
-        }
-
-        .private-link-badge-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .private-link-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(143, 240, 190, 0.12);
-            color: #9ff0ca;
-            font-size: 0.82rem;
-            font-weight: 600;
-        }
-
-        .private-link-card-grid {
-            display: grid;
-            gap: 12px;
-            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        }
-
-        .private-link-stat {
-            padding: 12px 14px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.04);
-            min-width: 0;
-        }
-
-        .private-link-stat span {
-            display: block;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.84rem;
-            margin-bottom: 6px;
-        }
-
-        .private-link-value {
-            display: block;
-            width: 100%;
-            padding: 11px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            font: inherit;
-            overflow-x: auto;
-            white-space: nowrap;
-            scrollbar-width: thin;
-        }
-
-        .private-link-value[readonly] {
-            cursor: text;
-        }
-
-        .private-link-shell {
-            display: grid;
-            gap: 24px;
-            grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.85fr);
-        }
-
-        .private-link-stack,
-        .private-link-sidebar,
-        .member-list,
-        .contribution-list {
-            display: grid;
-            gap: 16px;
-        }
-
-        .private-link-form {
-            display: grid;
-            gap: 16px;
-        }
-
-        .field-grid {
-            display: grid;
-            gap: 14px;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        }
-
-        .field {
-            display: grid;
-            gap: 8px;
-        }
-
-        .field input {
-            width: 100%;
-            padding: 13px 14px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text);
-        }
-
-        .field small {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .inline-form {
-            display: flex;
-            gap: 12px;
-            align-items: end;
-            flex-wrap: wrap;
-        }
-
-        .inline-form .field {
-            flex: 1 1 260px;
-        }
-
-        .private-link-meta,
-        .member-row,
-        .contribution-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 14px 16px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .private-link-meta {
-            align-items: start;
-        }
-
-        .private-link-meta > div {
-            flex: 1 1 0;
-            min-width: 0;
-        }
-
-        .private-link-meta strong,
-        .member-row strong,
-        .contribution-row strong {
-            display: block;
-            font-size: 1rem;
-            margin: 0;
-        }
-
-        .private-link-meta span,
-        .member-row span,
-        .contribution-row span {
-            color: rgba(255, 255, 255, 0.68);
-            font-size: 0.92rem;
-        }
-
-        .private-link-feedback {
-            min-height: 24px;
-            color: #9ff0ca;
-        }
-
-        .private-link-feedback.error {
-            color: #ffb6b6;
-        }
-
-        .private-link-empty {
-            padding: 18px;
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.04);
-            color: rgba(255, 255, 255, 0.72);
-        }
-
-        .button-tiny {
-            padding: 10px 14px;
-            border-radius: 12px;
-        }
-
-        @media (max-width: 980px) {
-            .private-link-shell {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/account/layout.css">
+    <link rel="stylesheet" href="/account/account.css">
 </head>
-
 <body>
-<% const isPrivateLinkOwner = !privateLink || privateLink.role === 'owner'; %>
-<% const isPrivateLinkHost = Boolean(privateLink && privateLink.activeHost); %>
-<% const hasPaidPrivateLink = Boolean(privateLink && Number(privateLink.monthlyCostCredits) > 0); %>
+<% const showLinkManagement = Boolean(privateLink && privateLink.activeHost); %>
 <div class="noise"></div>
 <div class="site-shell">
-    <header class="site-header">
-        <nav class="site-nav">
-            <a class="brand" href="/">
-                <img src="/logo.png" alt="CanLite">
-                <div class="brand-copy">
-                    <span class="brand-kicker">Account</span>
-                    <span class="brand-name">CanLite</span>
-                </div>
-            </a>
-            <div class="nav-links">
-                <a class="nav-link" href="/"><span class="material-symbols-outlined">home</span>Home</a>
-                <a class="nav-link" href="/games"><span class="material-symbols-outlined">stadia_controller</span>Games</a>
-                <a class="nav-link" href="/proxe"><span class="material-symbols-outlined">language</span>Proxy</a>
-                <a class="nav-link" href="/extra"><span class="material-symbols-outlined">add</span>Extra</a>
-                <a class="nav-link" href="/partners"><span class="material-symbols-outlined">group</span>Partners</a>
-            </div>
-            <div class="nav-tools">
-                <a id="settingsBtn" class="utility-chip" href="#"><span class="material-symbols-outlined">settings</span>Settings</a>
-                <div class="utility-chip clock-chip" id="time-clock"></div>
-            </div>
-        </nav>
-    </header>
+    <%- include("partials/app-header", { brandKicker: "Account", activeSection: null }) %>
 
     <main class="page">
         <section class="site-section">
             <div class="section-heading">
                 <div>
                     <h1>Your Account</h1>
-                    <p>Manage this device, collect credits from the offerwall, and spend them in the store.</p>
+                    <p>Manage your balance, account perks, and device session from one place.</p>
                 </div>
             </div>
 
-            <div class="store-grid">
-                <div class="store-summary">
-                    <article class="store-stat">
-                        <span class="store-kicker"><span class="material-symbols-outlined">savings</span>Balance</span>
-                        <strong id="credit-balance"><%= credits %> credits</strong>
-                        <p>Offerwall rewards now land here as store credits.</p>
-                    </article>
-                    <article class="store-stat">
-                        <span class="store-kicker"><span class="material-symbols-outlined">visibility_off</span>Ad-Free</span>
-                        <strong>
-                            <% if (adfree.active) { %>
-                                Active
-                            <% } else { %>
-                                Inactive
-                            <% } %>
-                        </strong>
-                        <p>
-                            <% if (adfree.active) { %>
-                                Ends <%= adfree.expiresAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) %> with about <%= adfree.daysRemaining %> days left.
-                            <% } else { %>
-                                Buy ad-free access at the same rate as before: 1 credit per day.
-                            <% } %>
-                        </p>
-                    </article>
-                    <article class="store-stat">
-                        <span class="store-kicker"><span class="material-symbols-outlined">mail</span>Account</span>
-                        <strong><%= email %></strong>
-                        <p>Your credits and purchases are tied to this account.</p>
-                    </article>
-                </div>
+            <div class="account-layout">
+                <%- include("partials/account-sidebar", {
+                    currentPage: "account",
+                    showLinkManagement,
+                    credits,
+                    email,
+                    sidebarTitle: "Account",
+                    sidebarDescription: showLinkManagement
+                        ? "Your private link tools are available from this host."
+                        : "Store purchases and session controls live here."
+                }) %>
 
-                <article class="info-card">
-                    <div class="section-heading" style="margin-bottom: 18px;">
-                        <div>
-                            <h2>Store</h2>
-                            <p>Spend your balance on account perks. Private link products are listed now and locked until launch.</p>
-                        </div>
-                    </div>
-
-                    <div class="store-note">
-                        <span>Need more credits? Finish surveys on the offerwall and come back here to spend them.</span>
-                        <a href="/offerwall">Open Offerwall</a>
-                    </div>
-
-                    <div class="store-actions" style="margin-top: 18px;">
-                        <article class="store-card">
-                            <h3>Ad-Free for 7 Days</h3>
-                            <p>Removes ads for one week on the current account.</p>
-                            <div class="price-row">
-                                <div class="store-price">7 credits</div>
-                                <span>1 credit per day</span>
-                            </div>
-                            <button class="button store-button" data-plan="week" data-label="7 days" type="button">Buy 7 Days</button>
+                <div class="account-main">
+                    <div class="store-summary">
+                        <article class="store-stat">
+                            <span class="store-kicker"><span class="material-symbols-outlined">savings</span>Balance</span>
+                            <strong><%= credits %> credits</strong>
+                            <p>Offerwall rewards now land here as store credits.</p>
                         </article>
-                        <article class="store-card">
-                            <h3>Ad-Free for 30 Days</h3>
-                            <p>Monthly option with a discounted store price.</p>
-                            <div class="price-row">
-                                <div class="store-price">25 credits</div>
-                                <span>30 days of access</span>
-                            </div>
-                            <button class="button store-button" data-plan="month" data-label="1 month" type="button">Buy 1 Month</button>
+                        <article class="store-stat">
+                            <span class="store-kicker"><span class="material-symbols-outlined">visibility_off</span>Ad-Free</span>
+                            <strong><%= adfree.active ? "Active" : "Inactive" %></strong>
+                            <p>
+                                <% if (adfree.active) { %>
+                                    Ends <%= adfree.expiresAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) %> with about <%= adfree.daysRemaining %> days left.
+                                <% } else { %>
+                                    Buy ad-free access at the same rate as before: 1 credit per day.
+                                <% } %>
+                            </p>
                         </article>
-                        <article class="store-card">
-                            <h3>Ad-Free Lifetime</h3>
-                            <p>Permanent ad-free access for this account.</p>
-                            <div class="price-row">
-                                <div class="store-price">100 credits</div>
-                                <span>One-time unlock</span>
-                            </div>
-                            <button class="button store-button" data-plan="lifetime" data-label="lifetime" type="button">Buy Lifetime</button>
+                        <article class="store-stat">
+                            <span class="store-kicker"><span class="material-symbols-outlined">mail</span>Account</span>
+                            <strong><%= email %></strong>
+                            <p>Your credits and purchases are tied to this account.</p>
                         </article>
                     </div>
 
-                    <p id="store-feedback" style="margin-top: 16px;"></p>
-
-                    <div class="perk-grid" style="margin-top: 10px;">
-                        <article class="perk-card">
-                            <h3>Bring Your Own Private Link</h3>
-                            <p>Attach your own domain, choose a cover URL and login path, and keep it running at 0 credits per month.</p>
-                            <div class="price-row">
-                                <div class="store-price">0 credits / month</div>
-                                <span>Available now</span>
-                            </div>
-                            <button class="button-ghost store-button" type="button" disabled>Manage Below</button>
-                        </article>
-                        <article class="perk-card">
-                            <h3>Provided Private Links</h3>
-                            <p>Future hosted option. The pricing path is wired in, but issuing provided links is still disabled.</p>
-                            <div class="price-row">
-                                <div class="store-price">10 credits / month</div>
-                                <span class="coming-soon">Still disabled</span>
-                            </div>
-                            <button class="button-ghost store-button" type="button" disabled>Provided Links Locked</button>
-                        </article>
-                        <article class="perk-card">
-                            <h3>Semi-Private Links</h3>
-                            <p>Lower-cost tier for semi-private link access when it goes live.</p>
-                            <div class="price-row">
-                                <div class="store-price">5 credits / month</div>
-                                <span class="coming-soon">Coming soon</span>
-                            </div>
-                            <button class="button-ghost store-button" type="button" disabled>Semi-Private Locked</button>
-                        </article>
-                    </div>
-                </article>
-
-                <article class="info-card private-link-grid">
-                    <div class="section-heading" style="margin-bottom: 0;">
-                        <div>
-                            <h2>Private Link Manager</h2>
-                            <p>Bring your own domain for free, choose the cover URL that unauthenticated visitors get proxied to, and set the exact login path for this link.</p>
-                        </div>
-                    </div>
-
-                    <div class="private-link-shell">
-                        <div class="private-link-stack">
-                            <section class="manager-section manager-section-strong">
-                                <div class="manager-section-head">
-                                    <div>
-                                        <h3>Create Or Edit</h3>
-                                        <p>Set the domain, cover destination, and hidden login path for your private link.</p>
-                                    </div>
-                                    <span class="manager-kicker">Configuration</span>
-                                </div>
-                                <form id="private-link-form" class="private-link-form">
-                                    <div class="field-grid">
-                                        <label class="field">
-                                            <span>Link type</span>
-                                            <select id="private-link-source" class="styled-select" <%= isPrivateLinkOwner ? '' : 'disabled' %>>
-                                                <option value="byo" selected>Bring your own link</option>
-                                                <option value="provided" disabled>Use a provided link (disabled)</option>
-                                            </select>
-                                            <small>Provided links stay disabled for now, but the billing field already exists.</small>
-                                        </label>
-                                        <label class="field">
-                                            <span>Login path</span>
-                                            <input id="private-link-login-path" type="text" placeholder="/secret-login" value="/login" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
-                                            <small>Anyone who opens this path on your private domain gets the login page.</small>
-                                        </label>
-                                    </div>
-                                    <div class="field-grid">
-                                        <label class="field">
-                                            <span>Private domain</span>
-                                            <input id="private-link-domain" type="text" placeholder="study.example.com" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
-                                            <small>This should be the domain you point at this CanLite deployment.</small>
-                                        </label>
-                                        <label class="field">
-                                            <span>Cover URL</span>
-                                            <input id="private-link-cover-url" type="url" placeholder="https://example.org" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
-                                            <small>Unauthenticated traffic on this private domain gets proxied here unless it hits the login path.</small>
-                                        </label>
-                                    </div>
-                                    <% if (isPrivateLinkOwner) { %>
-                                        <div class="button-row">
-                                            <button id="private-link-save" type="submit" class="button">Save Private Link</button>
-                                            <button id="private-link-clear" type="button" class="button-ghost">Clear Form</button>
-                                        </div>
-                                    <% } else { %>
-                                        <div class="private-link-empty">Only the link owner can change this domain, cover URL, login path, or member access.</div>
-                                    <% } %>
-                                </form>
-                            </section>
-
-                            <section class="manager-section manager-section-muted">
-                                <div class="manager-section-head">
-                                    <div>
-                                        <h3>Your Private Links</h3>
-                                        <p>Saved links appear here as a quick reference with copy-friendly values.</p>
-                                    </div>
-                                    <span class="manager-kicker">Saved</span>
-                                </div>
-                                <div id="private-link-list" class="private-link-list"></div>
-                            </section>
-
-                            <p id="private-link-feedback" class="private-link-feedback"></p>
-
-                            <section id="private-link-owner-tools" class="manager-section" <%= privateLink && privateLink.role === 'owner' && isPrivateLinkHost ? '' : 'hidden' %>>
-                                <div class="manager-section-head">
-                                    <div>
-                                        <h3>People With Access</h3>
-                                        <p>Add or remove up to 20 allowed account emails for this private link.</p>
-                                    </div>
-                                    <span class="manager-kicker">Owner Only</span>
-                                </div>
-                                <form id="private-link-member-form" class="inline-form">
-                                    <label class="field">
-                                        <span>Add account email</span>
-                                        <input id="private-link-member-email" type="email" placeholder="friend@example.com">
-                                        <small>Up to 20 extra people can be added to your link.</small>
-                                    </label>
-                                    <button type="submit" class="button">Add Person</button>
-                                </form>
-                                <div id="private-link-members" class="member-list"></div>
-                            </section>
-                        </div>
-
-                        <aside class="private-link-sidebar">
-                            <section class="manager-section manager-section-muted">
-                                <div class="manager-section-head">
-                                    <div>
-                                        <h3>Link Status</h3>
-                                        <p>Quick status for the current link and where you are viewing it from.</p>
-                                    </div>
-                                    <span class="manager-kicker">Overview</span>
-                                </div>
-                                <div class="private-link-meta">
-                                    <div>
-                                        <strong>Monthly cost</strong>
-                                        <span id="private-link-monthly-cost"><%= privateLink ? privateLink.monthlyCostCredits : 0 %> credits</span>
-                                    </div>
-                                    <% if (isPrivateLinkHost && hasPaidPrivateLink) { %>
-                                        <div>
-                                            <strong>Slush pool</strong>
-                                            <span id="private-link-slush-pool"><%= privateLink ? privateLink.slushPoolCredits : 0 %> credits</span>
-                                        </div>
-                                    <% } %>
-                                </div>
-                                <div class="private-link-meta">
-                                    <div>
-                                        <strong>Current role</strong>
-                                        <span id="private-link-role"><%= privateLink ? privateLink.role : 'No private link yet' %></span>
-                                    </div>
-                                    <div>
-                                        <strong>Current host</strong>
-                                        <span><%= privateLink && privateLink.activeHost ? 'This private link' : 'Main site' %></span>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <% if (isPrivateLinkHost && hasPaidPrivateLink) { %>
-                                <section class="manager-section">
-                                    <div class="manager-section-head">
-                                        <div>
-                                            <h3>Slush Pool</h3>
-                                            <p>Fund this link from personal credits and see who has chipped in.</p>
-                                        </div>
-                                        <span class="manager-kicker">Private Link Only</span>
-                                    </div>
-                                    <form id="private-link-contribution-form" class="private-link-form">
-                                        <label class="field">
-                                            <span>Chip into the link</span>
-                                            <input id="private-link-contribution-amount" type="number" min="0.01" step="0.01" placeholder="5">
-                                            <small>Credits are taken from your account balance and added to the link’s slush pool for future paid plans.</small>
-                                        </label>
-                                        <div class="button-row">
-                                            <button type="submit" class="button">Contribute Credits</button>
-                                        </div>
-                                    </form>
-
-                                    <div>
-                                        <h3 style="margin-bottom: 10px;">Contribution Totals</h3>
-                                        <div id="private-link-contributions" class="contribution-list"></div>
-                                    </div>
-                                </section>
-                            <% } else if (isPrivateLinkHost && privateLink) { %>
-                                <section class="manager-section manager-section-muted">
-                                    <div class="manager-section-head">
-                                        <div>
-                                            <h3>Slush Pool</h3>
-                                            <p>Free bring-your-own links do not use the slush pool.</p>
-                                        </div>
-                                        <span class="manager-kicker">Not Needed</span>
-                                    </div>
-                                    <div class="private-link-empty">This link is free, so there is nothing to fund here.</div>
-                                </section>
-                            <% } else if (privateLink) { %>
-                                <section class="manager-section manager-section-muted">
-                                    <div class="manager-section-head">
-                                        <div>
-                                            <h3>Slush Pool</h3>
-                                            <p>This section only appears when you open the account page on the private link itself.</p>
-                                        </div>
-                                        <span class="manager-kicker">Host Locked</span>
-                                    </div>
-                                    <div class="private-link-empty">Open this account page on <strong><%= privateLink.domain %></strong> to manage members or use its slush pool.</div>
-                                </section>
-                            <% } %>
-                        </aside>
-                    </div>
-                </article>
-
-                <div class="detail-grid">
                     <article class="info-card">
-                        <h3>Switch Site</h3>
-                        <p>What site would you like this link to be on this device? To switch back to CanLite, go to <code>/reset</code>. If you are a site owner and want your site added, DM CanLite on Discord or send an email.</p>
-                        <form action="/api/switch" method="POST" class="stack" style="margin-top:18px;">
-                            <label for="site-select">Choose a site</label>
-                            <select id="site-select" name="site" class="styled-select">
-                                <option value="https://trigonometry.texasmath.net">US5</option>
-                                <option value="https://gr4ys0n.github.io">Gaming Escape</option>
-                                <option value="https://securedweb.xyz">Secured Web</option>
-                                <option value="https://flamepass.com">Flamepass</option>
-                                <option value="https://watch.bludclart.com">Bludclart</option>
-                                <option value="https://wqgqvswarit.swarit.104.36.84.31.nip.io/">Pizza Edition</option>
-                            </select>
-                            <div class="button-row">
-                                <button type="submit" class="button">Switch</button>
+                        <div class="section-heading" style="margin-bottom: 18px;">
+                            <div>
+                                <h2>Store</h2>
+                                <p>Spend your balance on account perks. Link management has moved to its own page.</p>
                             </div>
-                        </form>
-                    </article>
-                    <article class="info-card">
-                        <h3>Session</h3>
-                        <p>Use the offerwall to earn credits, then spend them in the store above. Logging out does not remove your balance.</p>
-                        <div class="button-row" style="margin-top:18px;">
-                            <button id="logout-button" type="button" class="button-ghost">Logout</button>
+                        </div>
+
+                        <div class="store-note">
+                            <span>Need more credits? Finish surveys on the offerwall and come back here to spend them.</span>
+                            <a href="/offerwall">Open Offerwall</a>
+                        </div>
+
+                        <div class="store-actions" style="margin-top: 18px;">
+                            <article class="store-card">
+                                <h3>Ad-Free for 7 Days</h3>
+                                <p>Removes ads for one week on the current account.</p>
+                                <div class="price-row">
+                                    <div class="store-price">7 credits</div>
+                                    <span>1 credit per day</span>
+                                </div>
+                                <button class="button store-button" data-plan="week" data-label="7 days" type="button">Buy 7 Days</button>
+                            </article>
+                            <article class="store-card">
+                                <h3>Ad-Free for 30 Days</h3>
+                                <p>Monthly option with a discounted store price.</p>
+                                <div class="price-row">
+                                    <div class="store-price">25 credits</div>
+                                    <span>30 days of access</span>
+                                </div>
+                                <button class="button store-button" data-plan="month" data-label="1 month" type="button">Buy 1 Month</button>
+                            </article>
+                            <article class="store-card">
+                                <h3>Ad-Free Lifetime</h3>
+                                <p>Permanent ad-free access for this account.</p>
+                                <div class="price-row">
+                                    <div class="store-price">100 credits</div>
+                                    <span>One-time unlock</span>
+                                </div>
+                                <button class="button store-button" data-plan="lifetime" data-label="lifetime" type="button">Buy Lifetime</button>
+                            </article>
+                        </div>
+
+                        <p id="store-feedback" style="margin-top: 16px;"></p>
+
+                        <div class="perk-grid" style="margin-top: 10px;">
+                            <article class="perk-card">
+                                <h3>Bring Your Own Private Link</h3>
+                                <p>Attach your own domain, choose a cover URL and login path, and keep it running at 0 credits per month.</p>
+                                <div class="price-row">
+                                    <div class="store-price">0 credits / month</div>
+                                    <span>Available now</span>
+                                </div>
+                                <a class="button-ghost" href="/link-management" style="text-align:center; text-decoration:none;">Open Link Management</a>
+                            </article>
+                            <article class="perk-card">
+                                <h3>Provided Private Links</h3>
+                                <p>Future hosted option. The pricing path is wired in, but issuing provided links is still disabled.</p>
+                                <div class="price-row">
+                                    <div class="store-price">10 credits / month</div>
+                                    <span class="coming-soon">Still disabled</span>
+                                </div>
+                                <button class="button-ghost store-button" type="button" disabled>Provided Links Locked</button>
+                            </article>
+                            <article class="perk-card">
+                                <h3>Semi-Private Links</h3>
+                                <p>Lower-cost tier for semi-private link access when it goes live.</p>
+                                <div class="price-row">
+                                    <div class="store-price">5 credits / month</div>
+                                    <span class="coming-soon">Coming soon</span>
+                                </div>
+                                <button class="button-ghost store-button" type="button" disabled>Semi-Private Locked</button>
+                            </article>
                         </div>
                     </article>
+
+                    <div class="detail-grid">
+                        <article class="info-card">
+                            <h3>Switch Site</h3>
+                            <p>What site would you like this link to be on this device? To switch back to CanLite, go to <code>/reset</code>. If you are a site owner and want your site added, DM CanLite on Discord or send an email.</p>
+                            <form action="/api/switch" method="POST" class="stack" style="margin-top:18px;">
+                                <label for="site-select">Choose a site</label>
+                                <select id="site-select" name="site" class="styled-select">
+                                    <option value="https://trigonometry.texasmath.net">US5</option>
+                                    <option value="https://gr4ys0n.github.io">Gaming Escape</option>
+                                    <option value="https://securedweb.xyz">Secured Web</option>
+                                    <option value="https://flamepass.com">Flamepass</option>
+                                    <option value="https://watch.bludclart.com">Bludclart</option>
+                                    <option value="https://wqgqvswarit.swarit.104.36.84.31.nip.io/">Pizza Edition</option>
+                                </select>
+                                <div class="button-row">
+                                    <button type="submit" class="button">Switch</button>
+                                </div>
+                            </form>
+                        </article>
+
+                        <article class="info-card">
+                            <h3>Session</h3>
+                            <p>Use the offerwall to earn credits, then spend them in the store above. Logging out does not remove your balance.</p>
+                            <div class="button-row" style="margin-top:18px;">
+                                <button id="logout-button" type="button" class="button-ghost">Logout</button>
+                            </div>
+                        </article>
+                    </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="site-footer">
-        <div class="footer-main">
-            <div class="footer-links">
-                <a href="/privacy">Privacy Policy</a>
-                <a href="mailto:canlite24@outlook.com">Email Us</a>
-                <a href="https://discord.com/invite/46gkEU5kpP" target="_blank">Join our Discord</a>
-                <a href="/about">About Us</a>
-            </div>
-            <div class="footer-copy">&copy; <span id="year"></span> CanLite. All rights reserved.</div>
-        </div>
-    </footer>
+    <%- include("partials/app-footer") %>
 </div>
 
 <script>
@@ -765,160 +187,6 @@
 
     const feedback = document.getElementById('store-feedback');
     const balanceEl = document.getElementById('credit-balance');
-    let privateLinkState = <%- JSON.stringify(privateLink || null) %>;
-    const canManagePrivateLink = <%- JSON.stringify(isPrivateLinkOwner) %>;
-    const isPrivateLinkHost = <%- JSON.stringify(isPrivateLinkHost) %>;
-    const privateLinkFeedback = document.getElementById('private-link-feedback');
-    const privateLinkForm = document.getElementById('private-link-form');
-    const privateLinkOwnerTools = document.getElementById('private-link-owner-tools');
-    const privateLinkList = document.getElementById('private-link-list');
-    const privateLinkMembers = document.getElementById('private-link-members');
-    const privateLinkContributions = document.getElementById('private-link-contributions');
-    const privateLinkMonthlyCost = document.getElementById('private-link-monthly-cost');
-    const privateLinkSlushPool = document.getElementById('private-link-slush-pool');
-    const privateLinkRole = document.getElementById('private-link-role');
-    const privateLinkSourceInput = document.getElementById('private-link-source');
-    const privateLinkDomainInput = document.getElementById('private-link-domain');
-    const privateLinkCoverUrlInput = document.getElementById('private-link-cover-url');
-    const privateLinkLoginPathInput = document.getElementById('private-link-login-path');
-
-    const clearPrivateLinkForm = () => {
-        privateLinkSourceInput.value = 'byo';
-        privateLinkDomainInput.value = '';
-        privateLinkCoverUrlInput.value = '';
-        privateLinkLoginPathInput.value = '/login';
-    };
-
-    const loadPrivateLinkIntoForm = (link) => {
-        if (!link) {
-            clearPrivateLinkForm();
-            return;
-        }
-
-        privateLinkSourceInput.value = link.linkSource || 'byo';
-        privateLinkDomainInput.value = link.domain || '';
-        privateLinkCoverUrlInput.value = link.coverUrl || '';
-        privateLinkLoginPathInput.value = link.loginPath || '/login';
-    };
-
-    const setPrivateLinkFeedback = (message, isError = false) => {
-        privateLinkFeedback.textContent = message || '';
-        privateLinkFeedback.classList.toggle('error', Boolean(isError));
-    };
-
-    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-    }[char]));
-
-    const renderPrivateLinkState = () => {
-        const members = privateLinkState?.members || [];
-        const contributions = privateLinkState?.contributionSummary || [];
-        const isOwner = privateLinkState?.role === 'owner' && isPrivateLinkHost;
-
-        privateLinkOwnerTools.hidden = !isOwner;
-        privateLinkMonthlyCost.textContent = `${privateLinkState?.monthlyCostCredits ?? 0} credits`;
-        if (privateLinkSlushPool) {
-            privateLinkSlushPool.textContent = `${privateLinkState?.slushPoolCredits ?? 0} credits`;
-        }
-        privateLinkRole.textContent = privateLinkState?.role || 'No private link yet';
-
-        privateLinkList.innerHTML = privateLinkState
-            ? `
-                <article class="private-link-card">
-                    <div class="private-link-card-head">
-                        <div>
-                            <strong>${escapeHtml(privateLinkState.domain)}</strong>
-                        </div>
-                        <div class="private-link-badge-row">
-                            <span class="private-link-badge">${escapeHtml(privateLinkState.role || 'owner')}</span>
-                            ${privateLinkState.activeHost ? '<span class="private-link-badge">current host</span>' : ''}
-                            <span class="private-link-badge">${escapeHtml(privateLinkState.linkSource === 'provided' ? 'provided' : 'bring your own')}</span>
-                        </div>
-                    </div>
-                    <div class="private-link-card-grid">
-                        <div class="private-link-stat">
-                            <span>URL</span>
-                            <input class="private-link-value" type="text" readonly value="${escapeHtml(`https://${privateLinkState.domain}`)}" onclick="this.select()">
-                        </div>
-                        <div class="private-link-stat">
-                            <span>Login path</span>
-                            <input class="private-link-value" type="text" readonly value="${escapeHtml(privateLinkState.loginPath)}" onclick="this.select()">
-                        </div>
-                        <div class="private-link-stat">
-                            <span>Cover URL</span>
-                            <input class="private-link-value" type="text" readonly value="${escapeHtml(privateLinkState.coverUrl)}" onclick="this.select()">
-                        </div>
-                        <div class="private-link-stat">
-                            <span>Monthly cost</span>
-                            <strong>${privateLinkState.monthlyCostCredits} credits</strong>
-                        </div>
-                        <div class="private-link-stat">
-                            <span>Members</span>
-                            <strong>${members.length + 1}</strong>
-                        </div>
-                    </div>
-                    ${canManagePrivateLink ? `
-                        <div class="private-link-card-meta">
-                            <span style="color: rgba(255,255,255,0.68);">Use the editor below only when you want to change this link.</span>
-                            <button type="button" class="button-ghost button-tiny" data-edit-private-link="current">Edit Link</button>
-                        </div>
-                    ` : ''}
-                </article>
-            `
-            : '<div class="private-link-empty">No private links yet. Create one below.</div>';
-
-        if (privateLinkMembers) {
-            privateLinkMembers.innerHTML = members.length
-            ? members.map((member) => `
-                <div class="member-row">
-                    <div>
-                        <strong>${escapeHtml(member.email)}</strong>
-                        <span>Access granted</span>
-                    </div>
-                    ${isOwner ? `<button class="button-ghost button-tiny" type="button" data-remove-member="${member.userId}">Remove</button>` : ''}
-                </div>
-            `).join('')
-            : '<div class="private-link-empty">No extra members yet.</div>';
-        }
-
-        if (privateLinkContributions) {
-            privateLinkContributions.innerHTML = contributions.length
-            ? contributions.map((contribution) => `
-                <div class="contribution-row">
-                    <div>
-                        <strong>${escapeHtml(contribution.email)}</strong>
-                        <span>${contribution.totalCredits} credits contributed</span>
-                    </div>
-                </div>
-            `).join('')
-            : '<div class="private-link-empty">No credits have been chipped in yet.</div>';
-        }
-    };
-
-    clearPrivateLinkForm();
-    renderPrivateLinkState();
-
-    privateLinkList.addEventListener('click', (event) => {
-        const editButton = event.target.closest('[data-edit-private-link]');
-        if (!editButton || !canManagePrivateLink) {
-            return;
-        }
-
-        loadPrivateLinkIntoForm(privateLinkState);
-        setPrivateLinkFeedback('Loaded saved link into the editor.');
-    });
-
-    const privateLinkClearButton = document.getElementById('private-link-clear');
-    if (privateLinkClearButton) {
-        privateLinkClearButton.addEventListener('click', () => {
-            clearPrivateLinkForm();
-            setPrivateLinkFeedback('');
-        });
-    }
 
     for (const button of document.querySelectorAll('[data-plan]')) {
         button.addEventListener('click', async () => {
@@ -930,14 +198,11 @@
             try {
                 const response = await fetch('/api/store/adfree', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ plan })
                 });
 
                 const data = await response.json();
-
                 if (!response.ok) {
                     throw new Error(data.error || 'Purchase failed');
                 }
@@ -949,149 +214,6 @@
                 feedback.textContent = error.message || 'Purchase failed';
             } finally {
                 button.disabled = false;
-            }
-        });
-    }
-
-    privateLinkForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        if (!canManagePrivateLink) {
-            setPrivateLinkFeedback('Only the link owner can change this private link.', true);
-            return;
-        }
-
-        const payload = {
-            linkSource: privateLinkSourceInput.value,
-            domain: privateLinkDomainInput.value,
-            coverUrl: privateLinkCoverUrlInput.value,
-            loginPath: privateLinkLoginPathInput.value
-        };
-
-        setPrivateLinkFeedback('Saving private link...');
-
-        try {
-            const response = await fetch('/api/private-links', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to save private link');
-            }
-
-            privateLinkState = data.privateLink;
-            clearPrivateLinkForm();
-            renderPrivateLinkState();
-            setPrivateLinkFeedback('Private link saved.');
-        } catch (error) {
-            setPrivateLinkFeedback(error.message || 'Failed to save private link', true);
-        }
-    });
-
-    const privateLinkMemberForm = document.getElementById('private-link-member-form');
-    if (privateLinkMemberForm) {
-        privateLinkMemberForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const email = document.getElementById('private-link-member-email').value.trim();
-            if (!email) {
-                setPrivateLinkFeedback('Enter an email to add.', true);
-                return;
-            }
-
-            setPrivateLinkFeedback('Adding member...');
-
-            try {
-                const response = await fetch('/api/private-links/members', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email })
-                });
-
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to add member');
-                }
-
-                privateLinkState = data.privateLink;
-                document.getElementById('private-link-member-email').value = '';
-                renderPrivateLinkState();
-                setPrivateLinkFeedback('Member added.');
-            } catch (error) {
-                setPrivateLinkFeedback(error.message || 'Failed to add member', true);
-            }
-        });
-    }
-
-    if (privateLinkMembers) {
-        privateLinkMembers.addEventListener('click', async (event) => {
-            const button = event.target.closest('[data-remove-member]');
-            if (!button) {
-                return;
-            }
-
-            setPrivateLinkFeedback('Removing member...');
-
-            try {
-                const response = await fetch(`/api/private-links/members/${button.dataset.removeMember}`, {
-                    method: 'DELETE'
-                });
-
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to remove member');
-                }
-
-                privateLinkState = data.privateLink;
-                renderPrivateLinkState();
-                setPrivateLinkFeedback('Member removed.');
-            } catch (error) {
-                setPrivateLinkFeedback(error.message || 'Failed to remove member', true);
-            }
-        });
-    }
-
-    const privateLinkContributionForm = document.getElementById('private-link-contribution-form');
-    if (privateLinkContributionForm) {
-        privateLinkContributionForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const amount = Number(document.getElementById('private-link-contribution-amount').value);
-            if (!amount) {
-                setPrivateLinkFeedback('Enter a contribution amount.', true);
-                return;
-            }
-
-            setPrivateLinkFeedback('Contributing credits...');
-
-            try {
-                const response = await fetch('/api/private-links/contribute', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ amount })
-                });
-
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to contribute credits');
-                }
-
-                balanceEl.textContent = `${data.credits} credits`;
-                privateLinkState = data.privateLink;
-                document.getElementById('private-link-contribution-amount').value = '';
-                renderPrivateLinkState();
-                setPrivateLinkFeedback('Credits added to the slush pool.');
-            } catch (error) {
-                setPrivateLinkFeedback(error.message || 'Failed to contribute credits', true);
             }
         });
     }

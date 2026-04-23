@@ -561,7 +561,7 @@ class SettingsManager {
 (function() {
     // Set up event delegation immediately for settings button
     document.addEventListener('click', function settingsBtnHandler(e) {
-        if (e.target.closest('#settingsBtn')) {
+        if (e.target.closest('#settingsBtn, [data-open-settings]')) {
             e.preventDefault();
             e.stopPropagation();
             

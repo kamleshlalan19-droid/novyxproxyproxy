@@ -266,6 +266,28 @@ app.get("/account", async (req, res) => {
   }
 })
 
+app.get("/link-management", async (req, res) => {
+  if (req.session.token) {
+    const user = await getSessionUser(req);
+    if (!user) {
+      return res.status(400).json(false);
+    }
+
+    const privateLink = await getAccountPrivateLink({
+      userId: user.id,
+      hostname: req.hostname,
+    });
+
+    return res.render("link-management", {
+      credits: getCreditBalance(user.data),
+      email: user.email,
+      privateLink,
+    });
+  }
+
+  return res.status(400).json(false);
+})
+
 app.get("/offerwall", async (req, res) => {
   if (req.session.token) {
     const user = await getSessionUser(req);
