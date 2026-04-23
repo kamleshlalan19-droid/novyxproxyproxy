@@ -205,15 +205,15 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
 });
 
 (function () {
-    if (localStorage.getItem("closedAdfreeNotice")) return;
+    if (localStorage.getItem("closedNotice")) return;
     const box = document.createElement("div");
 
     box.innerHTML = `
         <div id="adfreeNotice">
             <span id="adfreeClose">✕</span>
             <div>
-                Account holders can now complete surveys to go ad free.  
-                Just select <b>My Account</b> in the top bar.
+                Account holders can now create private links.  
+                Just select <b>My Account</b> in the nav bar.
             </div>
         </div>
     `;
@@ -253,7 +253,7 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
     document.body.appendChild(box);
 
     document.getElementById("adfreeClose").onclick = () => {
-        localStorage.setItem("closedAdfreeNotice", "1");
+        localStorage.setItem("closedNotice", "1");
         box.remove();
     };
 })();
