@@ -20,30 +20,16 @@
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
 }
 
-.account-sidebar-card h2 {
-    margin: 6px 0 10px;
-}
-
-.account-sidebar-card p {
-    margin: 0;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.account-sidebar-kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(127, 227, 190, 0.12);
-    color: #9ff0ca;
-    font-size: 0.82rem;
-    font-weight: 600;
+.account-sidebar-frame {
+    display: grid;
+    gap: 18px;
 }
 
 .account-nav {
     display: grid;
     gap: 10px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .account-nav-link {
