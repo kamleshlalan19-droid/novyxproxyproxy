@@ -102,7 +102,8 @@ router.post("/members", async (req, res) => {
     }
 
     try {
-        const result = await addPrivateLinkMemberForOwner(user, hostLink.id, req.body.email);
+        const identifier = req.body.identifier || req.body.email || req.body.discord || "";
+        const result = await addPrivateLinkMemberForOwner(user, hostLink.id, identifier);
         if (result.error) {
             return res.status(result.status || 400).json({ error: result.error });
         }

@@ -37,7 +37,7 @@
 
                 <div class="account-main">
                     <div class="account-panels" data-initial-account-panel="<%= initialPanel %>">
-                        <%- include("partials/account-store-panel", { initialPanel, credits, email, adfree }) %>
+                        <%- include("partials/account-store-panel", { initialPanel, credits, email, adfree, discordLink }) %>
                         <%- include("partials/link-management-panel", { initialPanel, privateLink, privateLinks }) %>
                         <%- include("partials/private-link-admin-panel", { initialPanel, privateLink }) %>
                     </div>
@@ -131,6 +131,102 @@
         await fetch('/api/logout', { method: 'POST' });
         window.location.href = '/';
     });
+
+    const discordLinkFeedback = document.getElementById('discord-link-feedback');
+    const discordGenerateCodeButton = document.getElementById('discord-generate-code');
+    const discordUnlinkButton = document.getElementById('discord-unlink-button');
+    const discordLinkName = document.getElementById('discord-link-name');
+    const discordLinkMeta = document.getElementById('discord-link-meta');
+    const discordLinkCode = document.getElementById('discord-link-code');
+    const discordLinkCodeExpiry = document.getElementById('discord-link-code-expiry');
+    const discordLinkStatus = document.querySelector('.discord-link-status');
+    let discordLinkState = <%- JSON.stringify(discordLink || null) %>;
+
+    const setDiscordFeedback = (message, isError = false) => {
+        if (!discordLinkFeedback) {
+            return;
+        }
+
+        discordLinkFeedback.textContent = message || '';
+        discordLinkFeedback.classList.toggle('error', Boolean(isError));
+    };
+
+    const renderDiscordLinkState = (state) => {
+        discordLinkState = state || null;
+
+        if (!discordLinkName || !discordLinkMeta || !discordLinkCode || !discordLinkCodeExpiry || !discordLinkStatus) {
+            return;
+        }
+
+        if (state?.linked && state?.link) {
+            discordLinkStatus.classList.add('is-linked');
+            discordLinkName.textContent = state.link.discord_global_name || state.link.discord_username || 'Discord account';
+            discordLinkMeta.textContent = `Discord username: ${state.link.discord_username || 'unknown'}`;
+            if (discordUnlinkButton) {
+                discordUnlinkButton.disabled = false;
+            }
+        } else {
+            discordLinkStatus.classList.remove('is-linked');
+            discordLinkName.textContent = 'No Discord account connected';
+            discordLinkMeta.innerHTML = 'Generate a one-time code here, then use it in the Discord bot with <code>/link</code>.';
+            if (discordUnlinkButton) {
+                discordUnlinkButton.disabled = true;
+            }
+        }
+
+        if (state?.pendingCode?.code) {
+            discordLinkCode.textContent = state.pendingCode.code;
+            discordLinkCodeExpiry.textContent = `Expires ${new Date(state.pendingCode.expiresAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`;
+        } else {
+            discordLinkCode.textContent = 'Not generated yet';
+            discordLinkCodeExpiry.textContent = 'Codes stay active for 15 minutes.';
+        }
+    };
+
+    if (discordGenerateCodeButton) {
+        discordGenerateCodeButton.addEventListener('click', async () => {
+            discordGenerateCodeButton.disabled = true;
+            setDiscordFeedback('Generating Discord link code...');
+
+            try {
+                const response = await fetch('/api/discord/link-code', { method: 'POST' });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to generate Discord link code');
+                }
+
+                renderDiscordLinkState(data.discordLink);
+                setDiscordFeedback('Discord link code generated. Use it in the bot with /link.');
+            } catch (error) {
+                setDiscordFeedback(error.message || 'Failed to generate Discord link code', true);
+            } finally {
+                discordGenerateCodeButton.disabled = false;
+            }
+        });
+    }
+
+    if (discordUnlinkButton) {
+        discordUnlinkButton.addEventListener('click', async () => {
+            discordUnlinkButton.disabled = true;
+            setDiscordFeedback('Removing Discord link...');
+
+            try {
+                const response = await fetch('/api/discord/unlink', { method: 'POST' });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to unlink Discord account');
+                }
+
+                renderDiscordLinkState(data.discordLink);
+                setDiscordFeedback('Discord account unlinked.');
+            } catch (error) {
+                setDiscordFeedback(error.message || 'Failed to unlink Discord account', true);
+                renderDiscordLinkState(discordLinkState);
+            } finally {
+                discordUnlinkButton.disabled = !(document.querySelector('.discord-link-status')?.classList.contains('is-linked'));
+            }
+        });
+    }
 
     let activePrivateLinkState = <%- JSON.stringify(privateLink || null) %>;
     let privateLinksState = <%- JSON.stringify(privateLinks || []) %>;
@@ -276,14 +372,14 @@
 
         if (privateLinkMemberLabel) {
             privateLinkMemberLabel.textContent = adminPrivateLinkState?.domain
-                ? `Add account email to ${adminDomain}`
-                : 'Add account email to this private link';
+                ? `Add account email or linked Discord to ${adminDomain}`
+                : 'Add account email or linked Discord to this private link';
         }
 
         if (privateLinkMemberSummary) {
             privateLinkMemberSummary.textContent = adminPrivateLinkState?.domain
-                ? `Add or remove up to 19 invited accounts on ${adminDomain}. Each private link allows 20 total people including the owner.`
-                : 'Add or remove up to 19 invited accounts on this private link. Each private link allows 20 total people including the owner.';
+                ? `Add or remove up to 19 invited accounts on ${adminDomain} by email or linked Discord. Each private link allows 20 total people including the owner.`
+                : 'Add or remove up to 19 invited accounts on this private link by email or linked Discord. Each private link allows 20 total people including the owner.';
         }
 
         if (privateLinkMemberSubmit) {
@@ -360,7 +456,7 @@
                     <div class="member-row">
                         <div>
                             <strong>${escapeHtml(member.email)}</strong>
-                            <span>Access granted on ${escapeHtml(adminDomain)}</span>
+                            <span>${member.discordUsername || member.discordGlobalName ? `Discord: ${escapeHtml(member.discordGlobalName || member.discordUsername)} • ` : ''}Access granted on ${escapeHtml(adminDomain)}</span>
                         </div>
                         ${isOwner ? `<button class="button-ghost button-tiny" type="button" data-remove-member="${member.userId}">Remove</button>` : ''}
                     </div>
@@ -475,9 +571,9 @@
         privateLinkMemberForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            const email = document.getElementById('private-link-member-email').value.trim();
-            if (!email) {
-                setPrivateLinkFeedback(`Enter an email to add to ${activePrivateLinkState?.domain || 'this private link'}.`, true);
+            const identifier = document.getElementById('private-link-member-email').value.trim();
+            if (!identifier) {
+                setPrivateLinkFeedback(`Enter an email or linked Discord account to add to ${activePrivateLinkState?.domain || 'this private link'}.`, true);
                 return;
             }
 
@@ -487,7 +583,7 @@
                 const response = await fetch('/api/private-links/members', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ identifier })
                 });
 
                 const data = await response.json();

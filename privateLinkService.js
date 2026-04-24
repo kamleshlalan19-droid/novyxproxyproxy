@@ -182,15 +182,51 @@ export const saveOwnedPrivateLink = async (userId, input) => {
     }
 };
 
-export const addPrivateLinkMemberForOwner = async (owner, linkId, email) => {
+const resolvePrivateLinkMemberTarget = async (identifier) => {
+    const normalizedIdentifier = String(identifier || "").trim();
+    if (!normalizedIdentifier) {
+        return null;
+    }
+
+    const normalizedLower = normalizedIdentifier.toLowerCase();
+    const normalizedDiscord = normalizedIdentifier.replace(/^@/, "");
+    const normalizedDiscordLower = normalizedDiscord.toLowerCase();
+
+    const result = await pool.query(
+        `SELECT users.id,
+                users.email,
+                discord_account_links.discord_user_id,
+                discord_account_links.discord_username,
+                discord_account_links.discord_global_name
+         FROM users
+         LEFT JOIN discord_account_links ON discord_account_links.user_id = users.id
+         WHERE lower(users.email) = $1
+            OR discord_account_links.discord_user_id = $2
+            OR lower(coalesce(discord_account_links.discord_username, '')) = $3
+            OR lower(coalesce(discord_account_links.discord_global_name, '')) = $3
+         ORDER BY CASE
+             WHEN lower(users.email) = $1 THEN 0
+             WHEN discord_account_links.discord_user_id = $2 THEN 1
+             WHEN lower(coalesce(discord_account_links.discord_username, '')) = $3 THEN 2
+             WHEN lower(coalesce(discord_account_links.discord_global_name, '')) = $3 THEN 3
+             ELSE 4
+         END
+         LIMIT 1`,
+        [normalizedLower, normalizedDiscord, normalizedDiscordLower]
+    );
+
+    return result.rowCount > 0 ? result.rows[0] : null;
+};
+
+export const addPrivateLinkMemberForOwner = async (owner, linkId, identifier) => {
     const normalizedLinkId = Number(linkId);
-    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedIdentifier = String(identifier || "").trim();
     if (!normalizedLinkId) {
         return { error: "Invalid private link", status: 400 };
     }
 
-    if (!normalizedEmail) {
-        return { error: "Enter an email", status: 400 };
+    if (!normalizedIdentifier) {
+        return { error: "Enter an email, Discord username, or Discord ID", status: 400 };
     }
 
     const privateLink = await getOwnedPrivateLink(owner.id, normalizedLinkId);
@@ -202,20 +238,30 @@ export const addPrivateLinkMemberForOwner = async (owner, linkId, email) => {
         return { error: `You can only have ${MAX_PRIVATE_LINK_MEMBERS} total people on a private link, including the owner`, status: 400 };
     }
 
-    if (normalizedEmail === String(owner.email || "").toLowerCase()) {
+    const ownerEmail = String(owner.email || "").toLowerCase();
+    const ownerDiscordUsername = String(owner.discordUsername || "").toLowerCase();
+    const ownerDiscordGlobalName = String(owner.discordGlobalName || "").toLowerCase();
+    const ownerDiscordUserId = String(owner.discordUserId || "");
+    const normalizedIdentifierLower = normalizedIdentifier.toLowerCase().replace(/^@/, "");
+
+    if (
+        normalizedIdentifier.toLowerCase() === ownerEmail ||
+        normalizedIdentifierLower === ownerDiscordUsername ||
+        normalizedIdentifierLower === ownerDiscordGlobalName ||
+        normalizedIdentifier.replace(/^@/, "") === ownerDiscordUserId
+    ) {
         return { error: "You already own this link", status: 400 };
     }
 
-    const targetResult = await pool.query(
-        "SELECT id, email FROM users WHERE lower(email) = $1",
-        [normalizedEmail]
-    );
-
-    if (targetResult.rowCount === 0) {
-        return { error: "No account found for that email", status: 404 };
+    const targetUser = await resolvePrivateLinkMemberTarget(normalizedIdentifier);
+    if (!targetUser) {
+        return { error: "No account found for that email or linked Discord account", status: 404 };
     }
 
-    const targetUser = targetResult.rows[0];
+    if (Number(targetUser.id) === Number(owner.id)) {
+        return { error: "You already own this link", status: 400 };
+    }
+
     const alreadyExists = privateLink.members.some((member) => Number(member.userId) === Number(targetUser.id));
 
     if (alreadyExists) {

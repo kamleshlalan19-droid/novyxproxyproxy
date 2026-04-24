@@ -99,9 +99,13 @@ const enrichPrivateLink = async (link) => {
 
 const fetchMembers = async (linkId) => {
     const result = await pool.query(
-        `SELECT users.id, users.email, private_link_members.created_at
+        `SELECT users.id, users.email, private_link_members.created_at,
+                discord_account_links.discord_user_id,
+                discord_account_links.discord_username,
+                discord_account_links.discord_global_name
          FROM private_link_members
          JOIN users ON users.id = private_link_members.user_id
+         LEFT JOIN discord_account_links ON discord_account_links.user_id = users.id
          WHERE private_link_members.link_id = $1
          ORDER BY lower(users.email) ASC`,
         [linkId]
@@ -110,6 +114,9 @@ const fetchMembers = async (linkId) => {
     return result.rows.map((row) => ({
         userId: row.id,
         email: row.email,
+        discordUserId: row.discord_user_id || null,
+        discordUsername: row.discord_username || null,
+        discordGlobalName: row.discord_global_name || null,
         addedAt: row.created_at,
     }));
 };

@@ -113,6 +113,49 @@
     color: #9ff0ca;
 }
 
+.discord-link-card {
+    display: grid;
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.discord-link-status,
+.discord-link-code-box {
+    padding: 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.discord-link-status strong,
+.discord-link-code-box strong {
+    display: block;
+    margin-top: 10px;
+}
+
+.discord-link-status.is-linked {
+    border: 1px solid rgba(159, 240, 202, 0.22);
+}
+
+.discord-link-code-box span {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.66);
+}
+
+#discord-link-code {
+    font-size: 2rem;
+    letter-spacing: 0.12em;
+}
+
+#discord-link-feedback {
+    min-height: 24px;
+    margin: 0;
+    color: #9ff0ca;
+}
+
+#discord-link-feedback.error {
+    color: #ff9c9c;
+}
+
 .styled-select {
     color: var(--text);
     background: color-mix(in srgb, var(--surface-strong) 92%, black 8%);

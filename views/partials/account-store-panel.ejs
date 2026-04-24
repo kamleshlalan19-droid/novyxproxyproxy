@@ -93,6 +93,44 @@
 
     <div class="detail-grid">
         <article class="info-card">
+            <h3>Discord Link</h3>
+            <p>Link your Discord account so the CanLite bot can recognize you and dispense proxy links there.</p>
+            <div class="discord-link-card" id="discord-link-card">
+                <% if (discordLink?.linked && discordLink?.link) { %>
+                    <div class="discord-link-status is-linked">
+                        <span class="store-kicker"><span class="material-symbols-outlined">link</span>Linked</span>
+                        <strong id="discord-link-name"><%= discordLink.link.discord_global_name || discordLink.link.discord_username || "Discord account" %></strong>
+                        <p id="discord-link-meta">Discord username: <%= discordLink.link.discord_username || "unknown" %></p>
+                    </div>
+                <% } else { %>
+                    <div class="discord-link-status">
+                        <span class="store-kicker"><span class="material-symbols-outlined">link_off</span>Not Linked</span>
+                        <strong id="discord-link-name">No Discord account connected</strong>
+                        <p id="discord-link-meta">Generate a one-time code here, then use it in the Discord bot with <code>/link</code>.</p>
+                    </div>
+                <% } %>
+
+                <div class="discord-link-code-box">
+                    <span>One-time link code</span>
+                    <strong id="discord-link-code"><%= discordLink?.pendingCode?.code || "Not generated yet" %></strong>
+                    <p id="discord-link-code-expiry">
+                        <% if (discordLink?.pendingCode?.expiresAt) { %>
+                            Expires <%= new Date(discordLink.pendingCode.expiresAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) %>
+                        <% } else { %>
+                            Codes stay active for 15 minutes.
+                        <% } %>
+                    </p>
+                </div>
+
+                <div class="button-row">
+                    <button id="discord-generate-code" type="button" class="button">Generate Code</button>
+                    <button id="discord-unlink-button" type="button" class="button-ghost" <%= discordLink?.linked ? "" : "disabled" %>>Unlink Discord</button>
+                </div>
+                <p id="discord-link-feedback"></p>
+            </div>
+        </article>
+
+        <article class="info-card">
             <h3>Switch Site</h3>
             <p>For private links: fill out the private-link form first, then come back here and click CanLite on that domain. The domain must never have been visited or used before in the route database.</p>
             <form action="/api/switch" method="POST" class="stack" style="margin-top:18px;">

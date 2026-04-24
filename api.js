@@ -12,6 +12,11 @@ import redisClient from "./redis.js";
 import { authenticateUserCredentials } from "./auth.js";
 import { setSessionUser } from "./sessionUser.js";
 import privateLinkRoutes from "./routes/privateLinks.js";
+import {
+    createDiscordLinkCodeForUser,
+    getDiscordLinkSummaryForUser,
+    unlinkDiscordAccountForUser,
+} from "./discordLinks.js";
 
 const router = express.Router();
 
@@ -363,6 +368,57 @@ router.post('/logout', async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err });
+    }
+});
+
+router.get('/discord/link-status', async (req, res) => {
+    if (!req.session?.user_id) {
+        return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+        const discordLink = await getDiscordLinkSummaryForUser(req.session.user_id);
+        return res.json({ discordLink });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Failed to load Discord link status" });
+    }
+});
+
+router.post('/discord/link-code', async (req, res) => {
+    if (!req.session?.user_id) {
+        return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+        const pendingCode = await createDiscordLinkCodeForUser(req.session.user_id);
+        const discordLink = await getDiscordLinkSummaryForUser(req.session.user_id);
+        return res.json({
+            success: true,
+            pendingCode,
+            discordLink,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Failed to create Discord link code" });
+    }
+});
+
+router.post('/discord/unlink', async (req, res) => {
+    if (!req.session?.user_id) {
+        return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+        await unlinkDiscordAccountForUser(req.session.user_id);
+        const discordLink = await getDiscordLinkSummaryForUser(req.session.user_id);
+        return res.json({
+            success: true,
+            discordLink,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Failed to unlink Discord account" });
     }
 });
 

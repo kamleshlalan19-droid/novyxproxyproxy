@@ -24,6 +24,7 @@ import redisClient from "./redis.js";
 import { getAccountPrivateLink, getOwnedPrivateLinks } from "./privateLinks.js";
 import { canAccessPrivateLinkUpgrade, createPrivateLinkRequestGate } from "./privateLinkGate.js";
 import { getSessionUser } from "./sessionUser.js";
+import { getDiscordLinkSummaryForUser } from "./discordLinks.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -249,12 +250,13 @@ app.get("/account", async (req, res) => {
       return res.status(400).json(false); // Account does not exist
     } else {
       const adfree = await getAdfreeSummary(user.id);
-      const [privateLink, privateLinks] = await Promise.all([
+      const [privateLink, privateLinks, discordLink] = await Promise.all([
         getAccountPrivateLink({
           userId: user.id,
           hostname: req.hostname,
         }),
         getOwnedPrivateLinks(user.id),
+        getDiscordLinkSummaryForUser(user.id),
       ]);
 
       res.render("account-shell", {
@@ -264,6 +266,7 @@ app.get("/account", async (req, res) => {
         adfree,
         privateLink,
         privateLinks,
+        discordLink,
       });
     }
   } else {
@@ -279,12 +282,13 @@ app.get("/link-management", async (req, res) => {
     }
 
     const adfree = await getAdfreeSummary(user.id);
-    const [privateLink, privateLinks] = await Promise.all([
+    const [privateLink, privateLinks, discordLink] = await Promise.all([
       getAccountPrivateLink({
         userId: user.id,
         hostname: req.hostname,
       }),
       getOwnedPrivateLinks(user.id),
+      getDiscordLinkSummaryForUser(user.id),
     ]);
 
     return res.render("account-shell", {
@@ -294,6 +298,7 @@ app.get("/link-management", async (req, res) => {
       adfree,
       privateLink,
       privateLinks,
+      discordLink,
     });
   }
 
