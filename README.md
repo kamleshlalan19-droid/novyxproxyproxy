@@ -48,6 +48,25 @@ CanLite is built using Node.js, pnpm, and PostgreSQL. To set up the project, fol
 
 Ensure that PostgreSQL is properly configured before running the application.
 
+## Private Links
+
+Private links require your own domain or subdomain. CanLite will not issue a usable private link on a raw server IP, so you need to point a hostname you control at the server first.
+
+The simplest option is to use a free subdomain from [FreeDNS](https://freedns.afraid.org/):
+
+1. Create an account on FreeDNS.
+2. Add a subdomain under one of their shared public domains, or use a domain you already own.
+3. Create an `A` record pointing that hostname to your CanLite server's public IPv4 address.
+4. Wait for DNS to propagate.
+5. Use that hostname when setting up or sharing your private link.
+
+If you already have your own domain with another DNS provider, the setup is the same: create a subdomain and point an `A` record at the server running CanLite.
+
+Notes:
+- The hostname must resolve to the server before private links will work correctly.
+- Do not use the server IP directly for a private link.
+- If you change servers later, update the DNS record to the new public IP.
+
 ## Deployment
 CanLite is deployed at **[canlite.org](https://canlite.org)** on a **CrunchBits VPS**. Join our **[Discord server](https://discord.gg/46gkEU5kpP)** for updates, support, and unblocked links.
 

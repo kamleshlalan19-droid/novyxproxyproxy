@@ -100,7 +100,7 @@
 </head>
 <body>
 <div class="card">
-    <h1>Private link</h1>
+    <h1>Restricted area</h1>
     <p>Sign in with an allowed account to access <strong><%= domain %></strong>.</p>
     <div class="error"><%= error || "" %></div>
     <form action="<%= loginPath %>" method="post">
@@ -112,9 +112,8 @@
             Password
             <input type="password" name="password" autocomplete="current-password" required>
         </label>
-        <button type="submit">Open Private Link</button>
+        <button type="submit">Login</button>
     </form>
-    <div class="meta">If you do not have access yet, ask the link owner to add your account email.</div>
 </div>
 </body>
 </html>

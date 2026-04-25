@@ -58,6 +58,13 @@
                                 <span class="manager-kicker">Setup</span>
                             </div>
 
+                            <div class="private-link-callout">
+                                <h3>Before You Create A Link</h3>
+                                <p>You must provide your own domain or subdomain for a private link. Raw IP addresses will not work for private-link setup.</p>
+                                <p>Recommended: use <a href="https://freedns.afraid.org/" target="_blank" rel="noopener noreferrer">FreeDNS</a> to create a free subdomain, then point an <code>A</code> record to <code>104.36.85.249</code>.</p>
+                                <p>After the DNS record is live, enter that hostname here. The domain also needs to be brand new to the route database.</p>
+                            </div>
+
                             <form id="private-link-form" class="private-link-form">
                                 <div class="field-grid">
                                     <label class="field">
@@ -79,7 +86,7 @@
                                     <label class="field">
                                         <span>Private domain</span>
                                         <input id="private-link-domain" type="text" placeholder="study.example.com" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
-                                        <small>This should point at this CanLite deployment.</small>
+                                        <small>Use a hostname you control and point its <code>A</code> record to <code>104.36.85.249</code>. FreeDNS is recommended if you need a free subdomain.</small>
                                     </label>
                                     <label class="field">
                                         <span>Cover URL</span>

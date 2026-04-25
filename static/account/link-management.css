@@ -99,6 +99,34 @@
     color: rgba(255, 255, 255, 0.72);
 }
 
+.private-link-callout {
+    display: grid;
+    gap: 10px;
+    padding: 18px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(159, 240, 202, 0.12), rgba(255, 255, 255, 0.04));
+    border: 1px solid rgba(159, 240, 202, 0.18);
+}
+
+.private-link-callout h3,
+.private-link-callout p {
+    margin: 0;
+}
+
+.private-link-callout p {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.private-link-callout a {
+    color: #9ff0ca;
+}
+
+.private-link-callout code,
+.field small code {
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    color: #d8fff0;
+}
+
 .private-link-card {
     display: grid;
     gap: 14px;
