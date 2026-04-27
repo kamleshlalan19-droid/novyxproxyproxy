@@ -3,8 +3,7 @@
     <div class="section-heading">
         <div>
             <h1>Private Links</h1>
-            <p>Set up your real private link here: pick a private domain, a secret login path, and either a specific cover link or a generated one.</p>
-            <p>Important: your private domain must be brand new and never used before in the route database.</p>
+            <p>Choose whether to use your own domain or let CanLite generate the private link domain, then add the cover link and secret login path.</p>
         </div>
     </div>
 
@@ -13,26 +12,26 @@
             <div class="manager-section-head">
                 <div>
                     <h2 id="private-link-editor-title">Create Or Edit</h2>
-                    <p id="private-link-editor-summary">Step 1: fill this out to make or update a real private link.</p>
+                    <p id="private-link-editor-summary">Step 1: choose your private link type, then add a cover link and secret login path.</p>
                 </div>
             </div>
 
             <div class="private-link-callout">
                 <h3>Before You Start</h3>
-                <p>You need your own domain or subdomain for a private link. Raw IP addresses do not work here.</p>
+                <p>If you use your own domain or subdomain, it must be brand new and never used before in the route database.</p>
                 <p>Recommended: use <a href="https://freedns.afraid.org/" target="_blank" rel="noopener noreferrer">FreeDNS</a> to create a free subdomain, then point an <code>A</code> record to <code>104.36.85.249</code>.</p>
-                <p>When the DNS record is live, enter that hostname here. Then choose a secret login path and decide how the cover link should be made.</p>
+                <p>If you let CanLite generate the private link, the domain will be assigned automatically when you save.</p>
             </div>
 
             <form id="private-link-form" class="private-link-form">
                 <div class="field-grid">
                     <label class="field">
-                        <span>Link type</span>
+                        <span>Private link type</span>
                         <select id="private-link-source" class="styled-select" <%= isPrivateLinkOwner ? '' : 'disabled' %>>
-                            <option value="byo" selected>Bring your own link</option>
-                            <option value="provided" disabled>Use a provided link (disabled)</option>
+                            <option value="byo" selected>I have my own domain</option>
+                            <option value="provided">Generate one with CanLite</option>
                         </select>
-                        <small>This is your own domain or subdomain.</small>
+                        <small>Choose whether you want to use your own hostname or have CanLite assign one.</small>
                     </label>
                     <label class="field">
                         <span>Secret login path</span>
@@ -41,50 +40,25 @@
                     </label>
                 </div>
 
-                <div class="field-grid">
+                <div id="private-link-domain-group" class="field-grid">
                     <label class="field">
                         <span>Private domain</span>
                         <input id="private-link-domain" type="text" placeholder="study.example.com" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
                         <small>Use a hostname you control and point its <code>A</code> record to <code>104.36.85.249</code>. It must also be brand new to the route database or creation will be rejected.</small>
                     </label>
-                    <label class="field">
-                        <span>Specific cover link</span>
-                        <input id="private-link-cover-url" type="url" placeholder="https://google.com" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %>>
-                        <small>Use this if you already know the exact link you want. If you leave it blank, CanLite can generate one below.</small>
-                    </label>
                 </div>
 
                 <div class="field-grid">
                     <label class="field">
-                        <span>Generate cover link: site</span>
-                        <select id="private-link-cover-site" class="styled-select" <%= isPrivateLinkOwner ? '' : 'disabled' %>>
-                            <option value="">Choose a site</option>
-                            <option value="CanLite">CanLite</option>
-                            <option value="BrunysIXL">BrunysIXL</option>
-                        </select>
-                        <small>Use this only if you want the local API at <code>127.0.0.1:8080</code> to make the link.</small>
-                    </label>
-                    <label class="field">
-                        <span>Generate cover link: filter</span>
-                        <select id="private-link-cover-filter" class="styled-select" <%= isPrivateLinkOwner ? '' : 'disabled' %>>
-                            <option value="">Choose a filter</option>
-                            <option value="blocksi">Blocksi</option>
-                            <option value="cisco">Cisco</option>
-                            <option value="iboss">iBoss</option>
-                            <option value="lanschool">LanSchool</option>
-                            <option value="lightspeed">Lightspeed</option>
-                            <option value="linewize">Linewize</option>
-                            <option value="senso">Senso</option>
-                        </select>
-                        <small>Pick both site and filter if you want CanLite to generate the cover link instead of using a specific one.</small>
+                        <span>Cover link</span>
+                        <input id="private-link-cover-url" type="url" placeholder="https://google.com" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
+                        <small>This is required. Paste the exact cover link you want the private link to open.</small>
                     </label>
                 </div>
 
-                <p class="private-link-feedback" style="margin-top: 0;">
-                    Choose one cover-link method:
-                    either paste a specific link,
-                    or leave that blank and choose both a site and a filter.
-                </p>
+                <div id="private-link-generated-note" class="private-link-empty" hidden>
+                    CanLite will generate the private-link domain for you when you save. You still need to provide the cover link above.
+                </div>
 
                 <% if (isPrivateLinkOwner) { %>
                     <div class="button-row">

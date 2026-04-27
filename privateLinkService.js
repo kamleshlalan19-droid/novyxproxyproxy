@@ -1,5 +1,6 @@
 import pool from "./db.js";
 import routePool from "./routeDb.js";
+import { randomBytes } from "node:crypto";
 import { getCreditBalance, roundCredits, setCreditBalance } from "./store.js";
 import {
     MAX_PRIVATE_LINKS,
@@ -22,21 +23,11 @@ const BLOCKED_DOMAIN_PARTS = [
     "sslip.io",
     "plesk.page",
 ];
-const PRIVATE_LINK_GENERATOR_BASE_URL = process.env.PRIVATE_LINK_GENERATOR_BASE_URL || "http://127.0.0.1:8080/generate";
-const PRIVATE_LINK_GENERATOR_IP = process.env.PRIVATE_LINK_GENERATOR_IP || "104.36.85.249";
-const PRIVATE_LINK_GENERATOR_SITES = {
-    CanLite: "canlite",
-    BrunysIXL: "brunysixl",
-};
-const PRIVATE_LINK_GENERATOR_FILTERS = new Set([
-    "blocksi",
-    "cisco",
-    "iboss",
-    "lanschool",
-    "lightspeed",
-    "linewize",
-    "senso",
-]);
+const PRIVATE_LINK_PROVIDED_DOMAIN_SUFFIX = String(process.env.PRIVATE_LINK_PROVIDED_DOMAIN_SUFFIX || "private.canlite.org")
+    .trim()
+    .toLowerCase()
+    .replace(/^\.+/, "")
+    .replace(/\.+$/, "");
 
 export const PRIVATE_LINK_PLAN_DEFAULTS = {
     [PRIVATE_LINK_SOURCE.BRING_YOUR_OWN]: {
@@ -44,8 +35,8 @@ export const PRIVATE_LINK_PLAN_DEFAULTS = {
         providerEnabled: true,
     },
     [PRIVATE_LINK_SOURCE.PROVIDED]: {
-        monthlyCostCredits: 10,
-        providerEnabled: false,
+        monthlyCostCredits: 0,
+        providerEnabled: true,
     },
 };
 
@@ -55,77 +46,57 @@ export const canUsePrivateLinkDomain = (domain) => {
 
 const getRouteTableUrlForDomain = (domain) => `https://${String(domain || "").trim().toLowerCase()}`;
 
+const buildGeneratedPrivateLinkDomain = () => `cl-${randomBytes(5).toString("hex")}.${PRIVATE_LINK_PROVIDED_DOMAIN_SUFFIX}`;
+
+const getExistingPrivateLinkByDomain = async (client, domain) => (
+    client.query("SELECT id FROM private_links WHERE domain = $1 LIMIT 1", [domain])
+);
+
+const getExistingRouteByDomain = async (domain) => (
+    routePool.query("SELECT 1 FROM routestable WHERE lower(url) = $1 LIMIT 1", [getRouteTableUrlForDomain(domain)])
+);
+
+const reserveGeneratedPrivateLinkDomain = async (client) => {
+    if (!isValidDomain(PRIVATE_LINK_PROVIDED_DOMAIN_SUFFIX)) {
+        return { error: "Generated private-link domains are not configured correctly", status: 500 };
+    }
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+        const domain = buildGeneratedPrivateLinkDomain();
+        const [existingPrivateLink, existingRoute] = await Promise.all([
+            getExistingPrivateLinkByDomain(client, domain),
+            getExistingRouteByDomain(domain),
+        ]);
+
+        if (existingPrivateLink.rowCount === 0 && existingRoute.rowCount === 0) {
+            return { domain };
+        }
+    }
+
+    return { error: "Failed to generate a private link domain. Try again.", status: 500 };
+};
+
 export const createPrivateLinkCandidate = async (input = {}) => {
     const providedUrl = String(input.url || "").trim();
-    if (providedUrl) {
-        if (!isValidHttpUrl(providedUrl)) {
-            return { error: "Enter a valid cover link", status: 400 };
-        }
-
-        return {
-            url: providedUrl,
-            source: "provided_url",
-            site: "",
-            filterName: "",
-        };
+    if (!providedUrl) {
+        return { error: "Enter a valid cover link", status: 400 };
     }
 
-    const site = String(input.site || "").trim();
-    const filterName = String(input.filterName || input.filter_name || "").trim().toLowerCase();
-    const linkType = PRIVATE_LINK_GENERATOR_SITES[site];
-
-    if (!site || !filterName) {
-        return { error: "Provide either a URL or both a site and filter", status: 400 };
-    }
-
-    if (!linkType) {
-        return { error: "That site is not configured for generation", status: 400 };
-    }
-
-    if (!PRIVATE_LINK_GENERATOR_FILTERS.has(filterName)) {
-        return { error: "That filter is not configured for generation", status: 400 };
-    }
-
-    const requestUrl = new URL(PRIVATE_LINK_GENERATOR_BASE_URL);
-    requestUrl.searchParams.set("ip", PRIVATE_LINK_GENERATOR_IP);
-    requestUrl.searchParams.set("blocker", filterName);
-    requestUrl.searchParams.set("linktype", linkType);
-
-    const response = await fetch(requestUrl);
-    if (!response.ok) {
-        return { error: `Generator request failed with status ${response.status}`, status: 502 };
-    }
-
-    const payload = await response.json();
-    const generatedUrl = String(payload?.url || "").trim();
-    if (!isValidHttpUrl(generatedUrl)) {
-        return { error: "Generator returned an invalid URL", status: 502 };
+    if (!isValidHttpUrl(providedUrl)) {
+        return { error: "Enter a valid cover link", status: 400 };
     }
 
     return {
-        url: generatedUrl,
-        source: "generator",
-        site,
-        filterName,
+        url: providedUrl,
+        source: "provided_url",
+        site: "",
+        filterName: "",
     };
 };
 
 export const resolvePrivateLinkCoverUrl = async (input = {}) => {
     const directCoverUrl = String(input.coverUrl || "").trim();
-    if (directCoverUrl) {
-        return createPrivateLinkCandidate({ url: directCoverUrl });
-    }
-
-    const site = String(input.coverSite || input.site || "").trim();
-    const filterName = String(input.coverFilterName || input.filterName || input.filter_name || "").trim();
-    if (!site && !filterName) {
-        return { error: "Add a specific cover link, or choose a site and filter to generate one.", status: 400 };
-    }
-
-    return createPrivateLinkCandidate({
-        site,
-        filterName,
-    });
+    return createPrivateLinkCandidate({ url: directCoverUrl });
 };
 
 export const validatePrivateLinkInput = ({ domain, coverUrl, loginPath, linkSource }) => {
@@ -139,16 +110,14 @@ export const validatePrivateLinkInput = ({ domain, coverUrl, loginPath, linkSour
         return { error: "Invalid private link type" };
     }
 
-    if (normalizedLinkSource === PRIVATE_LINK_SOURCE.PROVIDED && !planDefaults.providerEnabled) {
-        return { error: "Provided links are not enabled yet" };
-    }
+    if (normalizedLinkSource === PRIVATE_LINK_SOURCE.BRING_YOUR_OWN) {
+        if (!isValidDomain(normalizedDomain)) {
+            return { error: "Enter a valid domain" };
+        }
 
-    if (!isValidDomain(normalizedDomain)) {
-        return { error: "Enter a valid domain" };
-    }
-
-    if (!canUsePrivateLinkDomain(normalizedDomain)) {
-        return { error: "That domain cannot be used as a private link" };
+        if (!canUsePrivateLinkDomain(normalizedDomain)) {
+            return { error: "That domain cannot be used as a private link" };
+        }
     }
 
     if (!isValidHttpUrl(normalizedCoverUrl)) {
@@ -192,32 +161,9 @@ export const saveOwnedPrivateLink = async (userId, input) => {
         await client.query("BEGIN");
 
         const ownedLinks = await client.query(
-            "SELECT id FROM private_links WHERE owner_user_id = $1 ORDER BY created_at DESC, id DESC FOR UPDATE",
+            "SELECT id, domain, link_source FROM private_links WHERE owner_user_id = $1 ORDER BY created_at DESC, id DESC FOR UPDATE",
             [userId]
         );
-
-        const conflictingDomain = await client.query(
-            "SELECT id, owner_user_id FROM private_links WHERE domain = $1 FOR UPDATE",
-            [domain]
-        );
-
-        const existingRoute = await routePool.query(
-            "SELECT 1 FROM routestable WHERE lower(url) = $1 LIMIT 1",
-            [getRouteTableUrlForDomain(domain)]
-        );
-
-        if (conflictingDomain.rowCount > 0 && Number(conflictingDomain.rows[0].id) !== normalizedLinkId) {
-            await client.query("ROLLBACK");
-            return { error: "That domain is already in use", status: 400 };
-        }
-
-        if (existingRoute.rowCount > 0) {
-            await client.query("ROLLBACK");
-            return {
-                error: "That domain has already been used or visited before. Private link domains must be completely unused.",
-                status: 400,
-            };
-        }
 
         const existingLink = normalizedLinkId
             ? ownedLinks.rows.find((link) => Number(link.id) === normalizedLinkId)
@@ -227,6 +173,43 @@ export const saveOwnedPrivateLink = async (userId, input) => {
         if (normalizedLinkId && !existingLink) {
             await client.query("ROLLBACK");
             return { error: "Private link not found", status: 404 };
+        }
+
+        let resolvedDomain = domain;
+        if (linkSource === PRIVATE_LINK_SOURCE.PROVIDED) {
+            resolvedDomain = existingLink?.link_source === PRIVATE_LINK_SOURCE.PROVIDED
+                ? existingLink.domain
+                : null;
+
+            if (!resolvedDomain) {
+                const generatedDomain = await reserveGeneratedPrivateLinkDomain(client);
+                if (generatedDomain.error) {
+                    await client.query("ROLLBACK");
+                    return generatedDomain;
+                }
+
+                resolvedDomain = generatedDomain.domain;
+            }
+        }
+
+        const conflictingDomain = await client.query(
+            "SELECT id, owner_user_id FROM private_links WHERE domain = $1 FOR UPDATE",
+            [resolvedDomain]
+        );
+
+        const existingRoute = await getExistingRouteByDomain(resolvedDomain);
+
+        if (conflictingDomain.rowCount > 0 && Number(conflictingDomain.rows[0].id) !== normalizedLinkId) {
+            await client.query("ROLLBACK");
+            return { error: "That domain is already in use", status: 400 };
+        }
+
+        if (existingRoute.rowCount > 0 && resolvedDomain !== existingLink?.domain) {
+            await client.query("ROLLBACK");
+            return {
+                error: "That domain has already been used or visited before. Private link domains must be completely unused.",
+                status: 400,
+            };
         }
 
         if (existingLink) {
@@ -241,7 +224,7 @@ export const saveOwnedPrivateLink = async (userId, input) => {
                      provider_enabled = $6,
                      updated_at = NOW()
                  WHERE id = $7`,
-                [domain, coverUrl, loginPath, linkSource, planDefaults.monthlyCostCredits, planDefaults.providerEnabled, linkId]
+                [resolvedDomain, coverUrl, loginPath, linkSource, planDefaults.monthlyCostCredits, planDefaults.providerEnabled, linkId]
             );
         } else {
             if (ownedLinks.rowCount >= MAX_PRIVATE_LINKS) {
@@ -261,7 +244,7 @@ export const saveOwnedPrivateLink = async (userId, input) => {
                     provider_enabled
                 ) VALUES ($1, $2, $3, $4, $5, $6, 0, $7)
                 RETURNING id`,
-                [userId, domain, coverUrl, loginPath, linkSource, planDefaults.monthlyCostCredits, planDefaults.providerEnabled]
+                [userId, resolvedDomain, coverUrl, loginPath, linkSource, planDefaults.monthlyCostCredits, planDefaults.providerEnabled]
             );
             linkId = insertResult.rows[0].id;
         }
