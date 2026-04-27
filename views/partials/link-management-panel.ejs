@@ -2,9 +2,9 @@
 <section class="account-panel <%= initialPanel === 'link-management' ? 'is-active' : '' %>" data-account-panel="link-management" <%= initialPanel === 'link-management' ? '' : 'hidden' %>>
     <div class="section-heading">
         <div>
-            <h1>Link Management</h1>
-            <p>Create and edit your private links from anywhere on your account.</p>
-            <p>The domain must have never been visited or used before in the route database. You can also generate a shareable link directly here through the backend.</p>
+            <h1>Private Links</h1>
+            <p>Set up your real private link here: pick a private domain, a secret login path, and a normal-looking cover site.</p>
+            <p>Important: your private domain must be brand new and never used before in the route database.</p>
         </div>
     </div>
 
@@ -13,15 +13,15 @@
             <div class="manager-section-head">
                 <div>
                     <h2 id="private-link-editor-title">Create Or Edit</h2>
-                    <p id="private-link-editor-summary">Select a saved link to edit it, or clear the form to create a new one.</p>
+                    <p id="private-link-editor-summary">Step 1: fill this out to make or update a real private link.</p>
                 </div>
             </div>
 
             <div class="private-link-callout">
-                <h3>Before You Create A Link</h3>
-                <p>You must provide your own domain or subdomain for a private link. Raw IP addresses will not work for private-link setup.</p>
+                <h3>Before You Start</h3>
+                <p>You need your own domain or subdomain for a private link. Raw IP addresses do not work here.</p>
                 <p>Recommended: use <a href="https://freedns.afraid.org/" target="_blank" rel="noopener noreferrer">FreeDNS</a> to create a free subdomain, then point an <code>A</code> record to <code>104.36.85.249</code>.</p>
-                <p>After the DNS record is live, enter that hostname here. The domain also needs to be brand new to the route database.</p>
+                <p>When the DNS record is live, enter that hostname here. Then choose a secret login path and a normal cover site.</p>
             </div>
 
             <form id="private-link-form" class="private-link-form">
@@ -32,10 +32,12 @@
                             <option value="byo" selected>Bring your own link</option>
                             <option value="provided" disabled>Use a provided link (disabled)</option>
                         </select>
+                        <small>This is your own domain or subdomain.</small>
                     </label>
                     <label class="field">
-                        <span>Login path</span>
-                        <input id="private-link-login-path" type="text" placeholder="/secret-login" value="/login" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
+                        <span>Secret login path</span>
+                        <input id="private-link-login-path" type="text" placeholder="/notes" value="/login" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
+                        <small>This is the hidden path you visit to open the private CanLite page.</small>
                     </label>
                 </div>
 
@@ -46,15 +48,15 @@
                         <small>Use a hostname you control and point its <code>A</code> record to <code>104.36.85.249</code>. It must also be brand new to the route database or creation will be rejected.</small>
                     </label>
                     <label class="field">
-                        <span>Cover URL</span>
-                        <input id="private-link-cover-url" type="url" placeholder="https://example.org" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
-                        <small>Unauthenticated traffic on the private domain gets proxied here unless it hits the login path.</small>
+                        <span>Cover site</span>
+                        <input id="private-link-cover-url" type="url" placeholder="https://google.com" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
+                        <small>People who visit your private domain normally will see this site unless they use your secret login path.</small>
                     </label>
                 </div>
 
                 <% if (isPrivateLinkOwner) { %>
                     <div class="button-row">
-                        <button id="private-link-save" type="submit" class="button">Save Private Link</button>
+                        <button id="private-link-save" type="submit" class="button">Save Setup</button>
                         <button id="private-link-clear" type="button" class="button-ghost">Clear Form</button>
                     </div>
                 <% } else { %>
@@ -68,8 +70,8 @@
         <section class="manager-section">
             <div class="manager-section-head">
                 <div>
-                    <h3>Create Shareable Link</h3>
-                    <p>Paste your own URL or have CanLite create one through the local backend generator.</p>
+                    <h3>Quick Link Generator</h3>
+                    <p>Optional: make a quick shareable link here. This is separate from your private domain setup above.</p>
                 </div>
             </div>
 
@@ -77,7 +79,7 @@
                 <label class="field">
                     <span>Provided URL</span>
                     <input id="private-link-create-url" type="url" placeholder="https://example.org/path">
-                    <small>If this is filled in, CanLite returns it directly instead of generating one.</small>
+                    <small>If you paste a URL here, CanLite just gives that back to you. Leave it blank to generate one instead.</small>
                 </label>
 
                 <div class="field-grid">
@@ -109,7 +111,7 @@
 
             <label class="field" style="margin-top: 16px;">
                 <span>Created Link</span>
-                <input id="private-link-create-result" type="text" readonly placeholder="Your generated or provided link will appear here.">
+                <input id="private-link-create-result" type="text" readonly placeholder="Your quick link will appear here.">
             </label>
         </section>
 

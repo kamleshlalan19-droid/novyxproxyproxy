@@ -4,7 +4,7 @@
     <div class="section-heading">
         <div>
             <h1>Private Link Admin</h1>
-            <p>Link-specific administration only appears while you are on that private link.</p>
+            <p>These controls only work while you are visiting the private link itself.</p>
         </div>
     </div>
 
@@ -15,15 +15,15 @@
                     <h2>Current Link</h2>
                     <p id="private-link-admin-summary">
                         <% if (isPrivateLinkHost && privateLink) { %>
-                            Managing <%= privateLink.domain %>.
+                            Managing <%= privateLink.domain %>. You are on the real private-link host right now.
                         <% } else { %>
-                            Open this page on the private link you want to administer.
+                            Open this page on the private link you want to manage.
                         <% } %>
                     </p>
                 </div>
             </div>
             <div id="private-link-admin-empty" class="private-link-empty" <%= isPrivateLinkHost ? 'hidden' : '' %>>
-                Link-specific administration is only available on the private link itself.
+                Link-specific tools only appear on the private link itself.
             </div>
         </section>
 
@@ -38,6 +38,7 @@
                 <label class="field">
                     <span id="private-link-member-label">Add account email or linked Discord to this private link</span>
                     <input id="private-link-member-email" type="text" placeholder="friend@example.com or @friend">
+                    <small>They must already have a CanLite account.</small>
                 </label>
                 <button id="private-link-member-submit" type="submit" class="button">Add User To Link</button>
             </form>

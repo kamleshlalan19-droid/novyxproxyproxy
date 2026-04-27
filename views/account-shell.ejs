@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta description="CanLite account area">
     <meta name="viewport" content="width=device-width">
-    <title><%= initialPanel === "link-management" ? "Link Management" : "Your Account" %></title>
+    <title><%= initialPanel === "link-management" ? "Private Links" : "Your Account" %></title>
     <script defer data-domain="trueanalytics.online" src="https://trueanalyticz.online/js/script.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,7 +80,7 @@
 
         syncAccountPanelState(panelName);
         document.title = panelName === 'link-management'
-            ? 'Link Management'
+            ? 'Private Links'
             : panelName === 'private-link-admin'
                 ? 'Private Link Admin'
                 : 'Your Account';
@@ -372,8 +372,8 @@
 
         if (privateLinkAdminSummary) {
             privateLinkAdminSummary.textContent = adminPrivateLinkState?.domain
-                ? `Managing ${adminDomain}. Link-specific tools only work on this host.`
-                : 'Open this page on the private link you want to administer.';
+                ? `Managing ${adminDomain}. These tools only work while you are on this private-link host.`
+                : 'Open this page on the private link you want to manage.';
         }
 
         if (privateLinkMemberLabel) {
@@ -400,8 +400,8 @@
 
         if (privateLinkEditorSummary) {
             privateLinkEditorSummary.textContent = editingPrivateLinkId && privateLinkState?.domain
-                ? `Editing ${privateLinkState.domain}. Clear the form to start a new private link.`
-                : 'You are creating a new private link. Select a saved link if you want to edit it instead.';
+                ? `Editing ${privateLinkState.domain}. Clear the form if you want to start a brand-new setup instead.`
+                : 'Step 1: create a private link by choosing a domain, a secret login path, and a cover site.';
         }
 
         if (privateLinkSaveButton) {
@@ -426,15 +426,15 @@
                     </div>
                     <div class="private-link-card-grid">
                         <div class="private-link-stat">
-                            <span>URL</span>
+                            <span>Private domain</span>
                             <input class="private-link-value" type="text" readonly value="${escapeHtml(`https://${link.domain}`)}" onclick="this.select()">
                         </div>
                         <div class="private-link-stat">
-                            <span>Login path</span>
+                            <span>Secret login path</span>
                             <input class="private-link-value" type="text" readonly value="${escapeHtml(link.loginPath)}" onclick="this.select()">
                         </div>
                         <div class="private-link-stat">
-                            <span>Cover URL</span>
+                            <span>Cover site</span>
                             <input class="private-link-value" type="text" readonly value="${escapeHtml(link.coverUrl)}" onclick="this.select()">
                         </div>
                         <div class="private-link-stat">
@@ -454,7 +454,7 @@
                 </article>
             `;
             }).join('')
-            : '<div class="private-link-empty">No private links yet. Create one above. You can create up to 5 private links.</div>';
+            : '<div class="private-link-empty">No private links yet. Start with the setup form above. You can create up to 5 private links.</div>';
 
         if (privateLinkMembers) {
             privateLinkMembers.innerHTML = members.length
@@ -565,7 +565,7 @@
                     clearPrivateLinkForm();
                 }
                 renderPrivateLinkState();
-                setPrivateLinkFeedback('Private link saved.');
+                setPrivateLinkFeedback(`Private link saved. Next, test https://${privateLinkState.domain}${privateLinkState.loginPath} on your private domain.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to save private link', true);
             }
@@ -611,8 +611,8 @@
                     privateLinkCreateResultInput.select();
                 }
 
-                const createdFrom = providedUrl ? 'Provided URL' : `${data.site || site} / ${String(data.filterName || filterName).toUpperCase()}`;
-                setPrivateLinkFeedback(`Created link via ${createdFrom}.`);
+                const createdFrom = providedUrl ? 'your provided URL' : `${data.site || site} / ${String(data.filterName || filterName).toUpperCase()}`;
+                setPrivateLinkFeedback(`Quick link ready from ${createdFrom}. Copy it from the box below.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to create private link', true);
             } finally {
