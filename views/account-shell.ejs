@@ -253,12 +253,8 @@
     const privateLinkDomainInput = document.getElementById('private-link-domain');
     const privateLinkCoverUrlInput = document.getElementById('private-link-cover-url');
     const privateLinkLoginPathInput = document.getElementById('private-link-login-path');
-    const privateLinkCreateForm = document.getElementById('private-link-create-form');
-    const privateLinkCreateSubmit = document.getElementById('private-link-create-submit');
-    const privateLinkCreateUrlInput = document.getElementById('private-link-create-url');
-    const privateLinkCreateSiteInput = document.getElementById('private-link-create-site');
-    const privateLinkCreateFilterInput = document.getElementById('private-link-create-filter');
-    const privateLinkCreateResultInput = document.getElementById('private-link-create-result');
+    const privateLinkCoverSiteInput = document.getElementById('private-link-cover-site');
+    const privateLinkCoverFilterInput = document.getElementById('private-link-cover-filter');
 
     const normalizeOwnedPrivateLinks = (links, activeLink) =>
         (Array.isArray(links) ? links : []).map((link) => ({
@@ -311,6 +307,12 @@
         privateLinkSourceInput.value = 'byo';
         privateLinkDomainInput.value = '';
         privateLinkCoverUrlInput.value = '';
+        if (privateLinkCoverSiteInput) {
+            privateLinkCoverSiteInput.value = '';
+        }
+        if (privateLinkCoverFilterInput) {
+            privateLinkCoverFilterInput.value = '';
+        }
         privateLinkLoginPathInput.value = '/login';
     };
 
@@ -324,6 +326,12 @@
         privateLinkSourceInput.value = link.linkSource || 'byo';
         privateLinkDomainInput.value = link.domain || '';
         privateLinkCoverUrlInput.value = link.coverUrl || '';
+        if (privateLinkCoverSiteInput) {
+            privateLinkCoverSiteInput.value = '';
+        }
+        if (privateLinkCoverFilterInput) {
+            privateLinkCoverFilterInput.value = '';
+        }
         privateLinkLoginPathInput.value = link.loginPath || '/login';
     };
 
@@ -401,7 +409,7 @@
         if (privateLinkEditorSummary) {
             privateLinkEditorSummary.textContent = editingPrivateLinkId && privateLinkState?.domain
                 ? `Editing ${privateLinkState.domain}. Clear the form if you want to start a brand-new setup instead.`
-                : 'Step 1: create a private link by choosing a domain, a secret login path, and a cover site.';
+                : 'Step 1: create a private link by choosing a domain, a secret login path, and a cover link.';
         }
 
         if (privateLinkSaveButton) {
@@ -434,7 +442,7 @@
                             <input class="private-link-value" type="text" readonly value="${escapeHtml(link.loginPath)}" onclick="this.select()">
                         </div>
                         <div class="private-link-stat">
-                            <span>Cover site</span>
+                            <span>Cover link</span>
                             <input class="private-link-value" type="text" readonly value="${escapeHtml(link.coverUrl)}" onclick="this.select()">
                         </div>
                         <div class="private-link-stat">
@@ -541,6 +549,8 @@
                 linkSource: privateLinkSourceInput.value,
                 domain: privateLinkDomainInput.value,
                 coverUrl: privateLinkCoverUrlInput.value,
+                coverSite: privateLinkCoverSiteInput?.value || '',
+                coverFilterName: privateLinkCoverFilterInput?.value || '',
                 loginPath: privateLinkLoginPathInput.value
             };
 
@@ -568,57 +578,6 @@
                 setPrivateLinkFeedback(`Private link saved. Next, test https://${privateLinkState.domain}${privateLinkState.loginPath} on your private domain.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to save private link', true);
-            }
-        });
-    }
-
-    if (privateLinkCreateForm) {
-        privateLinkCreateForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const providedUrl = privateLinkCreateUrlInput?.value.trim() || '';
-            const site = privateLinkCreateSiteInput?.value || '';
-            const filterName = privateLinkCreateFilterInput?.value || '';
-
-            if (!providedUrl && (!site || !filterName)) {
-                setPrivateLinkFeedback('Provide either a URL or both a site and filter.', true);
-                return;
-            }
-
-            if (privateLinkCreateSubmit) {
-                privateLinkCreateSubmit.disabled = true;
-            }
-            setPrivateLinkFeedback(providedUrl ? 'Validating URL...' : 'Creating link through the backend...');
-
-            try {
-                const response = await fetch('/api/private-links/create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        url: providedUrl,
-                        site,
-                        filterName,
-                    })
-                });
-
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to create private link');
-                }
-
-                if (privateLinkCreateResultInput) {
-                    privateLinkCreateResultInput.value = data.url || '';
-                    privateLinkCreateResultInput.select();
-                }
-
-                const createdFrom = providedUrl ? 'your provided URL' : `${data.site || site} / ${String(data.filterName || filterName).toUpperCase()}`;
-                setPrivateLinkFeedback(`Quick link ready from ${createdFrom}. Copy it from the box below.`);
-            } catch (error) {
-                setPrivateLinkFeedback(error.message || 'Failed to create private link', true);
-            } finally {
-                if (privateLinkCreateSubmit) {
-                    privateLinkCreateSubmit.disabled = false;
-                }
             }
         });
     }

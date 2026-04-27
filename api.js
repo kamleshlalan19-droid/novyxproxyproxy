@@ -425,7 +425,7 @@ router.post('/discord/unlink', async (req, res) => {
 
 router.post('/switch', async (req, res) => {
     const { site } = req.body;
-    if (!["https://wqgqvswarit.swarit.104.36.84.31.nip.io/", "https://us4-ubg.github.io", "https://trigonometry.texasmath.net", "https://petezahgames.com", "https://securedweb.xyz", "https://flamepass.com", "https://watch.bludclart.com"].includes(site)) {
+    if (!["https://wqgqvswarit.swarit.104.36.84.31.nip.io/", "https://us4-ubg.github.io", "https://petezahgames.com", "https://securedweb.xyz", "https://flamepass.com", "https://watch.bludclart.com"].includes(site)) {
         return res.status(400).send("Invalid site");
     }
     req.session.siteOveride = site;

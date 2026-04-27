@@ -59,7 +59,7 @@ export const createPrivateLinkCandidate = async (input = {}) => {
     const providedUrl = String(input.url || "").trim();
     if (providedUrl) {
         if (!isValidHttpUrl(providedUrl)) {
-            return { error: "Enter a valid URL", status: 400 };
+            return { error: "Enter a valid cover link", status: 400 };
         }
 
         return {
@@ -110,6 +110,24 @@ export const createPrivateLinkCandidate = async (input = {}) => {
     };
 };
 
+export const resolvePrivateLinkCoverUrl = async (input = {}) => {
+    const directCoverUrl = String(input.coverUrl || "").trim();
+    if (directCoverUrl) {
+        return createPrivateLinkCandidate({ url: directCoverUrl });
+    }
+
+    const site = String(input.coverSite || input.site || "").trim();
+    const filterName = String(input.coverFilterName || input.filterName || input.filter_name || "").trim();
+    if (!site && !filterName) {
+        return { error: "Add a specific cover link, or choose a site and filter to generate one.", status: 400 };
+    }
+
+    return createPrivateLinkCandidate({
+        site,
+        filterName,
+    });
+};
+
 export const validatePrivateLinkInput = ({ domain, coverUrl, loginPath, linkSource }) => {
     const normalizedDomain = String(domain || "").trim().toLowerCase();
     const normalizedCoverUrl = String(coverUrl || "").trim();
@@ -134,7 +152,7 @@ export const validatePrivateLinkInput = ({ domain, coverUrl, loginPath, linkSour
     }
 
     if (!isValidHttpUrl(normalizedCoverUrl)) {
-        return { error: "Enter a valid cover URL" };
+        return { error: "Enter a valid cover link" };
     }
 
     if (!isValidPrivateLinkPath(normalizedLoginPath)) {
@@ -153,7 +171,15 @@ export const validatePrivateLinkInput = ({ domain, coverUrl, loginPath, linkSour
 };
 
 export const saveOwnedPrivateLink = async (userId, input) => {
-    const validation = validatePrivateLinkInput(input);
+    const coverResult = await resolvePrivateLinkCoverUrl(input);
+    if (coverResult.error) {
+        return coverResult;
+    }
+
+    const validation = validatePrivateLinkInput({
+        ...input,
+        coverUrl: coverResult.url,
+    });
     if (validation.error) {
         return validation;
     }
