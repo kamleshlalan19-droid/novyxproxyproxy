@@ -4,7 +4,7 @@
         <div>
             <h1>Link Management</h1>
             <p>Create and edit your private links from anywhere on your account.</p>
-            <p>The domain must have never been visited or used before in the route database. Fill this out first, then click CanLite on the site selection screen afterward.</p>
+            <p>The domain must have never been visited or used before in the route database. You can also generate a shareable link directly here through the backend.</p>
         </div>
     </div>
 
@@ -48,7 +48,7 @@
                     <label class="field">
                         <span>Cover URL</span>
                         <input id="private-link-cover-url" type="url" placeholder="https://example.org" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %> required>
-                        <small>After you finish this form, use the site selection screen and click CanLite on that domain.</small>
+                        <small>Unauthenticated traffic on the private domain gets proxied here unless it hits the login path.</small>
                     </label>
                 </div>
 
@@ -63,6 +63,54 @@
             </form>
 
             <p id="private-link-feedback" class="private-link-feedback"></p>
+        </section>
+
+        <section class="manager-section">
+            <div class="manager-section-head">
+                <div>
+                    <h3>Create Shareable Link</h3>
+                    <p>Paste your own URL or have CanLite create one through the local backend generator.</p>
+                </div>
+            </div>
+
+            <form id="private-link-create-form" class="private-link-form">
+                <label class="field">
+                    <span>Provided URL</span>
+                    <input id="private-link-create-url" type="url" placeholder="https://example.org/path">
+                    <small>If this is filled in, CanLite returns it directly instead of generating one.</small>
+                </label>
+
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Site</span>
+                        <select id="private-link-create-site" class="styled-select">
+                            <option value="CanLite">CanLite</option>
+                            <option value="BrunysIXL">BrunysIXL</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Filter</span>
+                        <select id="private-link-create-filter" class="styled-select">
+                            <option value="blocksi">Blocksi</option>
+                            <option value="cisco">Cisco</option>
+                            <option value="iboss">iBoss</option>
+                            <option value="lanschool">LanSchool</option>
+                            <option value="lightspeed">Lightspeed</option>
+                            <option value="linewize">Linewize</option>
+                            <option value="senso">Senso</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="button-row">
+                    <button id="private-link-create-submit" type="submit" class="button">Create Link</button>
+                </div>
+            </form>
+
+            <label class="field" style="margin-top: 16px;">
+                <span>Created Link</span>
+                <input id="private-link-create-result" type="text" readonly placeholder="Your generated or provided link will appear here.">
+            </label>
         </section>
 
         <section class="manager-section">

@@ -22,6 +22,21 @@ const BLOCKED_DOMAIN_PARTS = [
     "sslip.io",
     "plesk.page",
 ];
+const PRIVATE_LINK_GENERATOR_BASE_URL = process.env.PRIVATE_LINK_GENERATOR_BASE_URL || "http://127.0.0.1:8080/generate";
+const PRIVATE_LINK_GENERATOR_IP = process.env.PRIVATE_LINK_GENERATOR_IP || "104.36.85.249";
+const PRIVATE_LINK_GENERATOR_SITES = {
+    CanLite: "canlite",
+    BrunysIXL: "brunysixl",
+};
+const PRIVATE_LINK_GENERATOR_FILTERS = new Set([
+    "blocksi",
+    "cisco",
+    "iboss",
+    "lanschool",
+    "lightspeed",
+    "linewize",
+    "senso",
+]);
 
 export const PRIVATE_LINK_PLAN_DEFAULTS = {
     [PRIVATE_LINK_SOURCE.BRING_YOUR_OWN]: {
@@ -39,6 +54,61 @@ export const canUsePrivateLinkDomain = (domain) => {
 };
 
 const getRouteTableUrlForDomain = (domain) => `https://${String(domain || "").trim().toLowerCase()}`;
+
+export const createPrivateLinkCandidate = async (input = {}) => {
+    const providedUrl = String(input.url || "").trim();
+    if (providedUrl) {
+        if (!isValidHttpUrl(providedUrl)) {
+            return { error: "Enter a valid URL", status: 400 };
+        }
+
+        return {
+            url: providedUrl,
+            source: "provided_url",
+            site: "",
+            filterName: "",
+        };
+    }
+
+    const site = String(input.site || "").trim();
+    const filterName = String(input.filterName || input.filter_name || "").trim().toLowerCase();
+    const linkType = PRIVATE_LINK_GENERATOR_SITES[site];
+
+    if (!site || !filterName) {
+        return { error: "Provide either a URL or both a site and filter", status: 400 };
+    }
+
+    if (!linkType) {
+        return { error: "That site is not configured for generation", status: 400 };
+    }
+
+    if (!PRIVATE_LINK_GENERATOR_FILTERS.has(filterName)) {
+        return { error: "That filter is not configured for generation", status: 400 };
+    }
+
+    const requestUrl = new URL(PRIVATE_LINK_GENERATOR_BASE_URL);
+    requestUrl.searchParams.set("ip", PRIVATE_LINK_GENERATOR_IP);
+    requestUrl.searchParams.set("blocker", filterName);
+    requestUrl.searchParams.set("linktype", linkType);
+
+    const response = await fetch(requestUrl);
+    if (!response.ok) {
+        return { error: `Generator request failed with status ${response.status}`, status: 502 };
+    }
+
+    const payload = await response.json();
+    const generatedUrl = String(payload?.url || "").trim();
+    if (!isValidHttpUrl(generatedUrl)) {
+        return { error: "Generator returned an invalid URL", status: 502 };
+    }
+
+    return {
+        url: generatedUrl,
+        source: "generator",
+        site,
+        filterName,
+    };
+};
 
 export const validatePrivateLinkInput = ({ domain, coverUrl, loginPath, linkSource }) => {
     const normalizedDomain = String(domain || "").trim().toLowerCase();

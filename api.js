@@ -37,6 +37,7 @@ const generateRandomString = (length) => {
     return crypto.randomBytes(length).toString('hex').slice(0, length);
 };
 
+
 const extendAdfreeForDays = async (client, userId, days) => {
     const existing = await client.query(
         "SELECT expiration FROM adfree WHERE id = $1",

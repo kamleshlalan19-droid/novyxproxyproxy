@@ -3,6 +3,7 @@ import { getAccountPrivateLink, getOwnedPrivateLinks, getPrivateLinkByDomain } f
 import { getSessionUserSnapshot } from "../sessionUser.js";
 import {
     addPrivateLinkMemberForOwner,
+    createPrivateLinkCandidate,
     contributeToPrivateLink,
     removePrivateLinkMemberForOwner,
     saveOwnedPrivateLink,
@@ -87,6 +88,31 @@ router.post("/", async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to save private link" });
+    }
+});
+
+router.post("/create", async (req, res) => {
+    const user = await requireSessionUser(req, res);
+    if (!user) {
+        return;
+    }
+
+    try {
+        const result = await createPrivateLinkCandidate(req.body || {});
+        if (result.error) {
+            return res.status(result.status || 400).json({ error: result.error });
+        }
+
+        return res.json({
+            success: true,
+            url: result.url,
+            source: result.source,
+            site: result.site,
+            filterName: result.filterName,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to create private link" });
     }
 });
 
