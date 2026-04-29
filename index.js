@@ -75,6 +75,19 @@ const getPaginatedGames = (catalog, search, page) => {
 
 const getSessionSiteOverride = (sessionData) => sessionData?.siteOverride || sessionData?.siteOveride || null;
 
+const normalizeLeaderboardGameName = (value) => {
+  const rawValue = String(value || "").trim();
+  if (!rawValue) {
+    return "";
+  }
+
+  try {
+    return decodeURIComponent(rawValue);
+  } catch {
+    return rawValue;
+  }
+};
+
 const renderAccountShell = async (req, res, initialPanel) => {
   if (!req.session?.token) {
     return res.status(400).json(false);
@@ -368,18 +381,23 @@ app.get("/games", async (req, res) => {
     const topGames = await redisClient.zRange(
       "game_leaderboard",
       0,
-      7,
+      31,
       { REV: true, WITHSCORES: true }
     );
 
     const result = [];
+    const seenNames = new Set();
     for (let index = 0; index < topGames.length; index += 2) {
-      const gameName = topGames[index];
+      const gameName = normalizeLeaderboardGameName(topGames[index]);
       const game = gamesCatalog.byName.get(gameName);
 
-      if (game) {
+      if (game && !seenNames.has(game.name)) {
         result.push({ ...game });
-      } else {
+        seenNames.add(game.name);
+        if (result.length === 8) {
+          break;
+        }
+      } else if (!game) {
         console.warn(`Game not found in database: ${gameName}`);
       }
     }

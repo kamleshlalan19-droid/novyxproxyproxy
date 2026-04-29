@@ -33,6 +33,19 @@ try {
 
 const gameByName = new Map(games.map((game) => [game.name, game]));
 
+const normalizeLeaderboardGameName = (value) => {
+    const rawValue = String(value || "").trim();
+    if (!rawValue) {
+        return "";
+    }
+
+    try {
+        return decodeURIComponent(rawValue);
+    } catch {
+        return rawValue;
+    }
+};
+
 const generateRandomString = (length) => {
     return crypto.randomBytes(length).toString("hex").slice(0, length);
 };
@@ -89,11 +102,17 @@ router.get("/ip", async (req, res) => {
 });
 
 router.get("/hit/:game", async (req, res) => {
-    if (req.params.game === "bludclart" || req.params.game === "Blooket") {
+    const gameName = normalizeLeaderboardGameName(req.params.game);
+
+    if (gameName === "bludclart" || gameName === "Blooket") {
         return res.status(403).send("Not Found");
     }
 
-    redisClient.zIncrBy("game_leaderboard", 1, req.params.game)
+    if (!gameByName.has(gameName)) {
+        return res.status(404).send("Game not found");
+    }
+
+    redisClient.zIncrBy("game_leaderboard", 1, gameName)
         .catch((err) => console.error("Redis update error:", err));
 
     return res.status(200).send("Updated");
