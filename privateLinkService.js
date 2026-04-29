@@ -46,6 +46,8 @@ export const PRIVATE_LINK_PLAN_DEFAULTS = {
     },
 };
 
+const isGeneratedPrivateLinkSource = (linkSource) => String(linkSource) === PRIVATE_LINK_SOURCE.PROVIDED;
+
 export const canUsePrivateLinkDomain = (domain) => {
     return !BLOCKED_DOMAIN_PARTS.some((blockedPart) => domain.includes(blockedPart));
 };
@@ -167,21 +169,30 @@ export const validatePrivateLinkInput = ({ domain, coverUrl, loginPath, linkSour
 
 export const saveOwnedPrivateLink = async (userId, input) => {
     const normalizedLinkId = Number(input?.id) || null;
-    let privateLinkResult = await createPrivateLinkCandidate({
-        url: input.privateLinkUrl || input.url,
-        filterName: input.filterName || input.filter_name,
-    });
+    const existingLink = normalizedLinkId
+        ? await getOwnedPrivateLink(userId, normalizedLinkId)
+        : null;
+    const requestedLinkSource = String(input.linkSource || existingLink?.linkSource || PRIVATE_LINK_SOURCE.BRING_YOUR_OWN);
+    const filterName = String(input.filterName || input.filter_name || "").trim();
 
-    if (privateLinkResult.error && normalizedLinkId) {
-        const existingLink = await getOwnedPrivateLink(userId, normalizedLinkId);
-        if (existingLink && String(input.linkSource || existingLink.linkSource || "") === PRIVATE_LINK_SOURCE.PROVIDED) {
+    let privateLinkResult;
+    if (isGeneratedPrivateLinkSource(requestedLinkSource)) {
+        if (filterName) {
+            privateLinkResult = await createPrivateLinkCandidate({ filterName });
+        } else if (existingLink && existingLink.linkSource === PRIVATE_LINK_SOURCE.PROVIDED) {
             privateLinkResult = {
                 url: `https://${existingLink.domain}`,
                 source: "generator",
                 site: "CanLite",
                 filterName: "",
             };
+        } else {
+            privateLinkResult = { error: "Choose a filter to generate the private-link URL.", status: 400 };
         }
+    } else {
+        privateLinkResult = await createPrivateLinkCandidate({
+            url: input.privateLinkUrl || input.url,
+        });
     }
 
     if (privateLinkResult.error) {
@@ -229,7 +240,11 @@ export const saveOwnedPrivateLink = async (userId, input) => {
             return { error: "That domain is already in use", status: 400 };
         }
 
-        if (existingRoute.rowCount > 0 && domain !== existingLink?.domain) {
+        if (
+            existingRoute.rowCount > 0 &&
+            !isGeneratedPrivateLinkSource(linkSource) &&
+            domain !== existingLink?.domain
+        ) {
             await client.query("ROLLBACK");
             return {
                 error: "That domain has already been used or visited before. Private link domains must be completely unused.",

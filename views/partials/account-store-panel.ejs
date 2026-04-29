@@ -28,7 +28,7 @@
     </div>
 
     <article class="info-card">
-        <div class="section-heading" style="margin-bottom: 18px;">
+        <div class="section-heading section-heading-compact">
             <div>
                 <h2>Store</h2>
             </div>
@@ -38,7 +38,7 @@
             <a href="/offerwall">Open Offerwall</a>
         </div>
 
-        <div class="store-actions" style="margin-top: 18px;">
+        <div class="store-actions store-actions-spaced">
             <article class="store-card">
                 <h3>Ad-Free for 7 Days</h3>
                 <div class="price-row">
@@ -62,16 +62,16 @@
             </article>
         </div>
 
-        <p id="store-feedback" style="margin-top: 16px;"></p>
+        <p id="store-feedback" class="status-feedback" aria-live="polite"></p>
 
-        <div class="perk-grid" style="margin-top: 10px;">
+        <div class="perk-grid perk-grid-spaced">
             <article class="perk-card">
                 <h3>Use Your Own Private-Link URL</h3>
                 <p>Paste the actual URL people should visit, then set the cover site they should see before login.</p>
                 <div class="price-row">
                     <div class="store-price">0 credits / month</div>
                 </div>
-                <button class="button-ghost panel-link-trigger" data-account-panel-target="link-management" type="button">Set Up Manual URL</button>
+                <button class="button-ghost panel-link-trigger" data-account-panel-target="link-management" data-private-link-source="byo" type="button">Set Up Manual URL</button>
             </article>
             <article class="perk-card">
                 <h3>Generate With CanLite</h3>
@@ -79,7 +79,7 @@
                 <div class="price-row">
                     <div class="store-price">0 credits / month</div>
                 </div>
-                <button class="button-ghost panel-link-trigger" data-account-panel-target="link-management" type="button">Set Up Generated Link</button>
+                <button class="button-ghost panel-link-trigger" data-account-panel-target="link-management" data-private-link-source="provided" type="button">Set Up Generated Link</button>
             </article>
             <article class="perk-card">
                 <h3>Semi-Private Links</h3>
@@ -112,7 +112,10 @@
                 <% } %>
 
                 <div class="discord-link-code-box">
-                    <span>One-time link code</span>
+                    <div class="code-box-head">
+                        <span>One-time link code</span>
+                        <button id="discord-copy-code" type="button" class="button-ghost button-tiny" data-copy-target="discord-link-code">Copy Code</button>
+                    </div>
                     <strong id="discord-link-code"><%= discordLink?.pendingCode?.code || "Not generated yet" %></strong>
                     <p id="discord-link-code-expiry">
                         <% if (discordLink?.pendingCode?.expiresAt) { %>
@@ -127,14 +130,14 @@
                     <button id="discord-generate-code" type="button" class="button">Generate Code</button>
                     <button id="discord-unlink-button" type="button" class="button-ghost" <%= discordLink?.linked ? "" : "disabled" %>>Unlink Discord</button>
                 </div>
-                <p id="discord-link-feedback"></p>
+                <p id="discord-link-feedback" class="status-feedback" aria-live="polite"></p>
             </div>
         </article>
 
         <article class="info-card">
             <h3>Switch Site</h3>
             <p>Use this to switch the active site on this device. Private-link setup is handled in Private Links.</p>
-            <form action="/api/switch" method="POST" class="stack" style="margin-top:18px;">
+            <form action="/api/switch" method="POST" class="stack stack-spaced">
                 <label for="site-select">Choose a site</label>
                 <select id="site-select" name="site" class="styled-select">
                     <option value="https://gr4ys0n.github.io">Gaming Escape</option>
@@ -151,7 +154,8 @@
 
         <article class="info-card">
             <h3>Session</h3>
-            <div class="button-row" style="margin-top:18px;">
+            <p>Log out on this device and clear the current account session.</p>
+            <div class="button-row button-row-spaced">
                 <button id="logout-button" type="button" class="button-ghost">Logout</button>
             </div>
         </article>

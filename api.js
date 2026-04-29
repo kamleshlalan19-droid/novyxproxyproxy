@@ -1,12 +1,10 @@
 import express from "express";
-import crypto from 'crypto';
-import pool from './db.js';
-import verifyUser from "./middleware/authAdmin.js";
-import moment from "moment";
+import crypto from "crypto";
+import pool from "./db.js";
 import path, { dirname } from "path";
-import fs from 'node:fs/promises';
+import fs from "node:fs/promises";
 import { fileURLToPath } from "url";
-import requestIp from'request-ip';
+import requestIp from "request-ip";
 import { getCreditBalance, roundCredits, setCreditBalance } from "./store.js";
 import redisClient from "./redis.js";
 import { authenticateUserCredentials } from "./auth.js";
@@ -22,6 +20,7 @@ const router = express.Router();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const gameDataDirectory = path.join(__dirname, "private", "data");
 
 let games = [];
 const gamesFilePath = path.join(__dirname, "end.json");
@@ -32,11 +31,11 @@ try {
     console.error("Failed to load games data:", err);
 }
 
-// Utility function to generate random strings
-const generateRandomString = (length) => {
-    return crypto.randomBytes(length).toString('hex').slice(0, length);
-};
+const gameByName = new Map(games.map((game) => [game.name, game]));
 
+const generateRandomString = (length) => {
+    return crypto.randomBytes(length).toString("hex").slice(0, length);
+};
 
 const extendAdfreeForDays = async (client, userId, days) => {
     const existing = await client.query(
@@ -85,29 +84,27 @@ const getCpxExpectedHash = (transId) => {
         .digest("hex");
 };
 
-router.get('/ip', async (req, res) => {
+router.get("/ip", async (req, res) => {
     return res.send(requestIp.getClientIp(req));
-})
+});
 
-router.get('/hit/:game', async (req, res) => {
-    if(req.params.game === "bludclart" || req.params.game === "Blooket") {
+router.get("/hit/:game", async (req, res) => {
+    if (req.params.game === "bludclart" || req.params.game === "Blooket") {
         return res.status(403).send("Not Found");
     }
-    const pipeline = redisClient.multi();
-    pipeline.zAdd('game_leaderboard', { score: 1, value: req.params.game }, { INCR: true });
 
-    pipeline.exec()
+    redisClient.zIncrBy("game_leaderboard", 1, req.params.game)
         .catch((err) => console.error("Redis update error:", err));
 
     return res.status(200).send("Updated");
-})
+});
 
-router.post('/check', async (req, res) => {
+router.post("/check", async (req, res) => {
     const { token } = req.body;
 
     try {
         const tokenResult = await pool.query(
-            'SELECT id, token, admin, email FROM users WHERE token = $1',
+            "SELECT id, token, admin, email FROM users WHERE token = $1",
             [token]
         );
 
@@ -116,12 +113,10 @@ router.post('/check', async (req, res) => {
         }
 
         const user = tokenResult.rows[0];
-
         setSessionUser(req, user);
 
-        // check adfree
         const adfreeResult = await pool.query(
-            'SELECT expiration FROM adfree WHERE id = $1',
+            "SELECT expiration FROM adfree WHERE id = $1",
             [user.id]
         );
 
@@ -133,9 +128,8 @@ router.post('/check', async (req, res) => {
             if (expiration > new Date()) {
                 adfree = true;
             } else {
-                // cleanup expired entry
                 await pool.query(
-                    'DELETE FROM adfree WHERE id = $1',
+                    "DELETE FROM adfree WHERE id = $1",
                     [user.id]
                 );
             }
@@ -143,9 +137,8 @@ router.post('/check', async (req, res) => {
 
         res.status(200).json({
             loggedIn: true,
-            adfree
+            adfree,
         });
-
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -153,11 +146,9 @@ router.post('/check', async (req, res) => {
 
 router.get("/arcade", async (req, res) => {
     try {
-        // server makes request to frogiesarcade.win/makesesh
         const response = await fetch("https://frogiesarcade.win/makesesh");
         const data = await response.json();
 
-        // return only the redir param
         res.json({ redir: data.redir });
     } catch (err) {
         console.error("Error fetching makesesh:", err);
@@ -165,8 +156,7 @@ router.get("/arcade", async (req, res) => {
     }
 });
 
-// LOGIN Route
-router.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     try {
@@ -180,80 +170,42 @@ router.post('/login', async (req, res) => {
         return res.send(result.user.token);
     } catch (err) {
         console.error(err);
-        res.status(500).send('Server Error');
+        res.status(500).send("Server Error");
     }
 });
 
-// REGISTER Route
-router.post('/register', async (req, res) => {
+router.post("/register", async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Check if email already exists
-        const emailCheck = await pool.query('SELECT email FROM users WHERE email = $1', [email]);
+        const emailCheck = await pool.query("SELECT email FROM users WHERE email = $1", [email]);
 
         if (emailCheck.rowCount !== 0) {
-            return res.send('exists'); // Account already exists
+            return res.send("exists");
         }
 
-        // Generate salt and token
         const salt = generateRandomString(64);
         const token = generateRandomString(32);
-        const userId = Math.floor(Math.random() * (9000000000)) + 1000000000;
+        const userId = crypto.randomInt(1000000000, 10000000000);
+        const hashedPass = crypto.createHash("sha256").update(password + salt).digest("hex");
 
-        // Hash the password with the salt
-        const hashedPass = crypto.createHash('sha256').update(password + salt).digest('hex');
-
-        // Insert new user into database
         await pool.query(
-            'INSERT INTO users (email, token, salt, password, verified, data, id, admin) VALUES ($1, $2, $3, $4, false, $5, $6, false)',
+            "INSERT INTO users (email, token, salt, password, verified, data, id, admin) VALUES ($1, $2, $3, $4, false, $5, $6, false)",
             [email, token, salt, hashedPass, "{}", userId]
         );
         setSessionUser(req, { id: userId, token, admin: false, email });
         return res.send(token);
     } catch (err) {
         console.error(err);
-        res.status(500).send('Server Error');
+        res.status(500).send("Server Error");
     }
 });
 
-router.get('/ad', async (req, res) => {
+router.get("/ad", async (req, res) => {
     return res.redirect("https://example.com");
-
-    if (!req.session.token) {
-        return res.redirect("//pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
-    }
-
-    const uid = await pool.query("SELECT id FROM users WHERE token = $1", [req.session.token]);
-    if (uid.rowCount === 0) {
-        return res.redirect("//pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
-    }
-
-    const result = await pool.query(
-        "SELECT expiration FROM adfree WHERE id = $1",
-        [uid.rows[0].id]
-    );
-
-    if (result.rowCount === 0) {
-        return res.redirect("//pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
-    }
-
-    const expiration = new Date(result.rows[0].expiration);
-
-    if (expiration > new Date()) {
-        return res.redirect("https://example.com"); // adfree
-    }
-
-    // expired → remove row
-    await pool.query(
-        "DELETE FROM adfree WHERE id = $1",
-        [uid.rows[0].id]
-    );
-
-    res.redirect("//pl27932047.effectivegatecpm.com/57/d6/b3/57d6b3a41d7f9b2309969fdafcca2b6c.js");
 });
 
-router.get('/postback', async (req, res) => {
+router.get("/postback", async (req, res) => {
     let replayKey = null;
 
     try {
@@ -262,7 +214,7 @@ router.get('/postback', async (req, res) => {
             trans_id,
             user_id,
             amount_local,
-            hash
+            hash,
         } = req.query;
 
         const transactionId = String(trans_id || "");
@@ -294,7 +246,7 @@ router.get('/postback', async (req, res) => {
             return res.send("invalid");
         }
 
-        const credits = roundCredits(parseFloat(amount_local));
+        const credits = roundCredits(Number.parseFloat(amount_local));
         if (!credits || !user_id || !transactionId) {
             return res.send("invalid");
         }
@@ -309,19 +261,15 @@ router.get('/postback', async (req, res) => {
         }
 
         const currentBalance = getCreditBalance(userResult.rows[0].data);
+        const nextBalance = status === "1"
+            ? currentBalance + credits
+            : currentBalance - credits;
 
-        if (status === "1") {
-            await pool.query(
-                "UPDATE users SET data = $1 WHERE id = $2",
-                [setCreditBalance(userResult.rows[0].data, currentBalance + credits), user_id]
-            );
-        }
-        if (status === "2") {
-            await pool.query(
-                "UPDATE users SET data = $1 WHERE id = $2",
-                [setCreditBalance(userResult.rows[0].data, currentBalance - credits), user_id]
-            );
-        }
+        await pool.query(
+            "UPDATE users SET data = $1 WHERE id = $2",
+            [setCreditBalance(userResult.rows[0].data, nextBalance), user_id]
+        );
+
         res.send("OK");
     } catch (err) {
         if (replayKey) {
@@ -332,47 +280,56 @@ router.get('/postback', async (req, res) => {
     }
 });
 
-router.post('/loadGameData', async (req, res) => {
+router.post("/loadGameData", async (req, res) => {
     const { result: token } = req.body;
 
     try {
-        const user = await pool.query('SELECT id FROM users WHERE token = $1', [token]);
+        const user = await pool.query("SELECT id FROM users WHERE token = $1", [token]);
         if (user.rowCount === 0) {
-            return res.status(403).json({ error: 'Invalid token' });
+            return res.status(403).json({ error: "Invalid token" });
         }
 
         const userId = user.rows[0].id;
-        const filePath = path.join(__dirname, 'private', 'data', `${userId}.json`);
+        const filePath = path.join(gameDataDirectory, `${userId}.json`);
 
-        let data = '{}';
+        let data = "{}";
         try {
-            data = await fs.readFile(filePath, 'utf-8');
+            data = await fs.readFile(filePath, "utf-8");
         } catch (readErr) {
-            // If file doesn't exist, return empty object
-            if (readErr.code !== 'ENOENT') throw readErr;
+            if (readErr.code !== "ENOENT") {
+                throw readErr;
+            }
         }
 
-        res.json({ gameData: JSON.parse(data) });
+        try {
+            return res.json({ gameData: JSON.parse(data) });
+        } catch {
+            return res.json({ gameData: {} });
+        }
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Server Error' });
+        res.status(500).json({ error: "Server Error" });
     }
 });
 
-router.post('/logout', async (req, res) => {
+router.post("/logout", async (req, res) => {
     const token = generateRandomString(32);
 
-    // Update the user's token in the database
     try {
-        await pool.query('UPDATE users SET token = $1 WHERE token = $2', [token, req.session.token]);
-        req.session.destroy();
-        res.json({ success: true });
+        await pool.query("UPDATE users SET token = $1 WHERE token = $2", [token, req.session.token]);
+        req.session.destroy((error) => {
+            if (error) {
+                return res.status(500).json({ error });
+            }
+
+            return res.json({ success: true });
+        });
     } catch (err) {
         res.status(500).json({ error: err });
     }
 });
 
-router.get('/discord/link-status', async (req, res) => {
+router.get("/discord/link-status", async (req, res) => {
     if (!req.session?.user_id) {
         return res.status(401).json({ error: "Not logged in" });
     }
@@ -386,7 +343,7 @@ router.get('/discord/link-status', async (req, res) => {
     }
 });
 
-router.post('/discord/link-code', async (req, res) => {
+router.post("/discord/link-code", async (req, res) => {
     if (!req.session?.user_id) {
         return res.status(401).json({ error: "Not logged in" });
     }
@@ -405,7 +362,7 @@ router.post('/discord/link-code', async (req, res) => {
     }
 });
 
-router.post('/discord/unlink', async (req, res) => {
+router.post("/discord/unlink", async (req, res) => {
     if (!req.session?.user_id) {
         return res.status(401).json({ error: "Not logged in" });
     }
@@ -423,17 +380,17 @@ router.post('/discord/unlink', async (req, res) => {
     }
 });
 
-router.post('/switch', async (req, res) => {
+router.post("/switch", async (req, res) => {
     const { site } = req.body;
     if (!["https://wqgqvswarit.swarit.104.36.84.31.nip.io/", "https://us4-ubg.github.io", "https://petezahgames.com", "https://securedweb.xyz", "https://flamepass.com", "https://watch.bludclart.com"].includes(site)) {
         return res.status(400).send("Invalid site");
     }
     req.session.siteOveride = site;
     req.session.siteOverride = site;
-    res.redirect(site)
-})
+    res.redirect(site);
+});
 
-router.post('/store/adfree', async (req, res) => {
+router.post("/store/adfree", async (req, res) => {
     const requestedPlan = String(req.body.plan || "");
     const plan = ADFREE_PLANS[requestedPlan];
 
@@ -480,7 +437,7 @@ router.post('/store/adfree', async (req, res) => {
         return res.json({
             success: true,
             credits: roundCredits(balance - plan.price),
-            plan: requestedPlan
+            plan: requestedPlan,
         });
     } catch (err) {
         await client.query("ROLLBACK");
@@ -490,51 +447,64 @@ router.post('/store/adfree', async (req, res) => {
         client.release();
     }
 });
+
 router.use("/private-links", privateLinkRoutes);
 
-// Save Game Data
-router.post('/saveGameData', async (req, res) => {
+router.post("/saveGameData", async (req, res) => {
     const { token, localStorageData } = req.body;
 
     try {
-        const user = await pool.query('SELECT id FROM users WHERE token = $1', [token]);
+        const user = await pool.query("SELECT id FROM users WHERE token = $1", [token]);
         if (user.rowCount === 0) {
-            return res.status(403).json({ error: 'Invalid token' });
+            return res.status(403).json({ error: "Invalid token" });
         }
 
         const userId = user.rows[0].id;
-        const filePath = path.join(__dirname, 'private', 'data', `${userId}.json`);
+        const filePath = path.join(gameDataDirectory, `${userId}.json`);
 
-        await fs.writeFile(filePath, JSON.stringify(localStorageData, null, 2), 'utf-8');
+        await fs.mkdir(gameDataDirectory, { recursive: true });
+        await fs.writeFile(filePath, JSON.stringify(localStorageData, null, 2), "utf-8");
 
         res.json({ success: true });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Server Error' });
+        res.status(500).json({ error: "Server Error" });
     }
 });
 
-router.get('/resolve/:id', async (req, res) => {
-    const response = await fetch("https://cdn.jsdelivr.net/gh/freebuisness/html@main/" + req.params.id);
-    const content = await response.text();
-    // Force proper rendering
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.send(content);
-})
+router.get("/resolve/:id", async (req, res) => {
+    try {
+        const response = await fetch(`https://cdn.jsdelivr.net/gh/freebuisness/html@main/${req.params.id}`);
+        if (!response.ok) {
+            return res.status(response.status).send("Upstream request failed");
+        }
 
-router.get('/img/:id', async (req, res) => {
+        const content = await response.text();
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.send(content);
+    } catch (error) {
+        console.error(error);
+        res.status(502).send("Failed to resolve content");
+    }
+});
+
+router.get("/img/:id", async (req, res) => {
     const gameName = req.params.id;
-    const game = games.find((g) => g.name === gameName);
+    const game = gameByName.get(gameName);
 
     try {
-        if(game.prev) {
-            res.sendFile(__dirname + "/static" + game.prev)
-        } else {
-            res.sendFile(__dirname + "/static/d/" + game.name.replace(/\//g, '') + '.jpg')
+        if (!game) {
+            return res.status(404).json({ error: "Game not found" });
         }
+
+        if (game.prev) {
+            return res.sendFile(__dirname + "/static" + game.prev);
+        }
+
+        return res.sendFile(__dirname + "/static/d/" + game.name.replace(/\//g, "") + ".jpg");
     } catch (e) {
-        res.status(500).json({ error: 'Server Error' });
+        res.status(500).json({ error: "Server Error" });
     }
-})
+});
 
 export default router;

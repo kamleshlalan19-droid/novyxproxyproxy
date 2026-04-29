@@ -20,7 +20,7 @@
                 <h3>Before You Start</h3>
                 <p>The cover site is always user-provided. That is what people see before they log in.</p>
                 <p>The private-link URL people visit can either be pasted directly or generated using CanLite.</p>
-                <p>If you paste the private-link URL yourself, its hostname still needs to be brand new and never used before in the route database.</p>
+                <p>If you paste the private-link URL yourself, its hostname still needs to be brand new and never used before in the route database. That unused-domain rule does not apply when CanLite generates the private-link URL for you.</p>
             </div>
 
             <form id="private-link-form" class="private-link-form">
@@ -44,7 +44,7 @@
                     <label class="field">
                         <span>Private-link URL</span>
                         <input id="private-link-url" type="url" placeholder="https://study.example.com" value="" <%= isPrivateLinkOwner ? '' : 'readonly' %>>
-                        <small>Paste the exact URL people should visit. Its hostname must be brand new to the route database.</small>
+                        <small>Paste the exact URL people should visit. This only applies when you already have the private-link URL yourself.</small>
                     </label>
                 </div>
 

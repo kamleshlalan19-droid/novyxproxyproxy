@@ -1,5 +1,4 @@
 import express from "express";
-import { execSync } from "node:child_process";
 import fs from "node:fs";
 import session from "express-session";
 import path from "path";
@@ -7,18 +6,13 @@ import { dirname } from "path";
 import { createBareServer } from "@tomphttp/bare-server-node";
 import { fileURLToPath } from "url";
 import * as http from "node:http";
-import * as https from "node:https";
 import apiRoutes from "./api.js";
-import requestIp from'request-ip';
-import geoip from 'geoip-lite';
-import httpProxy from "http-proxy"
-import verifyUser from "./middleware/authAdmin.js";
-import moment from "moment";
+import requestIp from "request-ip";
+import geoip from "geoip-lite";
+import httpProxy from "http-proxy";
 import { RedisStore } from "connect-redis";
-import { setupCanScreen } from "./CanScreen.js"
 import pool from "./db.js";
 import cors from "cors";
-import axios from "axios";
 import { getCreditBalance, roundCredits } from "./store.js";
 import redisClient from "./redis.js";
 import { getAccountPrivateLink, getOwnedPrivateLinks } from "./privateLinks.js";
@@ -29,21 +23,100 @@ import { getDiscordLinkSummaryForUser } from "./discordLinks.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const app = express();
-const routeCache = new Map();;
 const bareServer = createBareServer("/b/");
 const proxy = httpProxy.createProxyServer({ ws: true, changeOrigin: true });
+const DAY_MS = 86400000;
+const GAME_PAGE_SIZE = 100;
+const LONG_CACHE_CONTROL = "public, max-age=31557600, immutable";
+const DEFAULT_CACHE_CONTROL = "public, max-age=600";
+const DEFAULT_GAME_IMAGE_PATH = path.join(__dirname, "static", "logo.png");
+const sitemapPath = path.join(process.cwd(), "static", "sitemap.xml");
+
+const loadJsonArray = (filePath, label) => {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (error) {
+    console.error(`Failed to load ${label}:`, error);
+    return [];
+  }
+};
+
+const buildGameCatalog = (entries) => {
+  const items = Array.isArray(entries) ? entries : [];
+  const indexed = items.map((game) => ({
+    game,
+    nameLower: String(game?.name || "").toLowerCase(),
+  }));
+
+  indexed.sort((left, right) => left.game.name.localeCompare(right.game.name));
+
+  return {
+    byName: new Map(items.map((game) => [game.name, game])),
+    indexed,
+  };
+};
+
+const getPaginatedGames = (catalog, search, page) => {
+  const normalizedSearch = String(search || "").trim().toLowerCase();
+  const filtered = normalizedSearch
+    ? catalog.indexed.filter((entry) => entry.nameLower.includes(normalizedSearch))
+    : catalog.indexed;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / GAME_PAGE_SIZE));
+  const currentPage = Math.min(Math.max(Number.parseInt(page, 10) || 1, 1), totalPages);
+  const startIndex = (currentPage - 1) * GAME_PAGE_SIZE;
+
+  return {
+    games: filtered.slice(startIndex, startIndex + GAME_PAGE_SIZE).map((entry) => entry.game),
+    currentPage,
+    totalPages,
+    search: String(search || "").trim(),
+  };
+};
+
+const getSessionSiteOverride = (sessionData) => sessionData?.siteOverride || sessionData?.siteOveride || null;
+
+const renderAccountShell = async (req, res, initialPanel) => {
+  if (!req.session?.token) {
+    return res.status(400).json(false);
+  }
+
+  const user = await getSessionUser(req);
+  if (!user) {
+    return res.status(400).json(false);
+  }
+
+  const adfree = await getAdfreeSummary(user.id);
+  const [privateLink, privateLinks, discordLink] = await Promise.all([
+    getAccountPrivateLink({
+      userId: user.id,
+      hostname: req.hostname,
+    }),
+    getOwnedPrivateLinks(user.id),
+    getDiscordLinkSummaryForUser(user.id),
+  ]);
+
+  return res.render("account-shell", {
+    initialPanel,
+    credits: getCreditBalance(user.data),
+    email: user.email,
+    adfree,
+    privateLink,
+    privateLinks,
+    discordLink,
+  });
+};
 
 const getAdfreeSummary = async (userId) => {
   const adfreeResult = await pool.query(
-      "SELECT expiration FROM adfree WHERE id = $1",
-      [userId]
+    "SELECT expiration FROM adfree WHERE id = $1",
+    [userId]
   );
 
   if (adfreeResult.rowCount === 0) {
     return {
       active: false,
       expiresAt: null,
-      daysRemaining: 0
+      daysRemaining: 0,
     };
   }
 
@@ -54,7 +127,7 @@ const getAdfreeSummary = async (userId) => {
     return {
       active: false,
       expiresAt: null,
-      daysRemaining: 0
+      daysRemaining: 0,
     };
   }
 
@@ -63,50 +136,38 @@ const getAdfreeSummary = async (userId) => {
   return {
     active: true,
     expiresAt: expiration,
-    daysRemaining: roundCredits(msRemaining / 86400000)
+    daysRemaining: roundCredits(msRemaining / DAY_MS),
   };
 };
 
-let games = [];
-const gamesFilePath = path.join(__dirname, "end.json");
-try {
-  const data = fs.readFileSync(gamesFilePath, "utf8");
-  games = JSON.parse(data);
-} catch (err) {
-  console.error("Failed to load games data:", err);
-}
-
-let newgames = [];
-const newgamesFilePath = path.join(__dirname, "new.json");
-try {
-  const data = fs.readFileSync(newgamesFilePath, "utf8");
-  newgames = JSON.parse(data);
-} catch (err) {
-  console.error("Failed to load games data:", err);
-}
+const games = loadJsonArray(path.join(__dirname, "end.json"), "games data");
+const newgames = loadJsonArray(path.join(__dirname, "new.json"), "new games data");
+const gamesCatalog = buildGameCatalog(games);
+const newGamesCatalog = buildGameCatalog(newgames);
+const sitemapTemplate = (() => {
+  try {
+    return fs.readFileSync(sitemapPath, "utf8");
+  } catch (error) {
+    console.error("Failed to load sitemap:", error);
+    return null;
+  }
+})();
 
 const webhooks = Object.keys(process.env)
-    .filter(k => k.startsWith("DISCORD_WEBHOOK"))
-    .map(k => process.env[k])
-    .filter(Boolean);
+  .filter((key) => key.startsWith("DISCORD_WEBHOOK"))
+  .map((key) => process.env[key])
+  .filter(Boolean);
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-app.use((req, res, next) => {
-  req.on("aborted", () => {
-    let e = 1
-  });
-  next();
-});
-
 app.use(cors({
-  origin: "*"
+  origin: "*",
 }));
 
-let redisStore = new RedisStore({
+const redisStore = new RedisStore({
   client: redisClient,
   prefix: "myapp:",
 });
@@ -117,12 +178,9 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   cookie: { secure: true },
-})
+});
 
-app.use(
-    sessionMiddleware
-);
-
+app.use(sessionMiddleware);
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
@@ -130,70 +188,74 @@ app.use((req, res, next) => {
   try {
     const clientIp = requestIp.getClientIp(req);
 
-    // Skip local/internal IPs
     if (!clientIp || /(^127\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)/.test(clientIp)) {
       return next();
     }
 
-    // Get geo info from IP
     const geo = geoip.lookup(clientIp);
 
-    // Redirect if IP is from Israel
-    if (geo && geo.country === 'IL') {
-      return res.redirect('https://en.wikipedia.org/wiki/Gaza_genocide');
+    if (geo && geo.country === "IL") {
+      return res.redirect("https://en.wikipedia.org/wiki/Gaza_genocide");
     }
 
-    next(); // Continue for non-Israeli IPs
-  } catch (e) {
-    console.error('Geolocation error:', e);
-    next(); // Fail open on errors
+    next();
+  } catch (error) {
+    console.error("Geolocation error:", error);
+    next();
   }
 });
 
 app.use((req, res, next) => {
-  let override = req.session.siteOveride || null
-  if((req.path === "/reset" || req.path === "/reset/") && override) {
+  const override = getSessionSiteOverride(req.session);
+  if ((req.path === "/reset" || req.path === "/reset/") && override) {
     delete req.session.siteOveride;
+    delete req.session.siteOverride;
     return res.redirect("/");
   }
-  if(!override) {
-    next()
-  } else {
-    proxy.web(req, res, { target: override, changeOrigin: true });
+
+  if (!override) {
+    return next();
   }
-})
+
+  proxy.web(req, res, { target: override, changeOrigin: true });
+});
 
 app.use((req, res, next) => {
   const host = req.hostname;
-  if (!host) return next();
-  if (
-      !(
-          host.includes("104.36.85.249") ||
-          host.includes("104-36-85-249") ||
-          host.includes("nip.io") ||
-          host.includes("sslip.io") ||
-          host.includes("plesk.page")
-      )
-  ) {
-    const key = `myapp:seen:${host}`;
-
-    redisClient.set(key, "1", { EX: 43200, NX: true })
-        .then(result => {
-          if (!result) return;
-
-          const webhook = webhooks[Math.floor(Math.random() * webhooks.length)];
-
-          fetch(webhook, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              content: `New link found: https://${host}`,
-              flags: 4
-            })
-          }).catch(() => {});
-        })
-        .catch(() => {});
+  if (!host) {
+    return next();
   }
+
+  const blockedHost = host.includes("104.36.85.249")
+    || host.includes("104-36-85-249")
+    || host.includes("nip.io")
+    || host.includes("sslip.io")
+    || host.includes("plesk.page");
+
+  if (blockedHost || webhooks.length === 0) {
+    return next();
+  }
+
+  const key = `myapp:seen:${host}`;
+
+  redisClient.set(key, "1", { EX: 43200, NX: true })
+    .then((result) => {
+      if (!result) {
+        return;
+      }
+
+      const webhook = webhooks[Math.floor(Math.random() * webhooks.length)];
+
+      fetch(webhook, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          content: `New link found: https://${host}`,
+          flags: 4,
+        }),
+      }).catch(() => {});
+    })
+    .catch(() => {});
 
   next();
 });
@@ -217,26 +279,25 @@ app.get("/~/uv/uv/uv.handler.js", (req, res) => {
   res.sendFile(__dirname + "/static/uv/uv.handler.js");
 });
 
-
-app.get('/sitemap.xml', async (req, res) => {
+app.get("/sitemap.xml", async (req, res) => {
   try {
-    const sitemapPath = path.join(process.cwd(), 'static', 'sitemap.xml');
-    const raw = await fs.promises.readFile(sitemapPath, 'utf8'); // ✅ using promises from fs
+    if (!sitemapTemplate) {
+      return res.status(500).send("Internal Server Error");
+    }
 
     const domain = req.hostname;
-    const modified = raw.replace(/canlite\.org/g, domain);
+    const modified = sitemapTemplate.replace(/canlite\.org/g, domain);
 
-    res.set('Content-Type', 'application/xml');
+    res.set("Content-Type", "application/xml");
     res.send(modified);
   } catch (err) {
-    console.error('Error reading sitemap:', err);
-    res.status(500).send('Internal Server Error');
+    console.error("Error reading sitemap:", err);
+    res.status(500).send("Internal Server Error");
   }
 });
 
 app.get("/validate-domain", async (req, res) => {
-  const domain = (req.query.domain || "").toLowerCase();
-  // deny domains containing your IP
+  const domain = String(req.query.domain || "").toLowerCase();
   if (domain.includes("104.36.85.249") || domain.includes("104-36-85-249") || domain.includes("nip.io") || domain.includes("sslip") || domain.includes("plesk.page")) {
     return res.status(403).send("Denied");
   }
@@ -244,135 +305,59 @@ app.get("/validate-domain", async (req, res) => {
 });
 
 app.get("/account", async (req, res) => {
-  if (req.session.token) {
-    const user = await getSessionUser(req);
-    if (!user) {
-      return res.status(400).json(false); // Account does not exist
-    } else {
-      const adfree = await getAdfreeSummary(user.id);
-      const [privateLink, privateLinks, discordLink] = await Promise.all([
-        getAccountPrivateLink({
-          userId: user.id,
-          hostname: req.hostname,
-        }),
-        getOwnedPrivateLinks(user.id),
-        getDiscordLinkSummaryForUser(user.id),
-      ]);
-
-      res.render("account-shell", {
-        initialPanel: "account",
-        credits: getCreditBalance(user.data),
-        email: user.email,
-        adfree,
-        privateLink,
-        privateLinks,
-        discordLink,
-      });
-    }
-  } else {
-    return res.status(400).json(false);
-  }
-})
+  return renderAccountShell(req, res, "account");
+});
 
 app.get("/link-management", async (req, res) => {
-  if (req.session.token) {
-    const user = await getSessionUser(req);
-    if (!user) {
-      return res.status(400).json(false);
-    }
-
-    const adfree = await getAdfreeSummary(user.id);
-    const [privateLink, privateLinks, discordLink] = await Promise.all([
-      getAccountPrivateLink({
-        userId: user.id,
-        hostname: req.hostname,
-      }),
-      getOwnedPrivateLinks(user.id),
-      getDiscordLinkSummaryForUser(user.id),
-    ]);
-
-    return res.render("account-shell", {
-      initialPanel: "link-management",
-      credits: getCreditBalance(user.data),
-      email: user.email,
-      adfree,
-      privateLink,
-      privateLinks,
-      discordLink,
-    });
-  }
-
-  return res.status(400).json(false);
-})
+  return renderAccountShell(req, res, "link-management");
+});
 
 app.get("/offerwall", async (req, res) => {
-  if (req.session.token) {
-    const user = await getSessionUser(req);
-    if (!user) {
-      return res.status(400).json(false); // Account does not exist
-    } else {
-      const adfree = await getAdfreeSummary(user.id);
-      res.render("offerwall", {
-        id: user.id,
-        email: user.email,
-        credits: getCreditBalance(user.data),
-        adfree,
-      });
-    }
-  } else {
+  if (!req.session?.token) {
     return res.status(400).json(false);
   }
-})
+
+  const user = await getSessionUser(req);
+  if (!user) {
+    return res.status(400).json(false);
+  }
+
+  const adfree = await getAdfreeSummary(user.id);
+  return res.render("offerwall", {
+    id: user.id,
+    email: user.email,
+    credits: getCreditBalance(user.data),
+    adfree,
+  });
+});
 
 app.get("/allgames", async (req, res) => {
-  const perPage = 100;
-  let search = String(req.query.search || "").trim();
-  let page = parseInt(req.query.page) || 1;
-
-  const filteredGames = games.filter((game) =>
-      game.name.toLowerCase().includes(search.toLowerCase())
+  const { games: paginatedGames, currentPage, totalPages, search } = getPaginatedGames(
+    gamesCatalog,
+    req.query.search,
+    req.query.page
   );
-
-  const total = filteredGames.length;
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  if (page < 1) page = 1;
-  if (page > totalPages) page = totalPages;
-
-  const sortedGames = filteredGames.sort((a, b) => a.name.localeCompare(b.name));
-  const startIndex = (page - 1) * perPage;
-  const paginatedGames = sortedGames.slice(startIndex, startIndex + perPage);
 
   res.render("games", {
     games: paginatedGames,
-    currentPage: page,
-    totalPages: totalPages,
+    currentPage,
+    totalPages,
     search,
     hostname: req.hostname,
   });
 });
 
 app.get("/newgames", async (req, res) => {
-  const perPage = 100;
-  let search = String(req.query.search || "").trim();
-  let page = parseInt(req.query.page) || 1;
-
-  const filteredGames = newgames.filter((newgame) =>
-      newgame.name.toLowerCase().includes(search.toLowerCase())
+  const { games: paginatedGames, currentPage, totalPages, search } = getPaginatedGames(
+    newGamesCatalog,
+    req.query.search,
+    req.query.page
   );
-
-  const total = filteredGames.length;
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  if (page < 1) page = 1;
-  if (page > totalPages) page = totalPages;
-
-  const sortedGames = filteredGames.sort((a, b) => a.name.localeCompare(b.name));
-  const startIndex = (page - 1) * perPage;
-  const paginatedGames = sortedGames.slice(startIndex, startIndex + perPage);
 
   res.render("games", {
     games: paginatedGames,
-    currentPage: page,
-    totalPages: totalPages,
+    currentPage,
+    totalPages,
     search,
     hostname: req.hostname,
   });
@@ -381,37 +366,31 @@ app.get("/newgames", async (req, res) => {
 app.get("/games", async (req, res) => {
   try {
     const topGames = await redisClient.zRange(
-        "game_leaderboard",
-        0,
-        7,
-        { REV: true, WITHSCORES: true }
+      "game_leaderboard",
+      0,
+      7,
+      { REV: true, WITHSCORES: true }
     );
 
     const result = [];
-    for (let i = 0; i < topGames.length; i += 1) {
-      const gameName = topGames[i];
-      const score = topGames[i + 1];
-
-      const game = games.find(g => g.name === gameName);
+    for (let index = 0; index < topGames.length; index += 2) {
+      const gameName = topGames[index];
+      const game = gamesCatalog.byName.get(gameName);
 
       if (game) {
-        result.push({
-          ...game,
-        });
+        result.push({ ...game });
       } else {
         console.warn(`Game not found in database: ${gameName}`);
       }
     }
 
-    // Split into top 3 and next 5
     const topGamesFirst = result.slice(0, 3);
     const topGamesRest = result.slice(3, 8);
-    const hostname = req.hostname
 
     res.render("gamesRemake", {
       topGamesFirst,
       topGamesRest,
-      hostname
+      hostname: req.hostname,
     });
   } catch (err) {
     console.error("Error fetching top games:", err);
@@ -423,25 +402,24 @@ app.get("/d/:gameName.jpg", (req, res) => {
   const gameName = req.params.gameName;
   const filePath = path.join(__dirname, "static/d/", `${gameName}.jpg`);
 
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-  } else {
-    res.sendFile(path.join(__dirname, "static", "logo.png"));
-  }
+  res.sendFile(filePath, (error) => {
+    if (error && !res.headersSent) {
+      res.sendFile(DEFAULT_GAME_IMAGE_PATH);
+    }
+  });
 });
 
 app.get("/play/:id", (req, res) => {
   const gameName = req.params.id;
-  const game = games.find((g) => g.name === gameName);
+  const game = gamesCatalog.byName.get(gameName);
 
-  if (!game) return res.status(404).send("Game not found");
+  if (!game) {
+    return res.status(404).send("Game not found");
+  }
 
-
-  // Use pipeline with correct commands
-  const hostname = req.hostname
   res.render("play", {
     game,
-    hostname
+    hostname: req.hostname,
   });
 });
 
@@ -449,20 +427,23 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname + "/static/landing/index.html"));
 });
 
-app.get("/proxe", function (req, res) {
+app.get("/proxe", (req, res) => {
   res.sendFile(path.join(__dirname + "/dist/index.html"));
 });
 
-app.use(function (req, res, next) {
+app.use((req, res, next) => {
   if (
-      req.path.endsWith(".png") ||
-      req.path.endsWith(".jpg") ||
-      req.path.endsWith(".jpeg") ||
-      req.path.endsWith(".gif")
+    req.path.endsWith(".png")
+    || req.path.endsWith(".jpg")
+    || req.path.endsWith(".jpeg")
+    || req.path.endsWith(".gif")
+    || req.path.endsWith(".webp")
+    || req.path.endsWith(".svg")
+    || req.path.endsWith(".ico")
   ) {
-    res.set("Cache-Control", "public, max-age=31557600, immutable");
+    res.set("Cache-Control", LONG_CACHE_CONTROL);
   } else {
-    res.set("Cache-Control", "max-age=600");
+    res.set("Cache-Control", DEFAULT_CACHE_CONTROL);
   }
   return next();
 });
@@ -474,9 +455,6 @@ app.use(express.static(__dirname + "/static"));
 const server = http.createServer();
 
 server.on("request", async (req, res) => {
-  req.on("aborted", () => {
-    let e = 1;
-  });
   try {
     if (bareServer.shouldRoute(req)) {
       bareServer.routeRequest(req, res);
@@ -494,8 +472,6 @@ server.on("request", async (req, res) => {
 });
 
 function runSessionMiddleware(req, socket, callback) {
-  // Express normally calls (req, res, next), but in upgrade there is no res.
-  // So we pass an empty object for res and a manual callback for next.
   sessionMiddleware(req, {}, (err) => {
     if (err) {
       callback(err);
@@ -513,29 +489,29 @@ server.on("upgrade", async (req, socket, head) => {
     }
 
     try {
-      const override = req.session?.siteOveride || req.session?.siteOverride;
+      const override = getSessionSiteOverride(req.session);
       if (override) {
         proxy.ws(req, socket, head, { target: override, changeOrigin: true });
       } else if (req.headers.host) {
         canAccessPrivateLinkUpgrade(req)
-            .then((canAccess) => {
-              if (canAccess === null) {
-                if (bareServer.shouldRoute(req)) {
-                  bareServer.routeUpgrade(req, socket, head);
-                } else {
-                  socket.end();
-                }
-                return;
-              }
-
-              if (canAccess && bareServer.shouldRoute(req)) {
+          .then((canAccess) => {
+            if (canAccess === null) {
+              if (bareServer.shouldRoute(req)) {
                 bareServer.routeUpgrade(req, socket, head);
-                return;
+              } else {
+                socket.end();
               }
+              return;
+            }
 
-              socket.end();
-            })
-            .catch(() => socket.end());
+            if (canAccess && bareServer.shouldRoute(req)) {
+              bareServer.routeUpgrade(req, socket, head);
+              return;
+            }
+
+            socket.end();
+          })
+          .catch(() => socket.end());
       } else if (bareServer.shouldRoute(req)) {
         bareServer.routeUpgrade(req, socket, head);
       } else {
@@ -567,7 +543,7 @@ function shutdown() {
   process.exit(0);
 }
 
-if(process.env.environment === "testing") {
+if (process.env.environment === "testing") {
   server.listen(9908, () => {
     console.log("Testing server http://localhost:9908");
   });
@@ -580,7 +556,7 @@ if(process.env.environment === "testing") {
 const verify = express();
 verify.get("/validate-domain", (req, res) => {
   try {
-    const requestedDomain = req.query.domain;
+    const requestedDomain = String(req.query.domain || "");
     if (requestedDomain.includes("104.36.85.249")) {
       res.status(403).send("Forbidden");
     } else {
@@ -591,7 +567,7 @@ verify.get("/validate-domain", (req, res) => {
   }
 });
 
-if(process.env.environment === "testing") {
+if (process.env.environment === "testing") {
   verify.listen(3999, () => {
     console.log("Test domain validation server running on http://localhost:3999");
   });
@@ -601,16 +577,20 @@ if(process.env.environment === "testing") {
   });
 }
 
-proxy.on('error', (err, req, res) => {
-    console.error('Proxy error:', err);
-    if (res && !res.headersSent) {
-        res.writeHead(502, { 'Content-Type': 'text/plain' });
-    }
-    if (res && !res.writableEnded) res.end('Bad Gateway');
+proxy.on("error", (err, req, res) => {
+  console.error("Proxy error:", err);
+  if (res && !res.headersSent) {
+    res.writeHead(502, { "Content-Type": "text/plain" });
+  }
+  if (res && !res.writableEnded) {
+    res.end("Bad Gateway");
+  }
 });
 
-proxy.on('proxyReq', (pReq) => {
-    pReq.setTimeout(10000, () => {
-        try { pReq.destroy(); } catch (e) {}
-    });
+proxy.on("proxyReq", (proxyRequest) => {
+  proxyRequest.setTimeout(10000, () => {
+    try {
+      proxyRequest.destroy();
+    } catch (error) {}
+  });
 });

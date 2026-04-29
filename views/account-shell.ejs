@@ -56,6 +56,34 @@
     const accountPanelNodes = Array.from(document.querySelectorAll('[data-account-panel]'));
     const accountPanelTriggers = Array.from(document.querySelectorAll('[data-account-panel-target]'));
     let activeAccountPanel = accountPanelsRoot?.dataset.initialAccountPanel || 'account';
+    const panelHashes = {
+        account: '#account',
+        'link-management': '#private-links',
+        'private-link-admin': '#link-admin'
+    };
+
+    const setButtonBusy = (button, busy, busyLabel = 'Working...') => {
+        if (!button) {
+            return;
+        }
+
+        if (!button.dataset.defaultLabel) {
+            button.dataset.defaultLabel = button.textContent.trim();
+        }
+
+        button.disabled = busy;
+        button.setAttribute('aria-busy', busy ? 'true' : 'false');
+        button.textContent = busy ? busyLabel : button.dataset.defaultLabel;
+    };
+
+    const copyText = async (value) => {
+        const text = String(value || '').trim();
+        if (!text || text === 'Not generated yet') {
+            throw new Error('Nothing to copy yet');
+        }
+
+        await navigator.clipboard.writeText(text);
+    };
 
     const syncAccountPanelState = (panelName) => {
         for (const panel of accountPanelNodes) {
@@ -73,7 +101,7 @@
         activeAccountPanel = panelName;
     };
 
-    const switchAccountPanel = (panelName) => {
+    const switchAccountPanel = (panelName, { updateHistory = true } = {}) => {
         if (!panelName || panelName === activeAccountPanel) {
             return;
         }
@@ -84,6 +112,10 @@
             : panelName === 'private-link-admin'
                 ? 'Private Link Admin'
                 : 'Your Account';
+
+        if (updateHistory && panelHashes[panelName]) {
+            window.history.replaceState(null, '', panelHashes[panelName]);
+        }
     };
 
     for (const trigger of accountPanelTriggers) {
@@ -93,6 +125,10 @@
     }
 
     syncAccountPanelState(activeAccountPanel);
+    const initialHashPanel = Object.entries(panelHashes).find(([, hash]) => hash === window.location.hash)?.[0];
+    if (initialHashPanel && initialHashPanel !== activeAccountPanel) {
+        switchAccountPanel(initialHashPanel, { updateHistory: false });
+    }
 
     const feedback = document.getElementById('store-feedback');
     const balanceEl = document.getElementById('credit-balance');
@@ -101,8 +137,9 @@
         button.addEventListener('click', async () => {
             const plan = button.dataset.plan;
             const label = button.dataset.label || 'ad-free access';
-            button.disabled = true;
+            setButtonBusy(button, true, 'Processing...');
             feedback.textContent = 'Processing purchase...';
+            feedback.classList.remove('error');
 
             try {
                 const response = await fetch('/api/store/adfree', {
@@ -121,8 +158,9 @@
                 window.setTimeout(() => window.location.reload(), 700);
             } catch (error) {
                 feedback.textContent = error.message || 'Purchase failed';
+                feedback.classList.add('error');
             } finally {
-                button.disabled = false;
+                setButtonBusy(button, false);
             }
         });
     }
@@ -185,7 +223,7 @@
 
     if (discordGenerateCodeButton) {
         discordGenerateCodeButton.addEventListener('click', async () => {
-            discordGenerateCodeButton.disabled = true;
+            setButtonBusy(discordGenerateCodeButton, true, 'Generating...');
             setDiscordFeedback('Generating Discord link code...');
 
             try {
@@ -200,14 +238,14 @@
             } catch (error) {
                 setDiscordFeedback(error.message || 'Failed to generate Discord link code', true);
             } finally {
-                discordGenerateCodeButton.disabled = false;
+                setButtonBusy(discordGenerateCodeButton, false);
             }
         });
     }
 
     if (discordUnlinkButton) {
         discordUnlinkButton.addEventListener('click', async () => {
-            discordUnlinkButton.disabled = true;
+            setButtonBusy(discordUnlinkButton, true, 'Unlinking...');
             setDiscordFeedback('Removing Discord link...');
 
             try {
@@ -223,6 +261,7 @@
                 setDiscordFeedback(error.message || 'Failed to unlink Discord account', true);
                 renderDiscordLinkState(discordLinkState);
             } finally {
+                setButtonBusy(discordUnlinkButton, false);
                 discordUnlinkButton.disabled = !(document.querySelector('.discord-link-status')?.classList.contains('is-linked'));
             }
         });
@@ -257,8 +296,16 @@
     const privateLinkCoverUrlInput = document.getElementById('private-link-cover-url');
     const privateLinkLoginPathInput = document.getElementById('private-link-login-path');
     const privateLinkGeneratedNote = document.getElementById('private-link-generated-note');
+    const privateLinkMemberInput = document.getElementById('private-link-member-email');
+    const privateLinkContributionAmountInput = document.getElementById('private-link-contribution-amount');
     const getPrivateLinkSourceLabel = (linkSource) => (
         linkSource === 'provided' ? 'generated by CanLite API' : 'user-provided URL'
+    );
+
+    const formatPrivateLinkNextStep = (link) => (
+        link?.domain && link?.loginPath
+            ? `Private link saved. Next, test https://${link.domain}${link.loginPath}.`
+            : 'Private link saved.'
     );
 
     const normalizeOwnedPrivateLinks = (links, activeLink) =>
@@ -300,7 +347,20 @@
     privateLinksState = normalizeOwnedPrivateLinks(privateLinksState, activePrivateLinkState);
     syncSelectedPrivateLink(activePrivateLinkState?.role === 'owner' ? activePrivateLinkState?.id : null);
 
-    const getCurrentPrivateLinkDomain = () => privateLinkState?.domain || 'this private link';
+    const setDesiredPrivateLinkSource = (source) => {
+        if (!privateLinkSourceInput || !canManagePrivateLink) {
+            return;
+        }
+
+        privateLinkSourceInput.value = source === 'provided' ? 'provided' : 'byo';
+        syncPrivateLinkFormMode();
+        if (privateLinkSourceInput.value === 'provided') {
+            privateLinkFilterInput?.focus();
+        } else {
+            privateLinkUrlInput?.focus();
+        }
+    };
+
     const getRenderedPrivateLinks = () => (
         privateLinksState.length
             ? privateLinksState
@@ -448,6 +508,7 @@
             ? renderedLinks.map((link) => {
                 const isSelected = editingPrivateLinkId && Number(link.id) === Number(editingPrivateLinkId);
                 const memberTotal = (link.members?.length || 0) + 1;
+                const linkUrl = `https://${link.domain}`;
                 return `
                 <article class="private-link-card${isSelected ? ' is-selected' : ''}">
                     <div class="private-link-card-head">
@@ -463,15 +524,24 @@
                     <div class="private-link-card-grid">
                         <div class="private-link-stat">
                             <span>Private-link URL</span>
-                            <input class="private-link-value" type="text" readonly value="${escapeHtml(`https://${link.domain}`)}" onclick="this.select()">
+                            <div class="private-link-copy-row">
+                                <input class="private-link-value" type="text" readonly value="${escapeHtml(linkUrl)}" onclick="this.select()">
+                                <button type="button" class="button-ghost button-tiny" data-copy-text="${escapeHtml(linkUrl)}">Copy</button>
+                            </div>
                         </div>
                         <div class="private-link-stat">
                             <span>Secret login path</span>
-                            <input class="private-link-value" type="text" readonly value="${escapeHtml(link.loginPath)}" onclick="this.select()">
+                            <div class="private-link-copy-row">
+                                <input class="private-link-value" type="text" readonly value="${escapeHtml(link.loginPath)}" onclick="this.select()">
+                                <button type="button" class="button-ghost button-tiny" data-copy-text="${escapeHtml(link.loginPath)}">Copy</button>
+                            </div>
                         </div>
                         <div class="private-link-stat">
                             <span>Cover site URL</span>
-                            <input class="private-link-value" type="text" readonly value="${escapeHtml(link.coverUrl)}" onclick="this.select()">
+                            <div class="private-link-copy-row">
+                                <input class="private-link-value" type="text" readonly value="${escapeHtml(link.coverUrl)}" onclick="this.select()">
+                                <button type="button" class="button-ghost button-tiny" data-copy-text="${escapeHtml(link.coverUrl)}">Copy</button>
+                            </div>
                         </div>
                         <div class="private-link-stat">
                             <span>Monthly cost</span>
@@ -498,7 +568,7 @@
                     <div class="member-row">
                         <div>
                             <strong>${escapeHtml(member.email)}</strong>
-                            <span>${member.discordUsername || member.discordGlobalName ? `Discord: ${escapeHtml(member.discordGlobalName || member.discordUsername)} • ` : ''}Access granted on ${escapeHtml(adminDomain)}</span>
+                            <span>${member.discordUsername || member.discordGlobalName ? `Discord: ${escapeHtml(member.discordGlobalName || member.discordUsername)} | ` : ''}Access granted on ${escapeHtml(adminDomain)}</span>
                         </div>
                         ${isOwner ? `<button class="button-ghost button-tiny" type="button" data-remove-member="${member.userId}">Remove</button>` : ''}
                     </div>
@@ -568,6 +638,7 @@
                 clearPrivateLinkForm();
                 renderPrivateLinkState();
                 setPrivateLinkFeedback('');
+                privateLinkSourceInput?.focus();
             });
         }
 
@@ -588,6 +659,7 @@
                 loginPath: privateLinkLoginPathInput.value
             };
 
+            setButtonBusy(privateLinkSaveButton, true, editingPrivateLinkId ? 'Saving...' : 'Creating...');
             setPrivateLinkFeedback('Saving private link...');
 
             try {
@@ -609,9 +681,11 @@
                     clearPrivateLinkForm();
                 }
                 renderPrivateLinkState();
-                setPrivateLinkFeedback(`Private link saved. Next, test https://${privateLinkState.domain}${privateLinkState.loginPath}.`);
+                setPrivateLinkFeedback(formatPrivateLinkNextStep(privateLinkState));
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to save private link', true);
+            } finally {
+                setButtonBusy(privateLinkSaveButton, false);
             }
         });
     }
@@ -621,12 +695,13 @@
         privateLinkMemberForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            const identifier = document.getElementById('private-link-member-email').value.trim();
+            const identifier = privateLinkMemberInput?.value.trim();
             if (!identifier) {
                 setPrivateLinkFeedback(`Enter an email or linked Discord account to add to ${activePrivateLinkState?.domain || 'this private link'}.`, true);
                 return;
             }
 
+            setButtonBusy(privateLinkMemberSubmit, true, 'Adding...');
             setPrivateLinkFeedback(`Adding user to ${activePrivateLinkState?.domain || 'this private link'}...`);
 
             try {
@@ -642,11 +717,16 @@
                 }
 
                 applyPrivateLinkResponse(data);
-                document.getElementById('private-link-member-email').value = '';
+                if (privateLinkMemberInput) {
+                    privateLinkMemberInput.value = '';
+                    privateLinkMemberInput.focus();
+                }
                 renderPrivateLinkState();
                 setPrivateLinkFeedback(`User added to ${activePrivateLinkState?.domain || 'this private link'}.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to add member', true);
+            } finally {
+                setButtonBusy(privateLinkMemberSubmit, false);
             }
         });
     }
@@ -658,6 +738,7 @@
                 return;
             }
 
+            setButtonBusy(button, true, 'Removing...');
             setPrivateLinkFeedback(`Removing user from ${activePrivateLinkState?.domain || 'this private link'}...`);
 
             try {
@@ -675,21 +756,24 @@
                 setPrivateLinkFeedback(`User removed from ${activePrivateLinkState?.domain || 'this private link'}.`);
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to remove member', true);
+                setButtonBusy(button, false);
             }
         });
     }
 
     const privateLinkContributionForm = document.getElementById('private-link-contribution-form');
     if (privateLinkContributionForm) {
+        const contributionButton = privateLinkContributionForm.querySelector('button[type="submit"]');
         privateLinkContributionForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            const amount = Number(document.getElementById('private-link-contribution-amount').value);
+            const amount = Number(privateLinkContributionAmountInput?.value);
             if (!amount) {
                 setPrivateLinkFeedback('Enter a contribution amount.', true);
                 return;
             }
 
+            setButtonBusy(contributionButton, true, 'Contributing...');
             setPrivateLinkFeedback('Contributing credits...');
 
             try {
@@ -706,14 +790,54 @@
 
                 balanceEl.textContent = `${data.credits} credits`;
                 applyPrivateLinkResponse(data);
-                document.getElementById('private-link-contribution-amount').value = '';
+                if (privateLinkContributionAmountInput) {
+                    privateLinkContributionAmountInput.value = '';
+                    privateLinkContributionAmountInput.focus();
+                }
                 renderPrivateLinkState();
                 setPrivateLinkFeedback('Credits added to the slush pool.');
             } catch (error) {
                 setPrivateLinkFeedback(error.message || 'Failed to contribute credits', true);
+            } finally {
+                setButtonBusy(contributionButton, false);
             }
         });
     }
+
+    document.addEventListener('click', async (event) => {
+        const panelTrigger = event.target.closest('[data-private-link-source][data-account-panel-target]');
+        if (panelTrigger) {
+            switchAccountPanel(panelTrigger.dataset.accountPanelTarget);
+            window.setTimeout(() => setDesiredPrivateLinkSource(panelTrigger.dataset.privateLinkSource), 0);
+        }
+
+        const copyButton = event.target.closest('[data-copy-target], [data-copy-text]');
+        if (!copyButton) {
+            return;
+        }
+
+        try {
+            const value = copyButton.dataset.copyText || document.getElementById(copyButton.dataset.copyTarget)?.textContent || '';
+            await copyText(value);
+            const originalLabel = copyButton.textContent;
+            copyButton.textContent = 'Copied';
+            window.setTimeout(() => {
+                copyButton.textContent = originalLabel;
+            }, 1000);
+
+            if (copyButton.dataset.copyTarget) {
+                setDiscordFeedback('Copied to clipboard.');
+            } else {
+                setPrivateLinkFeedback('Copied to clipboard.');
+            }
+        } catch (error) {
+            if (copyButton.dataset.copyTarget) {
+                setDiscordFeedback(error.message || 'Failed to copy', true);
+            } else {
+                setPrivateLinkFeedback(error.message || 'Failed to copy', true);
+            }
+        }
+    });
 </script>
 <script src="/games/time.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

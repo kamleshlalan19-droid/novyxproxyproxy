@@ -41,3 +41,16 @@ export const getUserByToken = async (token) => {
 
     return result.rowCount > 0 ? result.rows[0] : null;
 };
+
+export const getUserByIdAndToken = async (id, token) => {
+    if (!id || !token) {
+        return null;
+    }
+
+    const result = await pool.query(
+        "SELECT id, token, admin, data, email FROM users WHERE id = $1 AND token = $2",
+        [id, token]
+    );
+
+    return result.rowCount > 0 ? result.rows[0] : null;
+};

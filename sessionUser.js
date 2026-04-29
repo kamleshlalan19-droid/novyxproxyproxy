@@ -1,4 +1,4 @@
-import { getUserByToken } from "./auth.js";
+import { getUserByIdAndToken } from "./auth.js";
 
 export const getSessionUserSnapshot = (req) => {
     if (!req.session?.token || !req.session?.user_id) {
@@ -19,7 +19,7 @@ export const getSessionUser = async (req) => {
         return null;
     }
 
-    return getUserByToken(req.session?.token);
+    return getUserByIdAndToken(snapshot.id, snapshot.token);
 };
 
 export const setSessionUser = (req, user) => {

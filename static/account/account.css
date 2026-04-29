@@ -3,6 +3,10 @@
     gap: 24px;
 }
 
+.section-heading-compact {
+    margin-bottom: 18px;
+}
+
 .store-summary {
     display: grid;
     gap: 16px;
@@ -46,6 +50,14 @@
     display: grid;
     gap: 16px;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.store-actions-spaced {
+    margin-top: 18px;
+}
+
+.perk-grid-spaced {
+    margin-top: 10px;
 }
 
 .store-card h3,
@@ -102,15 +114,20 @@
     cursor: not-allowed;
 }
 
+.status-feedback {
+    min-height: 24px;
+    margin: 16px 0 0;
+    color: #9ff0ca;
+}
+
+.status-feedback.error {
+    color: #ff9c9c;
+}
+
 .coming-soon {
     color: #ffcf88;
     font-size: 0.9rem;
     font-weight: 600;
-}
-
-#store-feedback {
-    min-height: 24px;
-    color: #9ff0ca;
 }
 
 .discord-link-card {
@@ -141,19 +158,31 @@
     color: rgba(255, 255, 255, 0.66);
 }
 
+.code-box-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 #discord-link-code {
     font-size: 2rem;
     letter-spacing: 0.12em;
 }
 
-#discord-link-feedback {
-    min-height: 24px;
-    margin: 0;
-    color: #9ff0ca;
+.stack-spaced {
+    margin-top: 18px;
 }
 
-#discord-link-feedback.error {
-    color: #ff9c9c;
+.button-row-spaced {
+    margin-top: 18px;
+}
+
+.button-row .button,
+.button-row .button-ghost,
+.button-row .button-tiny {
+    min-height: 44px;
 }
 
 .styled-select {
@@ -166,4 +195,20 @@
 .styled-select option {
     color: var(--text);
     background: var(--surface-strong);
+}
+
+@media (max-width: 720px) {
+    .store-stat,
+    .store-card,
+    .perk-card,
+    .info-card {
+        padding: 18px;
+        border-radius: 20px;
+    }
+
+    #discord-link-code {
+        font-size: 1.55rem;
+        letter-spacing: 0.08em;
+        overflow-wrap: anywhere;
+    }
 }
