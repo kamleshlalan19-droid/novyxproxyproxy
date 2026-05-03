@@ -2,12 +2,12 @@
 (function() {
     const panicKey = localStorage.getItem('settings_panicKey') || '`';
     const panicUrl = localStorage.getItem('settings_panicUrl') || 'https://drive.google.com';
-    
+
     document.addEventListener('keydown', function(e) {
         // Check if the pressed key matches the panic key
         if (e.key === panicKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
             // Only trigger if not typing in an input/textarea
-            if (document.activeElement.tagName !== 'INPUT' && 
+            if (document.activeElement.tagName !== 'INPUT' &&
                 document.activeElement.tagName !== 'TEXTAREA') {
                 e.preventDefault();
                 window.location.href = panicUrl;
@@ -83,24 +83,24 @@ const registerForm = document.getElementById("registerForm");
 
 // Open the modal when the button is clicked
 btn.onclick = function() {
-    if(localStorage.getItem('token')) {
-        window.location = "/account/"
+    if (localStorage.getItem('token')) {
+        window.location = "/account/";
     } else {
         modal.style.display = "block";
     }
-}
+};
 
 // Close the modal when the close icon is clicked
 closeBtn.onclick = function() {
     modal.style.display = "none";
-}
+};
 
 // Close the modal when clicking outside the modal content
 window.onclick = function(event) {
     if (event.target === modal) {
         modal.style.display = "none";
     }
-}
+};
 
 // Tab switching logic
 loginTab.onclick = function() {
@@ -108,14 +108,14 @@ loginTab.onclick = function() {
     registerTab.classList.remove("active");
     loginForm.style.display = "block";
     registerForm.style.display = "none";
-}
+};
 
 registerTab.onclick = function() {
     registerTab.classList.add("active");
     loginTab.classList.remove("active");
     loginForm.style.display = "none";
     registerForm.style.display = "block";
-}
+};
 
 document.querySelector("#loginForm form").addEventListener("submit", async function(e) {
     e.preventDefault();
@@ -130,9 +130,9 @@ document.querySelector("#loginForm form").addEventListener("submit", async funct
         });
         const result = await response.text();
 
-        if(result === "acc") {
+        if (result === "acc") {
             document.getElementById('loginStatus').innerHTML = `<p>Account does not exist. Please register.</p>`;
-        } else if(result === "pass") {
+        } else if (result === "pass") {
             document.getElementById('loginStatus').innerHTML = `<p>Incorrect password</p>`;
         } else {
             // Optionally store the token for subsequent authenticated requests
@@ -146,7 +146,7 @@ document.querySelector("#loginForm form").addEventListener("submit", async funct
                 .then(data => {
                     if (data.gameData) {
                         const storageData = data.gameData;
-                        localStorage.clear()
+                        localStorage.clear();
                         for (const key in storageData) {
                             localStorage.setItem(key, storageData[key]);
                         }
@@ -156,7 +156,7 @@ document.querySelector("#loginForm form").addEventListener("submit", async funct
                         modal.style.display = "none";
                         window.location.reload();
                     }
-                })
+                });
         }
     } catch (error) {
         console.error("Login error:", error);
@@ -178,7 +178,7 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
         });
         const token = await response.text();
 
-        if(token === "exists") {
+        if (token === "exists") {
             document.getElementById('loginStatus').innerHTML = `<p>Account already exists. Please log in.</p>`;
         } else {
             document.getElementById('loginModalBtn').innerHTML = `<span id="loginSpan" class="material-symbols-outlined">logout</span>Logout`;
@@ -204,56 +204,78 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
     }
 });
 
-(function () {
-    if (localStorage.getItem("closedNotice")) return;
-    const box = document.createElement("div");
+(function initUpdateNotifier() {
+    const updateVersion = "2026-05-uv-return";
+    const dismissedVersionKey = "dismissedUpdateNoticeVersion";
 
-    box.innerHTML = `
-        <div id="adfreeNotice">
-            <span id="adfreeClose">✕</span>
-            <div>
-                Account holders can now create private links.  
-                Just select <b>My Account</b> in the nav bar.
+    if (localStorage.getItem(dismissedVersionKey) === updateVersion) return;
+
+    const notifier = document.createElement("div");
+
+    notifier.innerHTML = `
+        <div id="updateNotice" role="status" aria-live="polite">
+            <button id="updateNoticeClose" type="button" aria-label="Dismiss update notice">x</button>
+            <div class="update-notice-label">Update</div>
+            <div class="update-notice-copy">
+                Ads are back. You can buy ad-free in the Account Store, and we switched back to the old, faster proxy backend.
             </div>
         </div>
     `;
 
     const style = document.createElement("style");
     style.innerHTML = `
-        #adfreeNotice {
+        #updateNotice {
             position: fixed;
-            bottom: 20px;
             right: 20px;
-            background: #1e1e1e;
-            color: white;
-            padding: 14px 18px;
-            border-radius: 8px;
-            font-family: Arial, sans-serif;
-            font-size: 25px;
-            max-width: 300px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            bottom: 20px;
             z-index: 999999;
+            max-width: 340px;
+            padding: 16px 18px;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            background: rgba(20, 20, 20, 0.96);
+            color: #fff;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+            font-family: Arial, sans-serif;
+            line-height: 1.45;
         }
 
-        #adfreeClose {
+        #updateNoticeClose {
             position: absolute;
-            top: 6px;
+            top: 8px;
             right: 8px;
+            border: 0;
+            background: transparent;
+            color: rgba(255,255,255,0.72);
             cursor: pointer;
-            font-size: 14px;
-            opacity: 0.7;
+            font-size: 18px;
+            line-height: 1;
         }
 
-        #adfreeClose:hover {
-            opacity: 1;
+        #updateNoticeClose:hover {
+            color: #fff;
+        }
+
+        .update-notice-label {
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #8fd3ff;
+        }
+
+        .update-notice-copy {
+            padding-right: 20px;
+            font-size: 15px;
         }
     `;
 
     document.head.appendChild(style);
-    document.body.appendChild(box);
+    document.body.appendChild(notifier);
 
-    document.getElementById("adfreeClose").onclick = () => {
-        localStorage.setItem("closedNotice", "1");
-        box.remove();
+    document.getElementById("updateNoticeClose").onclick = () => {
+        localStorage.setItem(dismissedVersionKey, updateVersion);
+        notifier.remove();
     };
 })();

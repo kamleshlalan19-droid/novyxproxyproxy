@@ -32,6 +32,16 @@ try {
 }
 
 const gameByName = new Map(games.map((game) => [game.name, game]));
+const popunderFilePath = path.join(__dirname, "popunder.txt");
+
+let popunderScriptBody = "";
+try {
+    const popunderMarkup = await fs.readFile(popunderFilePath, "utf8");
+    const popunderMatch = popunderMarkup.match(/<script[^>]*>([\s\S]*)<\/script>/i);
+    popunderScriptBody = popunderMatch ? popunderMatch[1].trim() : popunderMarkup.trim();
+} catch (err) {
+    console.error("Failed to load popunder script:", err);
+}
 
 const normalizeLeaderboardGameName = (value) => {
     const rawValue = String(value || "").trim();
@@ -48,6 +58,32 @@ const normalizeLeaderboardGameName = (value) => {
 
 const generateRandomString = (length) => {
     return crypto.randomBytes(length).toString("hex").slice(0, length);
+};
+
+const getAdfreeStateForUserId = async (userId) => {
+    if (!userId) {
+        return false;
+    }
+
+    const adfreeResult = await pool.query(
+        "SELECT expiration FROM adfree WHERE id = $1",
+        [userId]
+    );
+
+    if (adfreeResult.rowCount === 0) {
+        return false;
+    }
+
+    const expiration = new Date(adfreeResult.rows[0].expiration);
+    if (expiration > new Date()) {
+        return true;
+    }
+
+    await pool.query(
+        "DELETE FROM adfree WHERE id = $1",
+        [userId]
+    );
+    return false;
 };
 
 const extendAdfreeForDays = async (client, userId, days) => {
@@ -221,7 +257,134 @@ router.post("/register", async (req, res) => {
 });
 
 router.get("/ad", async (req, res) => {
-    return res.redirect("https://example.com");
+    let serverKnownAdfree = false;
+
+    try {
+        serverKnownAdfree = await getAdfreeStateForUserId(req.session?.user_id);
+    } catch (err) {
+        console.error("Failed to load adfree state for ad bootstrap:", err);
+    }
+
+    const responseBody = `
+(async () => {
+    const adTagSrc = "https://5gvci.com/act/files/tag.min.js?z=10917472";
+    const adTagSelector = 'script[src="https://5gvci.com/act/files/tag.min.js?z=10917472"]';
+    const adServiceWorkerPath = "/sw.js";
+    const popunderScriptBody = ${JSON.stringify(popunderScriptBody)};
+    const serverKnownAdfree = ${JSON.stringify(serverKnownAdfree)};
+
+    const cleanupAds = async () => {
+        document.querySelectorAll(adTagSelector).forEach((element) => element.remove());
+
+        if ("serviceWorker" in navigator) {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(
+                    registrations
+                        .filter((registration) => {
+                            const scriptUrl = registration.active?.scriptURL
+                                || registration.installing?.scriptURL
+                                || registration.waiting?.scriptURL
+                                || "";
+                            return scriptUrl.endsWith(adServiceWorkerPath);
+                        })
+                        .map((registration) => registration.unregister())
+                );
+            } catch (error) {
+                console.error("Failed to unregister ad service worker:", error);
+            }
+        }
+    };
+
+    const resolveAdfreeState = async () => {
+        if (window.userAdfree === true) {
+            return true;
+        }
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+            return serverKnownAdfree;
+        }
+
+        try {
+            const response = await fetch("/api/check", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token })
+            });
+
+            if (!response.ok) {
+                return serverKnownAdfree;
+            }
+
+            const data = await response.json();
+            if (data && data.loggedIn && data.adfree) {
+                window.userAdfree = true;
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error("Failed to resolve adfree state:", error);
+            return serverKnownAdfree;
+        }
+    };
+
+    const appendAdTagLoader = () => {
+        if (document.querySelector(adTagSelector)) {
+            return;
+        }
+
+        const loader = document.createElement("script");
+        loader.src = adTagSrc;
+        loader.async = true;
+        loader.setAttribute("data-cfasync", "false");
+        document.head.appendChild(loader);
+    };
+
+    const appendPopunderScript = () => {
+        if (!popunderScriptBody || window.__canlitePopunderInstalled) {
+            return;
+        }
+
+        window.__canlitePopunderInstalled = true;
+        const script = document.createElement("script");
+        script.type = "text/javascript";
+        script.setAttribute("data-cfasync", "false");
+        script.text = popunderScriptBody;
+        document.body.appendChild(script);
+    };
+
+    const registerAdServiceWorker = async () => {
+        if (!("serviceWorker" in navigator)) {
+            return;
+        }
+
+        try {
+            const registration = await navigator.serviceWorker.getRegistration(adServiceWorkerPath);
+            if (!registration) {
+                await navigator.serviceWorker.register(adServiceWorkerPath);
+            }
+        } catch (error) {
+            console.error("Failed to register ad service worker:", error);
+        }
+    };
+
+    const isAdfree = await resolveAdfreeState();
+    if (isAdfree) {
+        await cleanupAds();
+        return;
+    }
+
+    appendAdTagLoader();
+    appendPopunderScript();
+    await registerAdServiceWorker();
+})();
+`;
+
+    res.set("Cache-Control", "no-store");
+    res.type("application/javascript");
+    return res.send(responseBody);
 });
 
 router.get("/postback", async (req, res) => {
