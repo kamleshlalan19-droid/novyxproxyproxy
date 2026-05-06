@@ -495,7 +495,7 @@
                         placementId: playSidebarAdSlot?.dataset.placementId || "play-sidebar",
                         pageUrl: window.location.href,
                         pageTitle: gameName,
-                        pageContext: `${gameName}. ${gameDescription} Suggested game-related product listing beside the player.`,
+                        pageContext: gameDescription || gameName,
                         adType: playSidebarAdSlot?.dataset.adType || "banner",
                         width: Number(playSidebarAdSlot?.dataset.width || 300),
                         height: Number(playSidebarAdSlot?.dataset.height || 250),
