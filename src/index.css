@@ -145,6 +145,84 @@ body[data-theme-changing="true"] * {
     min-height: 100dvh;
 }
 
+.proxy-age-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background:
+        linear-gradient(180deg, rgba(4, 11, 18, 0.78), rgba(4, 11, 18, 0.92)),
+        radial-gradient(circle at top, rgba(126, 227, 255, 0.12), transparent 30%);
+    backdrop-filter: blur(18px);
+}
+
+.proxy-age-card {
+    width: min(100%, 520px);
+    padding: 28px;
+}
+
+.proxy-age-eyebrow {
+    margin: 0 0 10px;
+    color: var(--Blue);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.proxy-age-card h1 {
+    margin: 0 0 12px;
+    font-family: "Sora", "Segoe UI", sans-serif;
+    font-size: clamp(2rem, 5vw, 2.7rem);
+}
+
+.proxy-age-copy,
+.proxy-age-error {
+    line-height: 1.7;
+}
+
+.proxy-age-copy {
+    margin: 0;
+    color: var(--Subtext0);
+}
+
+.proxy-age-check {
+    margin-top: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.proxy-age-check input {
+    margin-top: 3px;
+    accent-color: var(--BlueStrong);
+}
+
+.proxy-age-error {
+    margin: 12px 0 0;
+    color: #ffb49a;
+}
+
+.proxy-age-actions {
+    margin-top: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.proxy-age-primary {
+    color: var(--Crust);
+    background: linear-gradient(135deg, var(--Blue), var(--BlueStrong));
+    border-color: color-mix(in srgb, var(--BlueStrong) 68%, white 12%);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--BlueStrong) 26%, transparent);
+}
+
 .proxy-shell {
     position: relative;
     min-height: 100vh;

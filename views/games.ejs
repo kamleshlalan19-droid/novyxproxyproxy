@@ -83,6 +83,10 @@
                 <input type="email" id="loginEmail" placeholder="Enter your email" required>
                 <label for="loginPassword">Password</label>
                 <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                <label class="auth-consent" for="loginConsent">
+                    <input type="checkbox" id="loginConsent" required>
+                    <span>I agree to the current <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>, including account-linked signal collection.</span>
+                </label>
                 <button type="submit">Login</button>
                 <p id="loginStatus"></p>
             </form>
@@ -94,7 +98,12 @@
                 <input type="email" id="registerEmail" placeholder="Enter your email" required>
                 <label for="registerPassword">Password</label>
                 <input type="password" id="registerPassword" placeholder="Enter your password" required>
+                <label class="auth-consent" for="registerConsent">
+                    <input type="checkbox" id="registerConsent" required>
+                    <span>I agree to the current <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>, including account-linked signal collection.</span>
+                </label>
                 <button type="submit">Register</button>
+                <p id="registerStatus"></p>
             </form>
         </div>
     </div>
@@ -173,6 +182,13 @@
                     <% const nextPage = Math.min(totalPages, currentPage + 1); %>
                     <a class="button-ghost" href="?page=<%= prevPage %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">Previous</a>
                     <a class="button-secondary" href="?page=<%= nextPage %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">Next Page</a>
+                    <div
+                        class="canlite-ad-slot"
+                        data-placement-id="games-toolbar"
+                        data-ad-type="banner"
+                        data-width="728"
+                        data-height="90"
+                    ></div>
                     <p class="hint">Need help with a game listing or want something removed? Email canlite24@outlook.com or use <a href="https://docs.google.com/forms/d/e/1FAIpQLSd6RQqR6QMTSPjVwBMedaPs39Yqk2Z_aXw0zomFClf62tokmg/viewform?usp=dialog">this form</a>.</p>
                 </div>
             </div>
@@ -181,6 +197,13 @@
 </div>
 
 <script>
+    window.__CANLITE_AD_CONTEXT = {
+        visitHash: <%- JSON.stringify(visitHash) %>,
+        pageUrl: window.location.href,
+        pageTitle: "CanLite Games Library",
+        pageContext: "Browse the CanLite games library."
+    };
+
     document.getElementById('searchbar').addEventListener("keydown", function(event) {
         if(event.key === 'Enter') {
             const url = new URL(window.location.href);
@@ -213,6 +236,7 @@
     <div class="footer-main">
         <div class="footer-links">
             <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
             <a href="mailto:canlite24@outlook.com">Email Us</a>
             <a href="https://discord.com/invite/46gkEU5kpP" target="_blank">Join our Discord</a>
             <a href="/about">About Us</a>

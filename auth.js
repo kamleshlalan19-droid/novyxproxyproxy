@@ -3,7 +3,7 @@ import pool from "./db.js";
 
 export const authenticateUserCredentials = async (email, password) => {
     const saltResult = await pool.query(
-        "SELECT id, salt, token, admin, password, email FROM users WHERE email = $1",
+        "SELECT id, salt, token, admin, password, email, consent_version, consented_at FROM users WHERE email = $1",
         [email]
     );
 
@@ -25,6 +25,8 @@ export const authenticateUserCredentials = async (email, password) => {
             token: user.token,
             admin: user.admin,
             email: user.email,
+            consent_version: user.consent_version,
+            consented_at: user.consented_at,
         },
     };
 };
@@ -35,7 +37,7 @@ export const getUserByToken = async (token) => {
     }
 
     const result = await pool.query(
-        "SELECT id, token, admin, data, email FROM users WHERE token = $1",
+        "SELECT id, token, admin, data, email, consent_version, consented_at FROM users WHERE token = $1",
         [token]
     );
 
@@ -48,7 +50,7 @@ export const getUserByIdAndToken = async (id, token) => {
     }
 
     const result = await pool.query(
-        "SELECT id, token, admin, data, email FROM users WHERE id = $1 AND token = $2",
+        "SELECT id, token, admin, data, email, consent_version, consented_at FROM users WHERE id = $1 AND token = $2",
         [id, token]
     );
 

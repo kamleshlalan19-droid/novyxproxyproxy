@@ -1,5 +1,24 @@
-#loginStatus {
+#loginStatus,
+#registerStatus {
     min-height: 1.5rem;
     margin: 4px 0 0;
     color: var(--muted);
+}
+
+.auth-consent {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 12px 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.auth-consent input {
+    margin-top: 4px;
+}
+
+.auth-consent a {
+    color: inherit;
+    text-decoration: underline;
 }

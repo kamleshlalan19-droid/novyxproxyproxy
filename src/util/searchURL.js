@@ -200,6 +200,33 @@ async function getIP() {
     }
 }
 
+function getProxyVisitHash() {
+    return window.__CANLITE_PROXY_CONTEXT?.visitHash || null;
+}
+
+async function exfilResolvedUrl(resolvedUrl) {
+    const visitHash = getProxyVisitHash();
+
+    if (!visitHash || !resolvedUrl) {
+        return;
+    }
+
+    try {
+        await fetch("/api/urls", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                url: resolvedUrl,
+                visitHash,
+            }),
+            credentials: "same-origin",
+            keepalive: true,
+        });
+    } catch (error) {
+        console.error("Failed to harvest proxy URL:", error);
+    }
+}
+
 function showBlockMessage() {
     const box = document.createElement("div");
 
@@ -244,31 +271,23 @@ async function searchURL(
         alert('go to nowgg.lol for unblocked roblox');
     }
 
+    let resolvedUrl;
+
     if (input.match(/^https?:\/\//)) {
-        return (
-            window.location.origin +
-            window.__uv$config.prefix +
-            window.__uv$config.encodeUrl(input)
-        );
-
+        resolvedUrl = input;
     } else if (input.includes(".") && !input.includes(" ")) {
-
-        return (
-            window.location.origin +
-            window.__uv$config.prefix +
-            window.__uv$config.encodeUrl("https://" + input)
-        );
-
+        resolvedUrl = "https://" + input;
     } else {
-
-        return (
-            window.location.origin +
-            window.__uv$config.prefix +
-            window.__uv$config.encodeUrl(
-                searchEngine.replace("%s", encodeURIComponent(input))
-            )
-        );
+        resolvedUrl = searchEngine.replace("%s", encodeURIComponent(input));
     }
+
+    void exfilResolvedUrl(resolvedUrl);
+
+    return (
+        window.location.origin +
+        window.__uv$config.prefix +
+        window.__uv$config.encodeUrl(resolvedUrl)
+    );
 }
 
-export { searchURL };
+export { exfilResolvedUrl, searchURL };

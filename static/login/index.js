@@ -31,6 +31,12 @@ if (localStorage.getItem('token')) {
                 localStorage.removeItem("token");
                 return;
             }
+
+            if (data.requiresConsent) {
+                window.location = `/consent?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                return;
+            }
+
             document.getElementById('loginModalBtn').innerHTML =
                 `<span id="loginSpan" class="material-symbols-outlined">account_circle</span>My Account`;
 
@@ -121,26 +127,30 @@ document.querySelector("#loginForm form").addEventListener("submit", async funct
     e.preventDefault();
     const email = document.getElementById("loginEmail").value;
     const password = document.getElementById("loginPassword").value;
+    const consentAccepted = document.getElementById("loginConsent")?.checked;
 
     try {
         const response = await fetch("/api/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, consentAccepted })
         });
-        const result = await response.text();
+        const result = await response.json();
 
-        if (result === "acc") {
+        if (result.reason === "acc") {
             document.getElementById('loginStatus').innerHTML = `<p>Account does not exist. Please register.</p>`;
-        } else if (result === "pass") {
+        } else if (result.reason === "pass") {
             document.getElementById('loginStatus').innerHTML = `<p>Incorrect password</p>`;
+        } else if (result.reason === "consent_required") {
+            document.getElementById('loginStatus').innerHTML = `<p>You must accept the current Terms and Privacy Policy to continue.</p>`;
         } else {
             // Optionally store the token for subsequent authenticated requests
             document.getElementById('loginStatus').innerHTML = `<p>Logged in. Loading game data.</p>`;
+            const token = result.token;
             fetch(`https://${window.location.host}/api/loadGameData`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ result }),
+                body: JSON.stringify({ result: token }),
             })
                 .then(response => response.json())
                 .then(data => {
@@ -152,9 +162,13 @@ document.querySelector("#loginForm form").addEventListener("submit", async funct
                         }
                         document.getElementById('loginModalBtn').innerHTML = `<span id="loginSpan" class="material-symbols-outlined">logout</span>Logout`;
                         console.log("LocalStorage data loaded:", storageData);
-                        localStorage.setItem("token", result);
+                        localStorage.setItem("token", token);
                         modal.style.display = "none";
-                        window.location.reload();
+                        if (result.requiresConsent) {
+                            window.location = `/consent?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                        } else {
+                            window.location.reload();
+                        }
                     }
                 });
         }
@@ -169,17 +183,21 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
     e.preventDefault();
     const email = document.getElementById("registerEmail").value;
     const password = document.getElementById("registerPassword").value;
+    const consentAccepted = document.getElementById("registerConsent")?.checked;
+    const registerStatus = document.getElementById("registerStatus") || document.getElementById("loginStatus");
 
     try {
         const response = await fetch("/api/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, consentAccepted })
         });
-        const token = await response.text();
+        const result = await response.json();
 
-        if (token === "exists") {
-            document.getElementById('loginStatus').innerHTML = `<p>Account already exists. Please log in.</p>`;
+        if (result.reason === "exists") {
+            registerStatus.innerHTML = `<p>Account already exists. Please log in.</p>`;
+        } else if (result.reason === "consent_required") {
+            registerStatus.innerHTML = `<p>You must accept the current Terms and Privacy Policy to continue.</p>`;
         } else {
             document.getElementById('loginModalBtn').innerHTML = `<span id="loginSpan" class="material-symbols-outlined">logout</span>Logout`;
             const localStorageData = { ...localStorage }; // Clone localStorage as an object
@@ -187,20 +205,25 @@ document.querySelector("#registerForm form").addEventListener("submit", async fu
             fetch("https://" + window.location.hostname + `/api/saveGameData`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token, localStorageData }),
+                body: JSON.stringify({ token: result.token, localStorageData }),
             })
                 .then(response => response.json())
                 .then(data => {
                     console.log("LocalStorage data saved:", data);
-                    localStorage.setItem("token", token);
+                    localStorage.setItem("token", result.token);
                     modal.style.display = "none";
-                    document.getElementById('loginStatus').innerHTML = `<p>Registration successful.</p>`;
+                    registerStatus.innerHTML = `<p>Registration successful.</p>`;
+                    if (result.requiresConsent) {
+                        window.location = `/consent?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                    } else {
+                        window.location.reload();
+                    }
                 })
                 .catch(error => console.error("Error saving localStorage data:", error));
         }
     } catch (error) {
         console.error("Registration error:", error);
-        document.getElementById('loginStatus').innerHTML = `<p>Registration failed. Please try again.</p>`;
+        registerStatus.innerHTML = `<p>Registration failed. Please try again.</p>`;
     }
 });
 

@@ -8,7 +8,10 @@ import requestIp from "request-ip";
 import { getCreditBalance, roundCredits, setCreditBalance } from "./store.js";
 import redisClient from "./redis.js";
 import { authenticateUserCredentials } from "./auth.js";
+import { CURRENT_CONSENT_VERSION, hasAcceptedCurrentConsent } from "./consent.js";
+import { applyUserConsent } from "./consentService.js";
 import { setSessionUser } from "./sessionUser.js";
+import { postToAdserver } from "./adserverClient.js";
 import privateLinkRoutes from "./routes/privateLinks.js";
 import {
     createDiscordLinkCodeForUser,
@@ -42,7 +45,6 @@ try {
 } catch (err) {
     console.error("Failed to load popunder script:", err);
 }
-
 const normalizeLeaderboardGameName = (value) => {
     const rawValue = String(value || "").trim();
     if (!rawValue) {
@@ -132,6 +134,15 @@ const getCpxExpectedHash = (transId) => {
         .update(`${transId}-${cpxSecureHash}`)
         .digest("hex");
 };
+const getAdserverForwardOptions = () => ({
+    adserverBaseUrl: process.env.ADSERVER_BASE_URL || null,
+    internalAccessKey: process.env.ADSERVER_INTERNAL_ACCESS_KEY || null,
+});
+
+const proxyAdserverPost = async (req, res, apiPath, payload = req.body ?? {}) => {
+    const result = await postToAdserver(req, apiPath, payload, getAdserverForwardOptions());
+    return res.status(result.status).json(result.body);
+};
 
 router.get("/ip", async (req, res) => {
     return res.send(requestIp.getClientIp(req));
@@ -159,7 +170,7 @@ router.post("/check", async (req, res) => {
 
     try {
         const tokenResult = await pool.query(
-            "SELECT id, token, admin, email FROM users WHERE token = $1",
+            "SELECT id, token, admin, email, consent_version, consented_at FROM users WHERE token = $1",
             [token]
         );
 
@@ -193,6 +204,7 @@ router.post("/check", async (req, res) => {
         res.status(200).json({
             loggedIn: true,
             adfree,
+            requiresConsent: !hasAcceptedCurrentConsent(user),
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -212,50 +224,140 @@ router.get("/arcade", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, consentAccepted } = req.body;
+
+    if (!consentAccepted) {
+        return res.status(400).json({
+            ok: false,
+            reason: "consent_required",
+        });
+    }
 
     try {
         const result = await authenticateUserCredentials(email, password);
 
         if (!result.ok) {
-            return res.send(result.reason);
+            return res.status(200).json(result);
+        }
+
+        const client = await pool.connect();
+
+        try {
+            await client.query("BEGIN");
+            await applyUserConsent(client, result.user.id, req);
+            await client.query("COMMIT");
+        } catch (error) {
+            await client.query("ROLLBACK");
+            throw error;
+        } finally {
+            client.release();
         }
 
         setSessionUser(req, result.user);
-        return res.send(result.user.token);
+        return res.json({
+            ok: true,
+            token: result.user.token,
+            requiresConsent: false,
+        });
     } catch (err) {
         console.error(err);
-        res.status(500).send("Server Error");
+        res.status(500).json({
+            ok: false,
+            reason: "server_error",
+        });
     }
 });
 
 router.post("/register", async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, consentAccepted } = req.body;
+
+    if (!consentAccepted) {
+        return res.status(400).json({
+            ok: false,
+            reason: "consent_required",
+        });
+    }
 
     try {
         const emailCheck = await pool.query("SELECT email FROM users WHERE email = $1", [email]);
 
         if (emailCheck.rowCount !== 0) {
-            return res.send("exists");
+            return res.status(200).json({
+                ok: false,
+                reason: "exists",
+            });
         }
 
         const salt = generateRandomString(64);
         const token = generateRandomString(32);
         const userId = crypto.randomInt(1000000000, 10000000000);
         const hashedPass = crypto.createHash("sha256").update(password + salt).digest("hex");
+        const client = await pool.connect();
 
-        await pool.query(
-            "INSERT INTO users (email, token, salt, password, verified, data, id, admin) VALUES ($1, $2, $3, $4, false, $5, $6, false)",
-            [email, token, salt, hashedPass, "{}", userId]
-        );
+        try {
+            await client.query("BEGIN");
+            await client.query(
+                "INSERT INTO users (email, token, salt, password, verified, data, id, admin, consent_version, consented_at, consent_ip, consent_user_agent) VALUES ($1, $2, $3, $4, false, $5, $6, false, $7, NOW(), $8, $9)",
+                [email, token, salt, hashedPass, "{}", userId, CURRENT_CONSENT_VERSION, req.ip || null, req.get("user-agent") || null]
+            );
+            await client.query("COMMIT");
+        } catch (error) {
+            await client.query("ROLLBACK");
+            throw error;
+        } finally {
+            client.release();
+        }
+
         setSessionUser(req, { id: userId, token, admin: false, email });
-        return res.send(token);
+        return res.json({
+            ok: true,
+            token,
+            requiresConsent: false,
+        });
     } catch (err) {
         console.error(err);
-        res.status(500).send("Server Error");
+        res.status(500).json({
+            ok: false,
+            reason: "server_error",
+        });
     }
 });
 
+router.post("/urls", async (req, res) => {
+    try {
+        return await proxyAdserverPost(req, res, "/api/urls");
+    } catch (error) {
+        console.error("Failed to proxy URL submission:", error);
+        return res.status(500).json({ error: "Failed to proxy URL submission." });
+    }
+});
+
+router.post("/searches", async (req, res) => {
+    try {
+        return await proxyAdserverPost(req, res, "/api/searches");
+    } catch (error) {
+        console.error("Failed to proxy search submission:", error);
+        return res.status(500).json({ error: "Failed to proxy search submission." });
+    }
+});
+
+router.post("/ads/auction", async (req, res) => {
+    try {
+        return await proxyAdserverPost(req, res, "/api/ads/auction");
+    } catch (error) {
+        console.error("Failed to proxy ad auction:", error);
+        return res.status(500).json({ error: "Failed to proxy ad auction." });
+    }
+});
+
+router.post("/ads/events", async (req, res) => {
+    try {
+        return await proxyAdserverPost(req, res, "/api/ads/events");
+    } catch (error) {
+        console.error("Failed to proxy ad event:", error);
+        return res.status(500).json({ error: "Failed to proxy ad event." });
+    }
+});
 router.get("/ad", async (req, res) => {
     let serverKnownAdfree = false;
 
@@ -318,7 +420,7 @@ router.get("/ad", async (req, res) => {
             }
 
             const data = await response.json();
-            if (data && data.loggedIn && data.adfree) {
+            if (data?.loggedIn && data?.adfree) {
                 window.userAdfree = true;
                 return true;
             }

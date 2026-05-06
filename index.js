@@ -17,6 +17,15 @@ import { getCreditBalance, roundCredits } from "./store.js";
 import redisClient from "./redis.js";
 import { getAccountPrivateLink, getOwnedPrivateLinks } from "./privateLinks.js";
 import { canAccessPrivateLinkUpgrade, createPrivateLinkRequestGate } from "./privateLinkGate.js";
+import { attachVisitHash, createPageVisitLogger, getOrCreateVisitHash } from "./adSignals.js";
+import {
+  CURRENT_CONSENT_VERSION,
+  hasAcceptedCurrentConsent,
+  isConsentExemptPath,
+  isHtmlNavigationRequest,
+  normalizeReturnTo,
+} from "./consent.js";
+import { applyUserConsent } from "./consentService.js";
 import { getSessionUser } from "./sessionUser.js";
 import { getDiscordLinkSummaryForUser } from "./discordLinks.js";
 
@@ -196,6 +205,11 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware);
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use((req, res, next) => {
+  res.locals.currentConsentVersion = CURRENT_CONSENT_VERSION;
+  next();
+});
+app.use(attachVisitHash);
 
 app.use((req, res, next) => {
   try {
@@ -275,6 +289,31 @@ app.use((req, res, next) => {
 
 app.use(createPrivateLinkRequestGate({ proxy }));
 
+
+app.use(async (req, res, next) => {
+  if (!isHtmlNavigationRequest(req) || isConsentExemptPath(req.path) || !req.session?.token) {
+    return next();
+  }
+
+  try {
+    const user = await getSessionUser(req);
+
+    if (!user || hasAcceptedCurrentConsent(user)) {
+      return next();
+    }
+
+    return res.redirect(`/consent?returnTo=${encodeURIComponent(req.originalUrl || "/")}`);
+  } catch (error) {
+    console.error("Consent enforcement error:", error);
+    return next();
+  }
+});
+
+app.use(createPageVisitLogger({
+  adserverBaseUrl: process.env.ADSERVER_BASE_URL || null,
+  internalAccessKey: process.env.ADSERVER_INTERNAL_ACCESS_KEY || null,
+}));
+
 app.get("/uv/sw.js", (req, res) => {
   res.set("Service-Worker-Allowed", "/~/uv/");
   res.sendFile(__dirname + "/static/uv/sw.js");
@@ -319,6 +358,62 @@ app.get("/validate-domain", async (req, res) => {
 
 app.get("/account", async (req, res) => {
   return renderAccountShell(req, res, "account");
+});
+
+app.get("/privacy", (req, res) => {
+  res.render("privacy", {
+    updatedAt: "May 5, 2026",
+  });
+});
+
+app.get("/terms", (req, res) => {
+  res.render("terms", {
+    updatedAt: "May 5, 2026",
+  });
+});
+
+app.get("/consent", async (req, res) => {
+  if (!req.session?.token) {
+    return res.redirect("/");
+  }
+
+  const user = await getSessionUser(req);
+
+  if (!user) {
+    return res.redirect("/");
+  }
+
+  if (hasAcceptedCurrentConsent(user)) {
+    return res.redirect(normalizeReturnTo(req.query.returnTo));
+  }
+
+  return res.render("consent", {
+    returnTo: normalizeReturnTo(req.query.returnTo),
+    email: user.email,
+    updatedAt: "May 5, 2026",
+  });
+});
+
+app.post("/consent", async (req, res) => {
+  if (!req.session?.user_id) {
+    return res.redirect("/");
+  }
+
+  const returnTo = normalizeReturnTo(req.body?.returnTo);
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await applyUserConsent(client, req.session.user_id, req);
+    await client.query("COMMIT");
+    return res.redirect(returnTo);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Consent update failed:", error);
+    return res.status(500).send("Failed to record consent");
+  } finally {
+    client.release();
+  }
 });
 
 app.get("/link-management", async (req, res) => {
@@ -445,8 +540,22 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname + "/static/landing/index.html"));
 });
 
-app.get("/proxe", (req, res) => {
-  res.sendFile(path.join(__dirname + "/dist/index.html"));
+app.get("/proxe", async (req, res, next) => {
+  try {
+    const visitHash = getOrCreateVisitHash(req);
+    const filePath = path.join(__dirname, "dist", "index.html");
+    const html = await fs.promises.readFile(filePath, "utf8");
+    const bootstrap = `<script>window.__CANLITE_PROXY_CONTEXT=${JSON.stringify({ visitHash })};</script>`;
+
+    res.type("html");
+    res.send(
+      html.includes("</head>")
+        ? html.replace("</head>", `${bootstrap}</head>`)
+        : `${bootstrap}${html}`
+    );
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.use((req, res, next) => {

@@ -48,6 +48,10 @@
                 <input type="email" id="loginEmail" placeholder="Enter your email" required>
                 <label for="loginPassword">Password</label>
                 <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                <label class="auth-consent" for="loginConsent">
+                    <input type="checkbox" id="loginConsent" required>
+                    <span>I agree to the current <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>, including account-linked signal collection.</span>
+                </label>
                 <button type="submit">Login</button>
                 <p id="loginStatus"></p>
             </form>
@@ -59,7 +63,12 @@
                 <input type="email" id="registerEmail" placeholder="Enter your email" required>
                 <label for="registerPassword">Password</label>
                 <input type="password" id="registerPassword" placeholder="Enter your password" required>
+                <label class="auth-consent" for="registerConsent">
+                    <input type="checkbox" id="registerConsent" required>
+                    <span>I agree to the current <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>, including account-linked signal collection.</span>
+                </label>
                 <button type="submit">Register</button>
+                <p id="registerStatus"></p>
             </form>
         </div>
     </div>
@@ -151,6 +160,7 @@
     <div class="footer-main">
         <div class="footer-links">
             <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
             <a href="mailto:canlite24@outlook.com">Email Us</a>
             <a href="https://discord.com/invite/46gkEU5kpP" target="_blank">Join our Discord</a>
             <a href="/about">About Us</a>

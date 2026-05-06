@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CanLite Data Affirmation</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #071019;
+            --panel: rgba(12, 22, 36, 0.92);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #eef4ff;
+            --muted: rgba(238, 244, 255, 0.7);
+            --accent: #8fd3ff;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            font-family: "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(69, 143, 255, 0.18), transparent 34%),
+                linear-gradient(180deg, #08111a 0%, #050a10 100%);
+            color: var(--text);
+        }
+        .card {
+            width: min(100%, 760px);
+            padding: 28px;
+            border-radius: 24px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.34);
+        }
+        h1 { margin-top: 0; }
+        p, li { color: var(--muted); line-height: 1.6; }
+        ul { padding-left: 20px; }
+        .actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 22px;
+            flex-wrap: wrap;
+        }
+        button {
+            border: 0;
+            border-radius: 14px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: #04110a;
+            background: var(--accent);
+        }
+        a { color: var(--accent); }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Confirm current data policy</h1>
+    <p>Signed in as <strong><%= email %></strong>. Before continuing, you must affirm the current CanLite data handling policy dated <%= updatedAt %>.</p>
+    <ul>
+        <li>CanLite logs page visits and account/session activity.</li>
+        <li>CanLite may associate visits, searches, ad impressions, and ad clicks with your account.</li>
+        <li>CanLite may use those signals for affiliate selection, bidding, learning, measurement, and anti-abuse systems.</li>
+    </ul>
+    <p>Read the full <a href="/privacy">Privacy Policy</a> and <a href="/terms">Terms of Service</a>.</p>
+    <form method="post" action="/consent">
+        <input type="hidden" name="returnTo" value="<%= returnTo %>">
+        <div class="actions">
+            <button type="submit">I affirm and continue</button>
+            <a href="/privacy">Review policy again</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>
