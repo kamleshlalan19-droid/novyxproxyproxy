@@ -1,7 +1,9 @@
 import { getSessionUser } from "./sessionUser.js";
 
+const DEFAULT_ADSERVER_BASE_URL = "http://127.0.0.1:3010";
+
 function getAdserverBaseUrl(options = {}) {
-  const baseUrl = options.adserverBaseUrl || process.env.ADSERVER_BASE_URL || "";
+  const baseUrl = options.adserverBaseUrl || process.env.ADSERVER_BASE_URL || DEFAULT_ADSERVER_BASE_URL;
   return String(baseUrl).replace(/\/$/, "");
 }
 

@@ -29,6 +29,7 @@ import { applyUserConsent } from "./consentService.js";
 import { getSessionUser } from "./sessionUser.js";
 import { getDiscordLinkSummaryForUser } from "./discordLinks.js";
 
+const DEFAULT_ADSERVER_BASE_URL = "http://127.0.0.1:3010";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const app = express();
@@ -310,7 +311,7 @@ app.use(async (req, res, next) => {
 });
 
 app.use(createPageVisitLogger({
-  adserverBaseUrl: process.env.ADSERVER_BASE_URL || null,
+  adserverBaseUrl: process.env.ADSERVER_BASE_URL || DEFAULT_ADSERVER_BASE_URL,
   internalAccessKey: process.env.ADSERVER_INTERNAL_ACCESS_KEY || null,
 }));
 

@@ -19,6 +19,7 @@ import {
     unlinkDiscordAccountForUser,
 } from "./discordLinks.js";
 
+const DEFAULT_ADSERVER_BASE_URL = "http://127.0.0.1:3010";
 const router = express.Router();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -135,7 +136,7 @@ const getCpxExpectedHash = (transId) => {
         .digest("hex");
 };
 const getAdserverForwardOptions = () => ({
-    adserverBaseUrl: process.env.ADSERVER_BASE_URL || null,
+    adserverBaseUrl: process.env.ADSERVER_BASE_URL || DEFAULT_ADSERVER_BASE_URL,
     internalAccessKey: process.env.ADSERVER_INTERNAL_ACCESS_KEY || null,
 });
 
