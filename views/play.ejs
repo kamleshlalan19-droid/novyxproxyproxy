@@ -319,6 +319,8 @@
         let readyCheckInterval;
         let loadTimeout;
         let loadscreenAdRequested = false;
+        let loadscreenAdRequestInFlight = false;
+        let loadscreenAdRequestAttempts = 0;
         let loadscreenAdImpressionSent = false;
         const debugSidebarAd = (...args) => {
             if (window.__CANLITE_AD_DEBUG === true) {
@@ -465,27 +467,35 @@
         };
 
         const requestSidebarAd = async () => {
-            if (loadscreenAdRequested) {
+            if (loadscreenAdRequested || loadscreenAdRequestInFlight) {
                 return;
             }
 
-            loadscreenAdRequested = true;
-            debugSidebarAd("Sidebar ad request started.");
+            loadscreenAdRequestInFlight = true;
+            loadscreenAdRequestAttempts += 1;
+            debugSidebarAd("Sidebar ad request started.", {
+                attempt: loadscreenAdRequestAttempts,
+            });
 
             if (await resolveAdfreeState()) {
                 debugSidebarAd("Skipped sidebar ad request because user is adfree.");
+                loadscreenAdRequested = true;
+                loadscreenAdRequestInFlight = false;
                 return;
             }
 
             const keywords = buildAdSignals();
             if (keywords.length === 0) {
                 debugSidebarAd("Skipped sidebar ad request because there are no keywords.");
+                loadscreenAdRequested = true;
+                loadscreenAdRequestInFlight = false;
                 return;
             }
 
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(() => controller.abort(), 3500);
+
             try {
-                const controller = new AbortController();
-                const timeoutId = window.setTimeout(() => controller.abort(), 2200);
                 const response = await fetch("/api/ads/auction", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -503,7 +513,6 @@
                         query: gameName,
                     }),
                 });
-                window.clearTimeout(timeoutId);
                 const result = await response.json();
                 debugSidebarAd("Auction response received.", {
                     ok: response.ok,
@@ -513,6 +522,8 @@
                     affiliate: result?.winner?.affiliate === true,
                     hasImpressionToken: Boolean(result?.winner?.tracking?.impressionToken),
                 });
+
+                loadscreenAdRequested = true;
 
                 if (!response.ok || !result?.winner?.adm || result?.winner?.affiliate !== true) {
                     debugSidebarAd("Skipped sidebar ad render because auction result did not qualify.", {
@@ -525,9 +536,27 @@
 
                 await renderSidebarAd(result);
             } catch (error) {
-                if (error?.name !== "AbortError") {
+                if (error?.name === "AbortError") {
+                    debugSidebarAd("Sidebar ad request aborted.", {
+                        attempt: loadscreenAdRequestAttempts,
+                    });
+                } else {
                     console.error("Failed to request play sidebar ad:", error);
                 }
+
+                if (loadscreenAdRequestAttempts < 2) {
+                    debugSidebarAd("Retrying sidebar ad request after transient failure.", {
+                        nextAttempt: loadscreenAdRequestAttempts + 1,
+                    });
+                    window.setTimeout(() => {
+                        void requestSidebarAd();
+                    }, 600);
+                } else {
+                    loadscreenAdRequested = true;
+                }
+            } finally {
+                window.clearTimeout(timeoutId);
+                loadscreenAdRequestInFlight = false;
             }
         };
 
