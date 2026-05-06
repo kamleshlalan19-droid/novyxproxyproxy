@@ -320,6 +320,11 @@
         let loadTimeout;
         let loadscreenAdRequested = false;
         let loadscreenAdImpressionSent = false;
+        const debugSidebarAd = (...args) => {
+            if (window.__CANLITE_AD_DEBUG === true) {
+                console.debug("[play-sidebar-ad]", ...args);
+            }
+        };
 
         const buildAdSignals = () => {
             const rawTerms = [
@@ -376,15 +381,22 @@
 
         const postAdEvent = async (auctionId, eventType, token) => {
             if (!auctionId || !eventType || !token) {
+                debugSidebarAd("Skipped event post due to missing fields.", {
+                    auctionId,
+                    eventType,
+                    hasToken: Boolean(token),
+                });
                 return;
             }
 
             try {
+                debugSidebarAd("Posting ad event.", { auctionId, eventType });
                 await fetch("/api/ads/events", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ auctionId, eventType, token }),
                 });
+                debugSidebarAd("Ad event posted.", { auctionId, eventType });
             } catch (error) {
                 console.error("Failed to post play sidebar ad event:", error);
             }
@@ -393,8 +405,18 @@
         const renderSidebarAd = async (result) => {
             const winner = result?.winner;
             if (!winner?.adm || !playSidebarAdSlot) {
+                debugSidebarAd("Skipped render because ad markup or slot is missing.", {
+                    hasAdm: Boolean(winner?.adm),
+                    hasSlot: Boolean(playSidebarAdSlot),
+                });
                 return;
             }
+
+            debugSidebarAd("Rendering sidebar ad.", {
+                auctionId: result?.auction?.id || null,
+                affiliate: winner?.affiliate === true,
+                hasImpressionToken: Boolean(winner?.tracking?.impressionToken),
+            });
 
             const frame = document.createElement("iframe");
             frame.className = "adserver-ad-frame";
@@ -434,6 +456,11 @@
             if (!loadscreenAdImpressionSent && winner.tracking?.impressionToken) {
                 loadscreenAdImpressionSent = true;
                 await postAdEvent(result.auction?.id, "impression", winner.tracking.impressionToken);
+            } else {
+                debugSidebarAd("Skipped impression event post.", {
+                    alreadySent: loadscreenAdImpressionSent,
+                    hasImpressionToken: Boolean(winner?.tracking?.impressionToken),
+                });
             }
         };
 
@@ -443,13 +470,16 @@
             }
 
             loadscreenAdRequested = true;
+            debugSidebarAd("Sidebar ad request started.");
 
             if (await resolveAdfreeState()) {
+                debugSidebarAd("Skipped sidebar ad request because user is adfree.");
                 return;
             }
 
             const keywords = buildAdSignals();
             if (keywords.length === 0) {
+                debugSidebarAd("Skipped sidebar ad request because there are no keywords.");
                 return;
             }
 
@@ -475,8 +505,21 @@
                 });
                 window.clearTimeout(timeoutId);
                 const result = await response.json();
+                debugSidebarAd("Auction response received.", {
+                    ok: response.ok,
+                    status: response.status,
+                    hasWinner: Boolean(result?.winner),
+                    hasAdm: Boolean(result?.winner?.adm),
+                    affiliate: result?.winner?.affiliate === true,
+                    hasImpressionToken: Boolean(result?.winner?.tracking?.impressionToken),
+                });
 
                 if (!response.ok || !result?.winner?.adm || result?.winner?.affiliate !== true) {
+                    debugSidebarAd("Skipped sidebar ad render because auction result did not qualify.", {
+                        ok: response.ok,
+                        hasAdm: Boolean(result?.winner?.adm),
+                        affiliate: result?.winner?.affiliate === true,
+                    });
                     return;
                 }
 
@@ -490,6 +533,7 @@
 
         const queueSidebarAdRequest = () => {
             window.setTimeout(() => {
+                debugSidebarAd("Queue fired for sidebar ad request.");
                 void requestSidebarAd();
             }, 0);
         };
