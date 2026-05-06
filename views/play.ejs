@@ -271,11 +271,15 @@
 </div>
 
 <script>
+    const canliteGameName = <%- JSON.stringify(game.name).replace(/<\//g, "<\\/") %>;
+    const canliteGameDescription = <%- JSON.stringify(game.desc || "").replace(/<\//g, "<\\/") %>;
+    const canliteGameTagsRaw = <%- JSON.stringify(game.tags || "").replace(/<\//g, "<\\/") %>;
+    const canliteVisitHash = <%- JSON.stringify(visitHash || null).replace(/<\//g, "<\\/") %>;
     window.__CANLITE_AD_CONTEXT = {
-        visitHash: <%- JSON.stringify(visitHash) %>,
+        visitHash: canliteVisitHash,
         pageUrl: window.location.href,
-        pageTitle: <%- JSON.stringify(game.name) %>,
-        pageContext: <%- JSON.stringify(game.desc || "") %>
+        pageTitle: canliteGameName,
+        pageContext: canliteGameDescription
     };
 
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -295,11 +299,12 @@
         });
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const gameName = <%- JSON.stringify(game.name) %>;
-        const gameType = <%- JSON.stringify(game.type) %>;
-        const gamePath = <%- JSON.stringify(game.path) %>;
-        const openTarget = <%- JSON.stringify(gameHref) %>;
+    const initializePlayPage = function () {
+        const gameName = canliteGameName;
+        const gameDescription = canliteGameDescription;
+        const gameType = <%- JSON.stringify(game.type).replace(/<\//g, "<\\/") %>;
+        const gamePath = <%- JSON.stringify(game.path).replace(/<\//g, "<\\/") %>;
+        const openTarget = <%- JSON.stringify(gameHref).replace(/<\//g, "<\\/") %>;
         const iframe = document.getElementById("gameFrame");
         const playerShell = document.getElementById("playerShell");
         const likeBtn = document.getElementById("like-btn");
@@ -317,7 +322,7 @@
         const playerSpinner = document.getElementById("playerSpinner");
         const loadscreenCommerceSlot = document.getElementById("loadscreenCommerceSlot");
         const loadscreenCommerceBody = document.getElementById("loadscreenCommerceBody");
-        const gameTags = String(<%- JSON.stringify(game.tags || "") %>).split(",").map((item) => item.trim()).filter(Boolean);
+        const gameTags = String(canliteGameTagsRaw).split(",").map((item) => item.trim()).filter(Boolean);
         let readyCheckInterval;
         let loadTimeout;
         let loadscreenAdRequested = false;
@@ -461,7 +466,7 @@
                         placementId: "play-loadscreen-commerce",
                         pageUrl: window.location.href,
                         pageTitle: gameName,
-                        pageContext: `${gameName}. ${String(<%- JSON.stringify(game.desc || "") %>)} Suggested game-related product listing while the player loads.`,
+                        pageContext: `${gameName}. ${gameDescription} Suggested game-related product listing while the player loads.`,
                         adType: "banner",
                         width: 300,
                         height: 250,
@@ -673,7 +678,13 @@
         setFavoriteState();
         void requestLoadscreenAd();
         loadGame();
-    });
+    };
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initializePlayPage, { once: true });
+    } else {
+        initializePlayPage();
+    }
 </script>
 
 <script src="/login/index.js"></script>
