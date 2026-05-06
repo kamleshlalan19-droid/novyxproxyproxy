@@ -119,8 +119,52 @@ async function postToAdserver(req, apiPath, payload, options = {}) {
   }
 }
 
+async function getFromAdserver(req, apiPath, options = {}) {
+  const baseUrl = getAdserverBaseUrl(options);
+
+  if (!baseUrl) {
+    return {
+      ok: false,
+      status: 503,
+      body: { error: "ADSERVER_BASE_URL is not configured." },
+      headers: new Headers(),
+      text: "",
+    };
+  }
+
+  const headers = await buildAdserverHeaders(req, options);
+
+  try {
+    const response = await fetch(`${baseUrl}${apiPath}`, {
+      method: "GET",
+      headers,
+      redirect: "manual",
+    });
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      body: null,
+      headers: response.headers,
+      text: await response.text(),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 502,
+      body: {
+        error: "Failed to reach adserver.",
+        detail: error.message,
+      },
+      headers: new Headers(),
+      text: "",
+    };
+  }
+}
+
 export {
   buildAdserverHeaders,
+  getFromAdserver,
   getAdserverBaseUrl,
   getForwardedAccountId,
   postToAdserver,

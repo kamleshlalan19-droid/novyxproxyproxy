@@ -11,7 +11,7 @@ import { authenticateUserCredentials } from "./auth.js";
 import { CURRENT_CONSENT_VERSION, hasAcceptedCurrentConsent } from "./consent.js";
 import { applyUserConsent } from "./consentService.js";
 import { setSessionUser } from "./sessionUser.js";
-import { postToAdserver } from "./adserverClient.js";
+import { getFromAdserver, postToAdserver } from "./adserverClient.js";
 import privateLinkRoutes from "./routes/privateLinks.js";
 import {
     createDiscordLinkCodeForUser,
@@ -357,6 +357,34 @@ router.post("/ads/events", async (req, res) => {
     } catch (error) {
         console.error("Failed to proxy ad event:", error);
         return res.status(500).json({ error: "Failed to proxy ad event." });
+    }
+});
+
+router.get("/ads/click/:auctionId", async (req, res) => {
+    try {
+        const query = new URLSearchParams(req.query || {}).toString();
+        const apiPath = `/api/ads/click/${encodeURIComponent(req.params.auctionId)}${query ? `?${query}` : ""}`;
+        const response = await getFromAdserver(req, apiPath, {
+            adserverBaseUrl: process.env.ADSERVER_BASE_URL || DEFAULT_ADSERVER_BASE_URL,
+            internalAccessKey: process.env.ADSERVER_INTERNAL_ACCESS_KEY || null,
+        });
+
+        if ([301, 302, 303, 307, 308].includes(response.status)) {
+            const location = response.headers.get("location");
+
+            if (location) {
+                return res.redirect(response.status, location);
+            }
+        }
+
+        if (response.body && !response.ok) {
+            return res.status(response.status).json(response.body);
+        }
+
+        return res.status(response.status).send(response.text || "Unexpected adserver response.");
+    } catch (error) {
+        console.error("Failed to proxy ad click:", error);
+        return res.status(500).json({ error: "Failed to proxy ad click." });
     }
 });
 router.get("/ad", async (req, res) => {
