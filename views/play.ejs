@@ -170,13 +170,6 @@
                                     <h2 id="playerStatusTitle">Preparing <%= game.name %></h2>
                                     <p id="playerStatusText">The game frame is loading. If it takes a while, you can refresh the player or open it in a dedicated tab.</p>
                                 </div>
-                                <div class="loadscreen-commerce-slot" id="loadscreenCommerceSlot" hidden>
-                                    <div class="loadscreen-commerce-header">
-                                        <span class="material-symbols-outlined">shopping_bag</span>
-                                        <span>Suggested while the game loads</span>
-                                    </div>
-                                    <div class="loadscreen-commerce-body" id="loadscreenCommerceBody"></div>
-                                </div>
                                 <div class="player-status-actions">
                                     <button class="button-secondary" id="retryLoadBtn" type="button">Retry load</button>
                                     <button class="button-ghost" id="openExternalBtn" type="button">Open in new tab</button>
@@ -225,6 +218,7 @@
                     <aside class="promo-card player-ad-card">
                         <h3>Advertisement</h3>
                         <div
+                            id="playSidebarAdSlot"
                             class="canlite-ad-slot"
                             data-placement-id="play-sidebar"
                             data-ad-type="banner"
@@ -320,8 +314,7 @@
         const playerStatusText = document.getElementById("playerStatusText");
         const playerSideStatus = document.getElementById("playerSideStatus");
         const playerSpinner = document.getElementById("playerSpinner");
-        const loadscreenCommerceSlot = document.getElementById("loadscreenCommerceSlot");
-        const loadscreenCommerceBody = document.getElementById("loadscreenCommerceBody");
+        const playSidebarAdSlot = document.getElementById("playSidebarAdSlot");
         const gameTags = String(canliteGameTagsRaw).split(",").map((item) => item.trim()).filter(Boolean);
         let readyCheckInterval;
         let loadTimeout;
@@ -375,7 +368,7 @@
                     return true;
                 }
             } catch (error) {
-                console.error("Failed to resolve adfree state for loadscreen ad:", error);
+                console.error("Failed to resolve adfree state for play sidebar ad:", error);
             }
 
             return false;
@@ -393,18 +386,18 @@
                     body: JSON.stringify({ auctionId, eventType, token }),
                 });
             } catch (error) {
-                console.error("Failed to post loadscreen ad event:", error);
+                console.error("Failed to post play sidebar ad event:", error);
             }
         };
 
-        const renderLoadscreenAd = async (result) => {
+        const renderSidebarAd = async (result) => {
             const winner = result?.winner;
-            if (!winner?.adm || !loadscreenCommerceBody || playerShell.dataset.state === "ready") {
+            if (!winner?.adm || !playSidebarAdSlot) {
                 return;
             }
 
             const frame = document.createElement("iframe");
-            frame.className = "loadscreen-commerce-frame";
+            frame.className = "adserver-ad-frame";
             frame.width = String(winner.w || 300);
             frame.height = String(winner.h || 250);
             frame.loading = "eager";
@@ -414,8 +407,14 @@
                 "allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
             );
 
-            loadscreenCommerceBody.replaceChildren(frame);
-            loadscreenCommerceSlot.hidden = false;
+            frame.style.border = "0";
+            frame.style.display = "block";
+            frame.style.width = "100%";
+            frame.style.maxWidth = String(winner.w || 300) + "px";
+            frame.style.height = String(winner.h || 250) + "px";
+            frame.style.margin = "0 auto";
+
+            playSidebarAdSlot.replaceChildren(frame);
 
             frame.srcdoc = [
                 "<!DOCTYPE html>",
@@ -438,7 +437,7 @@
             }
         };
 
-        const requestLoadscreenAd = async () => {
+        const requestSidebarAd = async () => {
             if (loadscreenAdRequested) {
                 return;
             }
@@ -463,13 +462,13 @@
                     signal: controller.signal,
                     body: JSON.stringify({
                         visitHash: window.__CANLITE_AD_CONTEXT?.visitHash || null,
-                        placementId: "play-loadscreen-commerce",
+                        placementId: playSidebarAdSlot?.dataset.placementId || "play-sidebar",
                         pageUrl: window.location.href,
                         pageTitle: gameName,
-                        pageContext: `${gameName}. ${gameDescription} Suggested game-related product listing while the player loads.`,
-                        adType: "banner",
-                        width: 300,
-                        height: 250,
+                        pageContext: `${gameName}. ${gameDescription} Suggested game-related product listing beside the player.`,
+                        adType: playSidebarAdSlot?.dataset.adType || "banner",
+                        width: Number(playSidebarAdSlot?.dataset.width || 300),
+                        height: Number(playSidebarAdSlot?.dataset.height || 250),
                         keywords,
                         query: gameName,
                     }),
@@ -481,12 +480,18 @@
                     return;
                 }
 
-                await renderLoadscreenAd(result);
+                await renderSidebarAd(result);
             } catch (error) {
                 if (error?.name !== "AbortError") {
-                    console.error("Failed to request loadscreen commerce ad:", error);
+                    console.error("Failed to request play sidebar ad:", error);
                 }
             }
+        };
+
+        const queueSidebarAdRequest = () => {
+            window.setTimeout(() => {
+                void requestSidebarAd();
+            }, 0);
         };
 
         const getFavorites = () => {
@@ -508,9 +513,6 @@
             playerSideStatus.textContent = text;
             playerSpinner.style.display = state === "loading" ? "block" : "none";
             playerStatus.hidden = state === "ready";
-            if (state === "ready" && loadscreenCommerceSlot) {
-                loadscreenCommerceSlot.hidden = true;
-            }
         };
 
         const clearReadyWatchers = () => {
@@ -675,8 +677,8 @@
             }
         });
 
+        queueSidebarAdRequest();
         setFavoriteState();
-        void requestLoadscreenAd();
         loadGame();
     };
 
