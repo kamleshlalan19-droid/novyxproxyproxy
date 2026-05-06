@@ -170,6 +170,13 @@
                                     <h2 id="playerStatusTitle">Preparing <%= game.name %></h2>
                                     <p id="playerStatusText">The game frame is loading. If it takes a while, you can refresh the player or open it in a dedicated tab.</p>
                                 </div>
+                                <div class="loadscreen-commerce-slot" id="loadscreenCommerceSlot" hidden>
+                                    <div class="loadscreen-commerce-header">
+                                        <span class="material-symbols-outlined">shopping_bag</span>
+                                        <span>Suggested while the game loads</span>
+                                    </div>
+                                    <div class="loadscreen-commerce-body" id="loadscreenCommerceBody"></div>
+                                </div>
                                 <div class="player-status-actions">
                                     <button class="button-secondary" id="retryLoadBtn" type="button">Retry load</button>
                                     <button class="button-ghost" id="openExternalBtn" type="button">Open in new tab</button>
@@ -308,8 +315,174 @@
         const playerStatusText = document.getElementById("playerStatusText");
         const playerSideStatus = document.getElementById("playerSideStatus");
         const playerSpinner = document.getElementById("playerSpinner");
+        const loadscreenCommerceSlot = document.getElementById("loadscreenCommerceSlot");
+        const loadscreenCommerceBody = document.getElementById("loadscreenCommerceBody");
+        const gameTags = String(<%- JSON.stringify(game.tags || "") %>).split(",").map((item) => item.trim()).filter(Boolean);
         let readyCheckInterval;
         let loadTimeout;
+        let loadscreenAdRequested = false;
+        let loadscreenAdImpressionSent = false;
+
+        const buildAdSignals = () => {
+            const rawTerms = [
+                gameName,
+                ...gameTags.slice(0, 6),
+            ];
+            const normalizedTerms = [];
+            const seen = new Set();
+
+            for (const term of rawTerms) {
+                const value = String(term || "").trim().toLowerCase();
+                if (!value || seen.has(value)) {
+                    continue;
+                }
+                seen.add(value);
+                normalizedTerms.push(value);
+            }
+
+            return normalizedTerms.slice(0, 8);
+        };
+
+        const resolveAdfreeState = async () => {
+            if (window.userAdfree === true) {
+                return true;
+            }
+
+            const token = localStorage.getItem("token");
+            if (!token) {
+                return false;
+            }
+
+            try {
+                const response = await fetch("/api/check", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token }),
+                });
+
+                if (!response.ok) {
+                    return false;
+                }
+
+                const data = await response.json();
+                if (data?.loggedIn && data?.adfree) {
+                    window.userAdfree = true;
+                    return true;
+                }
+            } catch (error) {
+                console.error("Failed to resolve adfree state for loadscreen ad:", error);
+            }
+
+            return false;
+        };
+
+        const postAdEvent = async (auctionId, eventType, token) => {
+            if (!auctionId || !eventType || !token) {
+                return;
+            }
+
+            try {
+                await fetch("/api/ads/events", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ auctionId, eventType, token }),
+                });
+            } catch (error) {
+                console.error("Failed to post loadscreen ad event:", error);
+            }
+        };
+
+        const renderLoadscreenAd = async (result) => {
+            const winner = result?.winner;
+            if (!winner?.adm || !loadscreenCommerceBody || playerShell.dataset.state === "ready") {
+                return;
+            }
+
+            const frame = document.createElement("iframe");
+            frame.className = "loadscreen-commerce-frame";
+            frame.width = String(winner.w || 300);
+            frame.height = String(winner.h || 250);
+            frame.loading = "eager";
+            frame.referrerPolicy = "no-referrer";
+            frame.setAttribute(
+                "sandbox",
+                "allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+            );
+
+            loadscreenCommerceBody.replaceChildren(frame);
+            loadscreenCommerceSlot.hidden = false;
+
+            frame.srcdoc = [
+                "<!DOCTYPE html>",
+                "<html lang=\"en\">",
+                "<head>",
+                "  <meta charset=\"utf-8\">",
+                "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
+                "  <base target=\"_top\">",
+                "  <style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}a{text-decoration:none;}</style>",
+                "</head>",
+                "<body>",
+                winner.adm,
+                "</body>",
+                "</html>",
+            ].join("");
+
+            if (!loadscreenAdImpressionSent && winner.tracking?.impressionToken) {
+                loadscreenAdImpressionSent = true;
+                await postAdEvent(result.auction?.id, "impression", winner.tracking.impressionToken);
+            }
+        };
+
+        const requestLoadscreenAd = async () => {
+            if (loadscreenAdRequested) {
+                return;
+            }
+
+            loadscreenAdRequested = true;
+
+            if (await resolveAdfreeState()) {
+                return;
+            }
+
+            const keywords = buildAdSignals();
+            if (keywords.length === 0) {
+                return;
+            }
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = window.setTimeout(() => controller.abort(), 2200);
+                const response = await fetch("/api/ads/auction", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        visitHash: window.__CANLITE_AD_CONTEXT?.visitHash || null,
+                        placementId: "play-loadscreen-commerce",
+                        pageUrl: window.location.href,
+                        pageTitle: gameName,
+                        pageContext: `${gameName}. ${String(<%- JSON.stringify(game.desc || "") %>)} Suggested game-related product listing while the player loads.`,
+                        adType: "banner",
+                        width: 300,
+                        height: 250,
+                        keywords,
+                        query: gameName,
+                    }),
+                });
+                window.clearTimeout(timeoutId);
+                const result = await response.json();
+
+                if (!response.ok || !result?.winner?.adm || result?.winner?.affiliate !== true) {
+                    return;
+                }
+
+                await renderLoadscreenAd(result);
+            } catch (error) {
+                if (error?.name !== "AbortError") {
+                    console.error("Failed to request loadscreen commerce ad:", error);
+                }
+            }
+        };
 
         const getFavorites = () => {
             const favoritesJSON = localStorage.getItem("canlitefavorites");
@@ -330,6 +503,9 @@
             playerSideStatus.textContent = text;
             playerSpinner.style.display = state === "loading" ? "block" : "none";
             playerStatus.hidden = state === "ready";
+            if (state === "ready" && loadscreenCommerceSlot) {
+                loadscreenCommerceSlot.hidden = true;
+            }
         };
 
         const clearReadyWatchers = () => {
@@ -495,6 +671,7 @@
         });
 
         setFavoriteState();
+        void requestLoadscreenAd();
         loadGame();
     });
 </script>
