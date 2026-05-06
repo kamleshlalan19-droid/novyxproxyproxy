@@ -415,7 +415,8 @@ const Home = function () {
     return (
         <div class="proxy-app">
             <Head bind:theme={use(this.theme)} />
-            <Show if={use(this.ageConfirmed, (ageConfirmed) => !ageConfirmed)}>
+            {$if(
+                use(this.ageConfirmed, (ageConfirmed) => !ageConfirmed),
                 <div class="proxy-age-gate">
                     <div class="proxy-age-card proxy-panel">
                         <p class="proxy-age-eyebrow">Age Confirmation Required</p>
@@ -437,11 +438,12 @@ const Home = function () {
                             />
                             <span>I confirm that I am 13 years old or older.</span>
                         </label>
-                        <Show if={use(this.agePromptError)}>
+                        {$if(
+                            use(this.agePromptError),
                             <p class="proxy-age-error">
                                 Confirm your age before entering the site.
-                            </p>
-                        </Show>
+                            </p>,
+                        )}
                         <div class="proxy-age-actions">
                             <button
                                 type="button"
@@ -459,8 +461,8 @@ const Home = function () {
                             </button>
                         </div>
                     </div>
-                </div>
-            </Show>
+                </div>,
+            )}
             <div class="proxy-shell">
                 <div class="proxy-ambient proxy-ambient-a"></div>
                 <div class="proxy-ambient proxy-ambient-b"></div>
